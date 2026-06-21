@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>豊岡組 点検簿ジェネレーター（事務）</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{--navy:#1f3a5f;--navy2:#2c4f80;--orange:#e8732b;--bg:#f4f6f9;--card:#fff;
+    --line:#dde3ea;--txt:#1c2733;--muted:#6b7888;--ok:#1f9d57;--warn:#c8412b;--soft:#eef2f7}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;
+    background:var(--bg);color:var(--txt);font-size:15px;line-height:1.5}
+  header{background:var(--navy);color:#fff;padding:10px 14px;display:flex;align-items:center;gap:10px}
+  header .logo{font-weight:700;font-size:17px}
+  header .tag{margin-left:auto;font-size:12px;background:rgba(255,255,255,.15);padding:3px 9px;border-radius:20px}
+  main{max-width:820px;margin:0 auto;padding:14px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:14px}
+  .card.off{opacity:.45;pointer-events:none}
+  .step{display:inline-flex;width:24px;height:24px;border-radius:50%;background:var(--navy);color:#fff;
+    align-items:center;justify-content:center;font-size:13px;font-weight:700;margin-right:8px}
+  h2{font-size:16px;margin:0 0 12px;display:flex;align-items:center}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
+  .fld{display:flex;flex-direction:column;gap:4px}
+  .fld label{font-size:12px;color:var(--muted);font-weight:600}
+  input,select{font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--txt);width:100%}
+  button.btn{background:var(--navy);color:#fff;border:none;padding:10px 18px;border-radius:8px;font-weight:700;cursor:pointer;font-size:14px}
+  button.btn.org{background:var(--orange)}
+  button.btn:disabled{background:#aab3be;cursor:default}
+  button.ghost{background:#fff;border:1px solid var(--line);color:var(--txt);padding:7px 12px;border-radius:8px;cursor:pointer;font-size:13px}
+  .muted{color:var(--muted);font-size:13px}
+  .info{background:var(--soft);border-radius:8px;padding:10px;font-size:13px;margin-top:8px}
+  .daygrid{display:grid;grid-template-columns:repeat(8,1fr);gap:6px;margin-top:10px}
+  .day{border:1px solid var(--line);border-radius:8px;padding:8px 0;text-align:center;cursor:pointer;background:#fff;font-variant-numeric:tabular-nums;user-select:none}
+  .day .wd{display:block;font-size:10px;color:var(--muted)}
+  .day.on{background:var(--orange);color:#fff;border-color:var(--orange)}
+  .day.on .wd{color:#fff}
+  .day.sun{color:var(--warn)}
+  .filebox{border:2px dashed var(--line);border-radius:10px;padding:18px;text-align:center;color:var(--muted)}
+  .note{background:#fff8ef;border:1px solid #f3d9b8;border-radius:10px;padding:12px;font-size:13px;color:#7a5320;margin-top:10px}
+  details{margin-top:10px}
+  summary{cursor:pointer;color:var(--navy);font-weight:600;font-size:14px}
+  .flexsp{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .right{margin-left:auto}
+</style>
+</head>
+<body>
+<header>
+  <span class="logo">点検簿ジェネレーター</span>
+  <span class="tag">事務用</span>
+</header>
+<main>
+  <div class="card">
+    <h2><span class="step">☁</span>クラウド連携（日報の取得元）</h2>
+    <div class="row">
+      <div class="fld" style="flex:1 1 100%"><label>Supabase Project URL</label><input id="sbUrl" placeholder="https://xxxx.supabase.co"></div>
+      <div class="fld" style="flex:1 1 100%"><label>publishable key</label><input id="sbKey" placeholder="sb_publishable_..."></div>
+    </div>
+    <div class="flexsp" style="margin-top:10px">
+      <button class="btn" id="sbConnect">接続して保存</button>
+      <span class="muted" id="sbStatus"></span>
+    </div>
+    <div class="muted" style="margin-top:6px">日報アプリと同じURL・キーを入れてください。一度入れれば、この端末では次回から自動でつながります。</div>
+  </div>
+
+  <div class="card">
+    <h2><span class="step">1</span>点検簿の様式を読み込む</h2>
+    <div class="filebox">
+      <input type="file" id="fileIn" accept=".xlsx" multiple>
+      <div class="muted" style="margin-top:8px">機械ごとの点検簿（月シートが入ったExcel）を選んでください。複数の機械を一度に選ぶこともできます（Ctrl／Shiftキーで複数選択）。リース機でも、その機械の様式ならOKです。</div>
+    </div>
+    <div id="loadInfo"></div>
+  </div>
+
+  <div class="card off" id="cardBatch">
+    <h2><span class="step">▤</span>複数ファイルの一括処理</h2>
+    <div class="muted" id="batchCount"></div>
+    <div class="row" style="margin-top:10px">
+      <div class="fld" style="flex:1 1 200px"><label>対象の月（シート名・共通）</label><select id="batchSheetSel"></select></div>
+      <div class="fld" style="flex:1 1 140px"><label>点検者（姓）</label><input id="batchSurname" list="nameList" placeholder="豊岡"></div>
+      <div class="fld" style="flex:1 1 180px"><label>点検者 氏名（任意）</label><input id="batchFull" placeholder="豊岡　強志"></div>
+    </div>
+    <div class="flexsp" style="margin-top:10px">
+      <button class="btn org" id="batchRun">一括処理してダウンロード</button>
+      <span class="muted" id="batchStatus"></span>
+    </div>
+    <div id="batchLog" class="info" style="display:none"></div>
+  </div>
+
+  <div class="card off" id="card2">
+    <h2><span class="step">2</span>月と点検者を指定</h2>
+    <div class="row">
+      <div class="fld" style="flex:1 1 160px"><label>対象の月（シート）</label><select id="sheetSel"></select></div>
+      <div class="fld" style="flex:1 1 140px"><label>点検者（姓・日付欄に入る）</label><input id="kSurname" list="nameList" placeholder="豊岡"></div>
+      <div class="fld" style="flex:1 1 180px"><label>点検者 氏名（任意・下段の表記）</label><input id="kFull" placeholder="豊岡　強志"></div>
+    </div>
+    <div class="info" id="sheetInfo"></div>
+    <details>
+      <summary>ヘッダーを上書きする（任意・通常は不要）</summary>
+      <div class="row" style="margin-top:10px">
+        <div class="fld" style="flex:2 1 260px"><label>工事名</label><input id="ovKoji"></div>
+        <div class="fld" style="flex:1 1 130px"><label>機種</label><input id="ovKishu" placeholder="0.25m3バックホウ"></div>
+        <div class="fld" style="flex:1 1 130px"><label>形式</label><input id="ovKeishiki" placeholder="PC78UU-10"></div>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <div class="fld" style="flex:1 1 160px"><label>元請負業者</label><input id="ovGen" placeholder="株式会社 豊岡組"></div>
+        <div class="fld" style="flex:1 1 130px"><label>現場代理人</label><input id="ovDairi"></div>
+        <div class="fld" style="flex:0 1 90px"><label>令和（年）</label><input id="ovYear" type="number" placeholder="7"></div>
+      </div>
+      <div class="muted" style="margin-top:6px">空欄の項目は様式の元の値をそのまま残します。</div>
+    </details>
+  </div>
+
+  <div class="card off" id="card3">
+    <h2><span class="step">3</span>その機械を使った日を選ぶ</h2>
+    <div class="flexsp">
+      <button class="ghost" id="allOn">全部オン</button>
+      <button class="ghost" id="allOff">全部オフ</button>
+      <button class="ghost" id="weekdays">平日だけ</button>
+      <span class="muted right">使った日をタップ（複数可）</span>
+    </div>
+    <div class="daygrid" id="dayGrid"></div>
+    <details open>
+      <summary>日報から自動で印を付ける</summary>
+      <div class="flexsp" style="margin-top:10px">
+        <button class="ghost" id="cloudFetch">クラウドからこの月の日報を取得</button>
+        <span class="muted" id="cloudInfo"></span>
+      </div>
+      <div id="machinePick" style="margin-top:10px"></div>
+      <div class="muted" style="margin-top:12px">― クラウドが使えないときの予備 ―</div>
+      <div class="row" style="margin-top:8px">
+        <div class="fld" style="flex:1 1 200px"><label>機械名で一致（含む）</label><input id="matchName" placeholder="例）0.25 や PC78UU"></div>
+        <label class="ghost" style="cursor:pointer;align-self:flex-end">日報JSONを読み込む
+          <input type="file" id="jsonIn" accept=".json" style="display:none"></label>
+      </div>
+      <div class="muted" id="jsonInfo" style="margin-top:6px">日報アプリの「JSON書き出し」ファイルから読み込む方法です。</div>
+    </details>
+  </div>
+
+  <div class="card off" id="card4">
+    <h2><span class="step">4</span>記入済みの点検簿を出力</h2>
+    <div class="flexsp">
+      <button class="btn org" id="genBtn">点検簿を出力（ダウンロード）</button>
+      <span class="muted" id="genStatus"></span>
+    </div>
+    <div class="note">出力後、罫線や曜日の表示が崩れていないか一度ご確認ください。もし崩れる箇所があれば、PCで完全に再現する別方式（生成スクリプト）に切り替えます。</div>
+  </div>
+</main>
+
+<datalist id="nameList">
+  <option value="豊岡"><option value="本郷"><option value="道本"><option value="櫻田">
+  <option value="坂本"><option value="白崎"><option value="武内"><option value="谷口">
+</datalist>
+
+<script>
+const $=id=>document.getElementById(id);
+const COLB=2;
+let wb=null, fileName='', curSheet=null, dayCol={}, itemRows=[], kenteiRow=null, used=new Set(), wdays={};
+let sb=null, monthMachineDays={};
+let batchFiles=[]; // [{fileName, wb, sheetNames}]
+const fetchCache={}; // "year-month" -> monthMachineDays
+const LSU='tk_tenken_url', LSK='tk_tenken_key';
+const WD=['日','月','火','水','木','金','土'];
+
+function cleanUrl(u){return (u||'').trim().replace(/\/rest\/v1\/?$/i,'').replace(/\/+$/,'');}
+function ensureSb(){
+  const url=cleanUrl(localStorage.getItem(LSU)||''),key=(localStorage.getItem(LSK)||'').trim();
+  if(url&&key&&window.supabase){try{sb=window.supabase.createClient(url,key);}catch(e){sb=null;}}else{sb=null;}
+  return sb;
+}
+function getYearMonth(){ return getYearMonthOf(curSheet,$('sheetSel').value); }
+function getYearMonthOf(ws,sheetName){
+  let year=cellNum(ws.getCell('AL25').value);
+  if(year==null){const r=cellNum(ws.getCell('Q3').value);year=r!=null?r+2018:null;}
+  let month=cellNum(ws.getCell('V3').value);
+  if(month==null){const m=(sheetName||'').match(/(\d+)/);month=m?+m[1]:null;}
+  return {year,month};
+}
+/* ===== シート構造解析（単一・一括の両方で共用） ===== */
+function parseSheet(ws){
+  const dc={},wd={};
+  for(let c=1;c<=60;c++){const n=cellNum(ws.getRow(4).getCell(c).value);
+    if(n!=null&&n>=1&&n<=31){dc[n]=c; wd[n]=cellText(ws.getRow(5).getCell(c).value);}}
+  const iRows=[];let kRow=null;
+  for(let r=6;r<=50;r++){const b=cellText(ws.getRow(r).getCell(COLB).value).trim();
+    if(b.indexOf('処理')>=0) break;
+    if(b!=='') iRows.push(r);}
+  for(let r=6;r<=50;r++){if(cellText(ws.getRow(r).getCell(COLB).value).indexOf('点検者')>=0){kRow=r;break;}}
+  const kishu=cellText(ws.getCell('J2').value), keishiki=cellText(ws.getCell('J3').value);
+  return {dayCol:dc,wdays:wd,itemRows:iRows,kenteiRow:kRow,kishu,keishiki};
+}
+/* ===== クラウドから月の機械別使用日を取得（キャッシュ付き） ===== */
+async function fetchMonthMachineDays(year,month){
+  const key=`${year}-${month}`;
+  if(fetchCache[key]) return fetchCache[key];
+  const pad=n=>String(n).padStart(2,'0');
+  const start=`${year}-${pad(month)}-01`, end=month==12?`${year+1}-01-01`:`${year}-${pad(month+1)}-01`;
+  const {data,error}=await sb.from('kantoku_nippou').select('report_date,data').gte('report_date',start).lt('report_date',end).limit(3000);
+  if(error){ const r={error,monthMachineDays:{},count:0}; return r; }
+  const mmd={};
+  (data||[]).forEach(x=>{
+    const dt=new Date((x.report_date||'')+'T00:00:00');if(isNaN(dt))return;const day=dt.getDate();
+    ((x.data&&x.data.machines)||[]).forEach(m=>{const nm=((m&&m.machine)||'').toString().trim();if(!nm)return;
+      (mmd[nm]=mmd[nm]||new Set()).add(day);});
+  });
+  const r={error:null,monthMachineDays:mmd,count:(data||[]).length};
+  fetchCache[key]=r;
+  return r;
+}
+
+function cellText(v){ if(v==null) return ''; if(typeof v==='object') return (v.result!=null?v.result:(v.text!=null?v.text:'')).toString(); return v.toString(); }
+function cellNum(v){ if(v==null) return null; if(typeof v==='object') v=(v.result!=null?v.result:null); const n=Number(v); return isNaN(n)?null:n; }
+
+/* ===== 1. 読み込み ===== */
+$('fileIn').onchange=async e=>{
+  const files=[...e.target.files]; if(!files.length) return;
+  if(files.length>1){ await loadBatch(files); return; }
+  $('cardBatch').classList.add('off');
+  const f=files[0];
+  fileName=f.name.replace(/\.xlsx$/i,'');
+  try{
+    const buf=await f.arrayBuffer();
+    wb=new ExcelJS.Workbook();
+    await wb.xlsx.load(buf);
+    const names=wb.worksheets.map(ws=>ws.name);
+    $('sheetSel').innerHTML=names.map(n=>`<option>${n}</option>`).join('');
+    $('loadInfo').innerHTML=`<div class="info">読み込みました：${names.length}シート（${names.join(' / ')}）</div>`;
+    $('card2').classList.remove('off');$('card3').classList.remove('off');$('card4').classList.remove('off');
+    selectSheet();
+  }catch(err){$('loadInfo').innerHTML=`<div class="info" style="color:var(--warn)">読み込みに失敗しました：${err.message}</div>`;}
+};
+
+/* ===== 2. シート選択 → 構造解析 ===== */
+$('sheetSel').onchange=selectSheet;
+function selectSheet(){
+  if(!wb) return;
+  curSheet=wb.getWorksheet($('sheetSel').value);
+  const p=parseSheet(curSheet);
+  dayCol=p.dayCol;wdays=p.wdays;itemRows=p.itemRows;kenteiRow=p.kenteiRow;
+  const days=Object.keys(dayCol).map(Number).sort((a,b)=>a-b);
+  $('sheetInfo').innerHTML=`機種：<b>${p.kishu||'(空)'}</b>　形式：<b>${p.keishiki||'(空)'}</b>　／ 検出：点検項目 ${itemRows.length}行・日数 ${days.length}日・点検者行 ${kenteiRow||'?'}`;
+  used=new Set();
+  buildGrid(days);
+  autoFetchAndApply();
+}
+
+/* ===== 複数ファイル：一括処理 ===== */
+async function loadBatch(files){
+  $('card2').classList.add('off');$('card3').classList.add('off');$('card4').classList.add('off');
+  $('loadInfo').innerHTML='<div class="info">読み込み中…</div>';
+  batchFiles=[];
+  for(const f of files){
+    try{
+      const buf=await f.arrayBuffer();
+      const w=new ExcelJS.Workbook();
+      await w.xlsx.load(buf);
+      batchFiles.push({fileName:f.name.replace(/\.xlsx$/i,''),wb:w,sheetNames:w.worksheets.map(ws=>ws.name)});
+    }catch(err){
+      batchFiles.push({fileName:f.name.replace(/\.xlsx$/i,''),wb:null,error:err.message});
+    }
+  }
+  $('loadInfo').innerHTML=`<div class="info">${batchFiles.length}個のファイルを読み込みました。</div>`;
+  $('batchCount').textContent=`${batchFiles.length}個のファイルが選択されました。月と点検者を指定して、まとめてクラウド取得・自動チェック・出力します。`;
+  // 対象月の選択肢は、読み込めた最初のファイルのシート名を基準にする
+  const base=batchFiles.find(b=>b.wb);
+  $('batchSheetSel').innerHTML=base?base.sheetNames.map(n=>`<option>${n}</option>`).join(''):'';
+  $('cardBatch').classList.remove('off');
+}
+$('batchRun').onclick=async()=>{
+  if(!ensureSb()){$('batchStatus').textContent='先にクラウド連携でURL・キーを保存してください。';return;}
+  const sheetName=$('batchSheetSel').value;
+  const surname=$('batchSurname').value.trim();
+  const full=$('batchFull').value.trim();
+  const log=$('batchLog'); log.style.display='block'; log.innerHTML='';
+  $('batchStatus').textContent='処理中…';
+  let ok=0,skip=0;
+  for(const bf of batchFiles){
+    const line=document.createElement('div');
+    if(!bf.wb){ line.textContent=`✗ ${bf.fileName}：読み込み失敗（${bf.error}）`; log.appendChild(line); skip++; continue; }
+    const ws=bf.wb.getWorksheet(sheetName);
+    if(!ws){ line.textContent=`✗ ${bf.fileName}：シート「${sheetName}」が見つかりません（スキップ）`; log.appendChild(line); skip++; continue; }
+    const p=parseSheet(ws);
+    const {year,month}=getYearMonthOf(ws,sheetName);
+    if(!year||!month){ line.textContent=`✗ ${bf.fileName}：年月を判定できませんでした（スキップ）`; log.appendChild(line); skip++; continue; }
+    const res=await fetchMonthMachineDays(year,month);
+    if(res.error){ line.textContent=`✗ ${bf.fileName}：クラウド取得エラー（${res.error.message||''}）`; log.appendChild(line); skip++; continue; }
+    const names=Object.keys(res.monthMachineDays);
+    const matched=names.filter(nm=>isMachineMatch(nm,p.kishu,p.keishiki));
+    const days=new Set();
+    matched.forEach(nm=>res.monthMachineDays[nm].forEach(d=>days.add(d)));
+    days.forEach(d=>{
+      const c=p.dayCol[d]; if(!c) return;
+      p.itemRows.forEach(r=>{ ws.getRow(r).getCell(c).value='✔'; });
+      if(p.kenteiRow && surname) ws.getRow(p.kenteiRow).getCell(c).value=surname;
+    });
+    if(p.kenteiRow && (full||surname)) ws.getCell('B'+p.kenteiRow).value='点検者　：　'+(full||surname);
+    try{
+      const buf=await bf.wb.xlsx.writeBuffer();
+      const blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+      const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+      a.download=`${bf.fileName}_記入済_${sheetName}.xlsx`;a.click();
+      line.textContent=matched.length
+        ? `✓ ${bf.fileName}：機械「${matched.join('、')}」一致 → ${days.size}日に印を付けて出力しました`
+        : `△ ${bf.fileName}：一致する機械が見つからず、印なしで出力しました（手動確認してください）`;
+      ok++;
+    }catch(err){ line.textContent=`✗ ${bf.fileName}：出力に失敗（${err.message}）`; skip++; }
+    log.appendChild(line);
+    await new Promise(r=>setTimeout(r,250)); // 連続ダウンロードがブロックされないように少し間隔を空ける
+  }
+  $('batchStatus').textContent=`完了：${ok}件出力／${skip}件スキップ`;
+};
+
+/* ===== 機械名のあいまい一致（機種・形式テキストと比較） ===== */
+function normTokens(s){
+  return (s||'').toString().toUpperCase()
+    .match(/[0-9]+(?:\.[0-9]+)?|[A-Z]+/g) || [];
+}
+function isMachineMatch(machineName, kishu, keishiki){
+  const mTok=normTokens(machineName);
+  const refTok=new Set([...normTokens(kishu),...normTokens(keishiki)]);
+  if(!mTok.length||!refTok.size) return false;
+  return mTok.some(t=>t.length>=2 && refTok.has(t));
+}
+function buildGrid(days){
+  $('dayGrid').innerHTML=days.map(d=>{
+    const wd=wdays[d]||''; const sun=wd==='日';
+    return `<div class="day${sun?' sun':''}" data-d="${d}">${d}<span class="wd">${wd}</span></div>`;
+  }).join('');
+  $('dayGrid').querySelectorAll('.day').forEach(el=>el.onclick=()=>{
+    const d=+el.dataset.d;
+    if(used.has(d)){used.delete(d);el.classList.remove('on');}else{used.add(d);el.classList.add('on');}
+  });
+}
+function setUsed(set){
+  used=new Set(set);
+  $('dayGrid').querySelectorAll('.day').forEach(el=>{
+    el.classList.toggle('on', used.has(+el.dataset.d));});
+}
+$('allOn').onclick=()=>setUsed(Object.keys(dayCol).map(Number));
+$('allOff').onclick=()=>setUsed([]);
+$('weekdays').onclick=()=>setUsed(Object.keys(dayCol).map(Number).filter(d=>{const wd=wdays[d];return wd!=='日'&&wd!=='土';}));
+
+/* ===== クラウド連携 ===== */
+$('sbConnect').onclick=async()=>{
+  localStorage.setItem(LSU,cleanUrl($('sbUrl').value));
+  localStorage.setItem(LSK,$('sbKey').value.trim());
+  $('sbUrl').value=cleanUrl($('sbUrl').value);
+  $('sbStatus').textContent='接続中…';
+  if(!ensureSb()){$('sbStatus').textContent='接続できません（URL/キーを確認）';return;}
+  const {error}=await sb.from('kantoku_nippou').select('report_date').limit(1);
+  $('sbStatus').textContent=error?('接続エラー：'+(error.message||'')):'接続OK';
+};
+$('cloudFetch').onclick=()=>fetchAndApply(false);
+async function autoFetchAndApply(){
+  if(!ensureSb()) return; // 未接続なら静かにスキップ（手動操作にフォールバック）
+  await fetchAndApply(true);
+}
+async function fetchAndApply(auto){
+  if(!ensureSb()){$('cloudInfo').textContent='先にクラウド連携でURL・キーを保存してください。';return;}
+  if(!curSheet){$('cloudInfo').textContent='先に様式と月を選んでください。';return;}
+  const {year,month}=getYearMonth();
+  if(!year||!month){$('cloudInfo').textContent='シートから年月を判定できませんでした。';return;}
+  $('cloudInfo').textContent='取得中…';
+  const res=await fetchMonthMachineDays(year,month);
+  if(res.error){$('cloudInfo').textContent='取得エラー：'+(res.error.message||'');return;}
+  monthMachineDays=res.monthMachineDays;
+  const names=Object.keys(monthMachineDays).sort();
+  $('cloudInfo').textContent=`${year}年${month}月：日報 ${res.count}件・使用機械 ${names.length}種`+(auto?'（自動取得）':'');
+  const kishu=cellText(curSheet.getCell('J2').value), keishiki=cellText(curSheet.getCell('J3').value);
+  renderMachinePick(names, kishu, keishiki, auto);
+}
+function renderMachinePick(names, kishu, keishiki, auto){
+  const box=$('machinePick');
+  if(!names.length){box.innerHTML='<div class="muted">この月の日報に使用機械の記録がありませんでした。</div>';return;}
+  const matched=names.filter(nm=>isMachineMatch(nm,kishu,keishiki));
+  box.innerHTML='<div class="muted" style="margin-bottom:6px">この点検簿に当てる機械にチェック（使用日が自動で印付きます。機種・形式に近い機械は自動でチェック済みです）</div>'+
+    names.map(nm=>`<label style="display:block;padding:4px 0;font-size:14px"><input type="checkbox" class="mpick" value="${nm.replace(/"/g,'&quot;')}" style="width:auto;margin-right:8px">${nm}（${monthMachineDays[nm].size}日）</label>`).join('');
+  box.querySelectorAll('.mpick').forEach(cb=>{cb.checked=matched.includes(cb.value);cb.onchange=applyMachinePick;});
+  if(matched.length){applyMachinePick();}
+  if(auto){
+    $('cloudInfo').textContent+=matched.length?`／自動一致：${matched.join('、')}`:'／自動一致する機械が見つかりませんでした。手動で選んでください。';
+  }
+}
+function applyMachinePick(){
+  const s=new Set();
+  [...$('machinePick').querySelectorAll('.mpick:checked')].forEach(c=>{(monthMachineDays[c.value]||new Set()).forEach(d=>s.add(d));});
+  setUsed([...s]);
+}
+
+/* ===== 日報JSONから自動マーク ===== */
+$('jsonIn').onchange=async e=>{
+  const f=e.target.files[0]; if(!f) return;
+  let data; try{ data=JSON.parse(await f.text()); }catch(err){ $('jsonInfo').textContent='JSONの読み込みに失敗しました。'; return; }
+  if(!Array.isArray(data)){ $('jsonInfo').textContent='日報のJSON形式ではないようです。'; return; }
+  const term=$('matchName').value.trim();
+  // 対象年月：シートのAL25(西暦)とV3(月)、無ければシート名の数字
+  let year=cellNum(curSheet.getCell('AL25').value);
+  if(year==null){const r=cellNum(curSheet.getCell('Q3').value); year=r!=null?r+2018:null;}
+  let month=cellNum(curSheet.getCell('V3').value);
+  if(month==null){const m=($('sheetSel').value.match(/(\d+)/)); month=m?+m[1]:null;}
+  if(!year||!month){ $('jsonInfo').textContent='対象の年月をシートから判定できませんでした。手動で選んでください。'; return; }
+  const hit=new Set();
+  data.forEach(r=>{
+    if(!r.report_date) return;
+    const d=new Date(r.report_date+'T00:00:00'); if(isNaN(d)) return;
+    if(d.getFullYear()!==year || d.getMonth()+1!==month) return;
+    const machines=(r.machines||[]).map(m=>(m.machine||'').toString());
+    const match = term ? machines.some(nm=>nm.indexOf(term)>=0) : machines.length>0;
+    if(match) hit.add(d.getDate());
+  });
+  setUsed([...used,...hit]);
+  $('jsonInfo').textContent=`${year}年${month}月で ${hit.size}日に印を付けました（必要なら手で調整してください）。`;
+};
+
+/* ===== 3→4. 出力 ===== */
+$('genBtn').onclick=async()=>{
+  if(!curSheet){alert('様式を読み込んでください');return;}
+  if(used.size===0){if(!confirm('使った日が1日も選ばれていません。このまま出力しますか？'))return;}
+  const surname=$('kSurname').value.trim();
+  const full=$('kFull').value.trim();
+  // ヘッダー上書き（入力がある項目のみ）
+  const ov=(addr,val)=>{ if(val!=='' && val!=null) curSheet.getCell(addr).value=val; };
+  ov('Q2',$('ovKoji').value.trim());
+  ov('J2',$('ovKishu').value.trim());
+  ov('J3',$('ovKeishiki').value.trim());
+  ov('AG3',$('ovGen').value.trim());
+  ov('AN3',$('ovDairi').value.trim());
+  if($('ovYear').value.trim()!=='') curSheet.getCell('Q3').value=Number($('ovYear').value.trim());
+  // チェックと点検者
+  const days=[...used].sort((a,b)=>a-b);
+  days.forEach(d=>{
+    const c=dayCol[d]; if(!c) return;
+    itemRows.forEach(r=>{ curSheet.getRow(r).getCell(c).value='✔'; });
+    if(kenteiRow && surname) curSheet.getRow(kenteiRow).getCell(c).value=surname;
+  });
+  if(kenteiRow && (full||surname)) curSheet.getCell('B'+kenteiRow).value='点検者　：　'+(full||surname);
+  // 出力
+  $('genStatus').textContent='生成中…';
+  try{
+    const buf=await wb.xlsx.writeBuffer();
+    const blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+    a.download=`${fileName}_記入済_${$('sheetSel').value}.xlsx`;a.click();
+    $('genStatus').textContent=`出力しました（${days.length}日分）。`;
+  }catch(err){$('genStatus').textContent='出力に失敗：'+err.message;}
+};
+
+/* ===== 起動時：クラウド設定を復元 ===== */
+(function(){
+  $('sbUrl').value=localStorage.getItem(LSU)||'';
+  $('sbKey').value=localStorage.getItem(LSK)||'';
+  if($('sbUrl').value && $('sbKey').value){ ensureSb(); $('sbStatus').textContent=sb?'保存済み（接続準備OK）':''; }
+})();
+</script>
+</body>
+</html>

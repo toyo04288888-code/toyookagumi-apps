@@ -1,0 +1,4403 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="豊岡組見積">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1f3a5f">
+<link rel="manifest" href='data:application/json,{"name":"豊岡組 現場見積","short_name":"豊岡組見積","start_url":"./","display":"standalone","background_color":"#1f3a5f","theme_color":"#1f3a5f","icons":[{"src":"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjIyIiBmaWxsPSIjMWYzYTVmIi8+PHJlY3QgeD0iNDAiIHk9IjE4IiB3aWR0aD0iMjAiIGhlaWdodD0iNjQiIHJ4PSI1IiBmaWxsPSIjZmNkMzRkIi8+PHJlY3QgeD0iMTgiIHk9IjQwIiB3aWR0aD0iNjQiIGhlaWdodD0iMjAiIHJ4PSI1IiBmaWxsPSIjZmNkMzRkIi8+PC9zdmc+","sizes":"any","type":"image/svg+xml"}]}'>
+<link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjIyIiBmaWxsPSIjMWYzYTVmIi8+PHJlY3QgeD0iNDAiIHk9IjE4IiB3aWR0aD0iMjAiIGhlaWdodD0iNjQiIHJ4PSI1IiBmaWxsPSIjZmNkMzRkIi8+PHJlY3QgeD0iMTgiIHk9IjQwIiB3aWR0aD0iNjQiIGhlaWdodD0iMjAiIHJ4PSI1IiBmaWxsPSIjZmNkMzRkIi8+PC9zdmc+">
+<title>豊岡組 現場見積アプリ</title>
+<style>*,:after,:before{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgba(59,130,246,.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }::backdrop{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgba(59,130,246,.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }/*! tailwindcss v3.4.17 | MIT License | https://tailwindcss.com*/*,:after,:before{box-sizing:border-box;border:0 solid #e5e7eb}:after,:before{--tw-content:""}:host,html{line-height:1.5;-webkit-text-size-adjust:100%;-moz-tab-size:4;-o-tab-size:4;tab-size:4;font-family:ui-sans-serif,system-ui,sans-serif,Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol,Noto Color Emoji;font-feature-settings:normal;font-variation-settings:normal;-webkit-tap-highlight-color:transparent}body{margin:0;line-height:inherit}hr{height:0;color:inherit;border-top-width:1px}abbr:where([title]){-webkit-text-decoration:underline dotted;text-decoration:underline dotted}h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}a{color:inherit;text-decoration:inherit}b,strong{font-weight:bolder}code,kbd,pre,samp{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,Liberation Mono,Courier New,monospace;font-feature-settings:normal;font-variation-settings:normal;font-size:1em}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit;border-collapse:collapse}button,input,optgroup,select,textarea{font-family:inherit;font-feature-settings:inherit;font-variation-settings:inherit;font-size:100%;font-weight:inherit;line-height:inherit;letter-spacing:inherit;color:inherit;margin:0;padding:0}button,select{text-transform:none}button,input:where([type=button]),input:where([type=reset]),input:where([type=submit]){-webkit-appearance:button;background-color:transparent;background-image:none}:-moz-focusring{outline:auto}:-moz-ui-invalid{box-shadow:none}progress{vertical-align:baseline}::-webkit-inner-spin-button,::-webkit-outer-spin-button{height:auto}[type=search]{-webkit-appearance:textfield;outline-offset:-2px}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}summary{display:list-item}blockquote,dd,dl,figure,h1,h2,h3,h4,h5,h6,hr,p,pre{margin:0}fieldset{margin:0}fieldset,legend{padding:0}menu,ol,ul{list-style:none;margin:0;padding:0}dialog{padding:0}textarea{resize:vertical}input::-moz-placeholder,textarea::-moz-placeholder{opacity:1;color:#9ca3af}input::placeholder,textarea::placeholder{opacity:1;color:#9ca3af}[role=button],button{cursor:pointer}:disabled{cursor:default}audio,canvas,embed,iframe,img,object,svg,video{display:block;vertical-align:middle}img,video{max-width:100%;height:auto}[hidden]:where(:not([hidden=until-found])){display:none}.fixed{position:fixed}.absolute{position:absolute}.relative{position:relative}.sticky{position:sticky}.inset-0{inset:0}.bottom-6{bottom:1.5rem}.right-5{right:1.25rem}.top-0{top:0}.z-20{z-index:20}.z-30{z-index:30}.mx-2{margin-left:.5rem;margin-right:.5rem}.mx-4{margin-left:1rem;margin-right:1rem}.-mt-1{margin-top:-.25rem}.mb-0\.5{margin-bottom:.125rem}.mb-1{margin-bottom:.25rem}.mb-2{margin-bottom:.5rem}.mb-3{margin-bottom:.75rem}.mb-4{margin-bottom:1rem}.ml-0\.5{margin-left:.125rem}.ml-1{margin-left:.25rem}.ml-2{margin-left:.5rem}.ml-auto{margin-left:auto}.mr-2{margin-right:.5rem}.mt-0\.5{margin-top:.125rem}.mt-1{margin-top:.25rem}.mt-1\.5{margin-top:.375rem}.mt-2{margin-top:.5rem}.mt-2\.5{margin-top:.625rem}.flex{display:flex}.grid{display:grid}.hidden{display:none}.h-1{height:.25rem}.h-2{height:.5rem}.h-6{height:1.5rem}.min-h-screen{min-height:100vh}.w-12{width:3rem}.w-2{width:.5rem}.w-20{width:5rem}.w-32{width:8rem}.w-6{width:1.5rem}.w-full{width:100%}.min-w-0{min-width:0}.flex-1{flex:1 1 0%}.flex-shrink-0{flex-shrink:0}.cursor-pointer{cursor:pointer}.grid-cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}.flex-col{flex-direction:column}.flex-wrap{flex-wrap:wrap}.items-start{align-items:flex-start}.items-center{align-items:center}.justify-end{justify-content:flex-end}.justify-center{justify-content:center}.justify-between{justify-content:space-between}.gap-0\.5{gap:.125rem}.gap-1{gap:.25rem}.gap-1\.5{gap:.375rem}.gap-2{gap:.5rem}.gap-3{gap:.75rem}.gap-4{gap:1rem}.space-y-1>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(.25rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(.25rem*var(--tw-space-y-reverse))}.space-y-2>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(.5rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(.5rem*var(--tw-space-y-reverse))}.space-y-2\.5>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(.625rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(.625rem*var(--tw-space-y-reverse))}.space-y-3>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(.75rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(.75rem*var(--tw-space-y-reverse))}.space-y-4>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(1rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(1rem*var(--tw-space-y-reverse))}.overflow-hidden{overflow:hidden}.overflow-x-auto{overflow-x:auto}.overflow-y-auto{overflow-y:auto}.truncate{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.rounded-2xl{border-radius:1rem}.rounded-full{border-radius:9999px}.rounded-lg{border-radius:.5rem}.rounded-sm{border-radius:.125rem}.rounded-xl{border-radius:.75rem}.border{border-width:1px}.border-2{border-width:2px}.border-b{border-bottom-width:1px}.border-t{border-top-width:1px}.border-blue-200{--tw-border-opacity:1;border-color:rgb(191 219 254/var(--tw-border-opacity,1))}.border-gray-100{--tw-border-opacity:1;border-color:rgb(243 244 246/var(--tw-border-opacity,1))}.border-gray-200{--tw-border-opacity:1;border-color:rgb(229 231 235/var(--tw-border-opacity,1))}.bg-black\/50{background-color:rgba(0,0,0,.5)}.bg-gray-200{--tw-bg-opacity:1;background-color:rgb(229 231 235/var(--tw-bg-opacity,1))}.bg-gray-50{--tw-bg-opacity:1;background-color:rgb(249 250 251/var(--tw-bg-opacity,1))}.bg-white{--tw-bg-opacity:1;background-color:rgb(255 255 255/var(--tw-bg-opacity,1))}.p-1{padding:.25rem}.p-2{padding:.5rem}.p-3{padding:.75rem}.p-4{padding:1rem}.px-2{padding-left:.5rem;padding-right:.5rem}.px-2\.5{padding-left:.625rem;padding-right:.625rem}.px-3{padding-left:.75rem;padding-right:.75rem}.px-4{padding-left:1rem;padding-right:1rem}.px-5{padding-left:1.25rem;padding-right:1.25rem}.px-6{padding-left:1.5rem;padding-right:1.5rem}.py-0\.5{padding-top:.125rem;padding-bottom:.125rem}.py-1{padding-top:.25rem;padding-bottom:.25rem}.py-1\.5{padding-top:.375rem;padding-bottom:.375rem}.py-2{padding-top:.5rem;padding-bottom:.5rem}.py-2\.5{padding-top:.625rem;padding-bottom:.625rem}.py-20{padding-top:5rem;padding-bottom:5rem}.py-3{padding-top:.75rem;padding-bottom:.75rem}.py-4{padding-top:1rem;padding-bottom:1rem}.pb-1{padding-bottom:.25rem}.pb-2{padding-bottom:.5rem}.pb-2\.5{padding-bottom:.625rem}.pb-3{padding-bottom:.75rem}.pb-32{padding-bottom:8rem}.pt-1{padding-top:.25rem}.pt-2{padding-top:.5rem}.pt-3{padding-top:.75rem}.pt-4{padding-top:1rem}.text-left{text-align:left}.text-center{text-align:center}.text-right{text-align:right}.text-2xl{font-size:1.5rem;line-height:2rem}.text-5xl{font-size:3rem;line-height:1}.text-6xl{font-size:3.75rem;line-height:1}.text-base{font-size:1rem;line-height:1.5rem}.text-lg{font-size:1.125rem;line-height:1.75rem}.text-sm{font-size:.875rem;line-height:1.25rem}.text-xl{font-size:1.25rem;line-height:1.75rem}.text-xs{font-size:.75rem;line-height:1rem}.font-bold{font-weight:700}.font-medium{font-weight:500}.font-normal{font-weight:400}.font-semibold{font-weight:600}.leading-relaxed{line-height:1.625}.leading-snug{line-height:1.375}.leading-tight{line-height:1.25}.text-gray-400{--tw-text-opacity:1;color:rgb(156 163 175/var(--tw-text-opacity,1))}.text-gray-500{--tw-text-opacity:1;color:rgb(107 114 128/var(--tw-text-opacity,1))}.text-gray-600{--tw-text-opacity:1;color:rgb(75 85 99/var(--tw-text-opacity,1))}.text-gray-700{--tw-text-opacity:1;color:rgb(55 65 81/var(--tw-text-opacity,1))}.text-gray-800{--tw-text-opacity:1;color:rgb(31 41 55/var(--tw-text-opacity,1))}.text-white{--tw-text-opacity:1;color:rgb(255 255 255/var(--tw-text-opacity,1))}.shadow-sm{--tw-shadow:0 1px 2px 0 rgba(0,0,0,.05);--tw-shadow-colored:0 1px 2px 0 var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow)}.outline-none{outline:2px solid transparent;outline-offset:2px}.filter{filter:var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow)}.hover\:bg-blue-50:hover{--tw-bg-opacity:1;background-color:rgb(239 246 255/var(--tw-bg-opacity,1))}.active\:scale-95:active{--tw-scale-x:.95;--tw-scale-y:.95}.active\:scale-95:active,.active\:scale-\[0\.98\]:active{transform:translate(var(--tw-translate-x),var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.active\:scale-\[0\.98\]:active{--tw-scale-x:0.98;--tw-scale-y:0.98}.active\:scale-\[0\.99\]:active{--tw-scale-x:0.99;--tw-scale-y:0.99;transform:translate(var(--tw-translate-x),var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}@media (min-width:768px){.md\:flex{display:flex}.md\:hidden{display:none}.md\:flex-col{flex-direction:column}}</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js" crossorigin="anonymous"></script>
+<style>body{margin:0;padding:0;-webkit-tap-highlight-color:transparent;}</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, _typeof(o); }
+function _createForOfIteratorHelper(r, e) { var t = "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (!t) { if (Array.isArray(r) || (t = _unsupportedIterableToArray(r)) || e && r && "number" == typeof r.length) { t && (r = t); var _n = 0, F = function F() {}; return { s: F, n: function n() { return _n >= r.length ? { done: !0 } : { done: !1, value: r[_n++] }; }, e: function e(r) { throw r; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var o, a = !0, u = !1; return { s: function s() { t = t.call(r); }, n: function n() { var r = t.next(); return a = r.done, r; }, e: function e(r) { u = !0, o = r; }, f: function f() { try { a || null == t.return || t.return(); } finally { if (u) throw o; } } }; }
+function ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
+function _objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? ownKeys(Object(t), !0).forEach(function (r) { _defineProperty(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
+function _defineProperty(e, r, t) { return (r = _toPropertyKey(r)) in e ? Object.defineProperty(e, r, { value: t, enumerable: !0, configurable: !0, writable: !0 }) : e[r] = t, e; }
+function _toPropertyKey(t) { var i = _toPrimitive(t, "string"); return "symbol" == _typeof(i) ? i : i + ""; }
+function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != _typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
+function _slicedToArray(r, e) { return _arrayWithHoles(r) || _iterableToArrayLimit(r, e) || _unsupportedIterableToArray(r, e) || _nonIterableRest(); }
+function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+function _iterableToArrayLimit(r, l) { var t = null == r ? null : "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (null != t) { var e, n, i, u, a = [], f = !0, o = !1; try { if (i = (t = t.call(r)).next, 0 === l) { if (Object(t) !== t) return; f = !1; } else for (; !(f = (e = i.call(t)).done) && (a.push(e.value), a.length !== l); f = !0); } catch (r) { o = !0, n = r; } finally { try { if (!f && null != t.return && (u = t.return(), Object(u) !== u)) return; } finally { if (o) throw n; } } return a; } }
+function _arrayWithHoles(r) { if (Array.isArray(r)) return r; }
+function _toConsumableArray(r) { return _arrayWithoutHoles(r) || _iterableToArray(r) || _unsupportedIterableToArray(r) || _nonIterableSpread(); }
+function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+function _unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return _arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? _arrayLikeToArray(r, a) : void 0; } }
+function _iterableToArray(r) { if ("undefined" != typeof Symbol && null != r[Symbol.iterator] || null != r["@@iterator"]) return Array.from(r); }
+function _arrayWithoutHoles(r) { if (Array.isArray(r)) return _arrayLikeToArray(r); }
+function _arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
+var _React = React,
+  useState = _React.useState,
+  useMemo = _React.useMemo;
+var DATA = [{
+  "id": "asphalt",
+  "label": "アスファルト舗装",
+  "emoji": "🛣",
+  "bg": "#1f3a5f",
+  "items": [{
+    "id": "as_new",
+    "name": "新設舗装 一式",
+    "unit": "m²",
+    "price": 6400,
+    "labor": 1600,
+    "note": "すきとり15cm＋路盤10cm＋As5cm",
+    "comp": [{
+      "n": "路床すきとり t=15cm",
+      "c": 600
+    }, {
+      "n": "残土 運搬・処分",
+      "c": 700
+    }, {
+      "n": "路床整正・転圧",
+      "c": 350
+    }, {
+      "n": "下層路盤 RC-40 t=10cm",
+      "c": 1000
+    }, {
+      "n": "プライムコート PK-3",
+      "c": 300
+    }, {
+      "n": "表層 As 密粒度13 t=5cm",
+      "c": 2600
+    }, {
+      "n": "諸経費（現場管理費＋一般管理費）",
+      "c": 830
+    }],
+    "desc": {
+      "steps": ["① 路床を所定深さまですきとり（t=15cm）", "② 残土をダンプで搬出・処分", "③ 路床を整正し振動ローラで転圧", "④ 再生砕石RC-40を敷均し・転圧（t=10cm）", "⑤ プライムコート散布", "⑥ アスファルトフィニッシャで表層舗設（t=5cm）", "⑦ タンデム・タイヤローラで転圧"],
+      "machines": "バックホウ0.45m³、ダンプ4t、フィニッシャ、ローラ各種",
+      "notes": ["合材温度管理（締固め開始110℃以上）", "雨天・降雪時は施工不可", "残土・合材単価は地域差大、要確認"],
+      "basis": "土木工事標準歩掛「舗装工」"
+    }
+  }, {
+    "id": "as_re",
+    "name": "打換え 一式",
+    "unit": "m²",
+    "price": 6200,
+    "labor": 1400,
+    "note": "既設撤去＋不陸整正＋As5cm",
+    "comp": [{
+      "n": "既設As撤去 t=5cm",
+      "c": 1100
+    }, {
+      "n": "As殻 運搬・処分",
+      "c": 800
+    }, {
+      "n": "不陸整正・転圧",
+      "c": 550
+    }, {
+      "n": "プライムコート PK-3",
+      "c": 300
+    }, {
+      "n": "表層 As 密粒度13 t=5cm",
+      "c": 2600
+    }, {
+      "n": "諸経費",
+      "c": 800
+    }],
+    "desc": {
+      "steps": ["① 既設アスファルトを取壊し・撤去", "② As殻をダンプで再資源化施設へ搬出", "③ 既設路盤の不陸整正・補修・転圧", "④ プライムコート散布", "⑤ フィニッシャで表層舗設（t=5cm）", "⑥ ローラで転圧"],
+      "machines": "バックホウ＋ブレーカ、ダンプ、フィニッシャ、ローラ",
+      "notes": ["既設路盤が傷んでいる場合は路盤補修を増工", "As殻処分費は施設により変動", "段差すりつけ部は別途"],
+      "basis": "土木工事標準歩掛「舗装工」"
+    }
+  }, {
+    "id": "as_t3",
+    "name": "表層 As t=3cm",
+    "unit": "m²",
+    "price": 2200,
+    "labor": 480,
+    "note": "密粒度13",
+    "desc": {
+      "steps": ["① 既設面清掃", "② タック/プライム散布", "③ フィニッシャで舗設（t=3cm）", "④ ローラ転圧"],
+      "machines": "フィニッシャ、ローラ",
+      "notes": ["薄層のため温度低下に注意", "歩道・薄層補修向き"],
+      "basis": "土木工事標準歩掛「舗装工」"
+    }
+  }, {
+    "id": "as_t4",
+    "name": "表層 As t=4cm",
+    "unit": "m²",
+    "price": 2580,
+    "labor": 560,
+    "note": "密粒度13",
+    "desc": {
+      "steps": ["① 既設面清掃", "② 乳剤散布", "③ フィニッシャで舗設（t=4cm）", "④ ローラ転圧"],
+      "machines": "フィニッシャ、ローラ",
+      "notes": ["温度管理", "端部処理は別途"],
+      "basis": "土木工事標準歩掛「舗装工」"
+    }
+  }, {
+    "id": "as_t5",
+    "name": "表層 As t=5cm",
+    "unit": "m²",
+    "price": 3000,
+    "labor": 610,
+    "note": "密粒度13",
+    "desc": {
+      "steps": ["① 既設面清掃", "② 乳剤散布", "③ フィニッシャで舗設（t=5cm）", "④ ローラ転圧"],
+      "machines": "フィニッシャ、ローラ",
+      "notes": ["温度管理（締固め開始110℃以上）", "標準的な車道舗装厚"],
+      "basis": "土木工事標準歩掛「舗装工」"
+    }
+  }, {
+    "id": "as_t6",
+    "name": "表層 As t=6cm",
+    "unit": "m²",
+    "price": 3400,
+    "labor": 680,
+    "note": "密粒度20",
+    "desc": {
+      "steps": ["① 既設面清掃", "② 乳剤散布", "③ フィニッシャで舗設（t=6cm）", "④ ローラ転圧"],
+      "machines": "フィニッシャ、ローラ",
+      "notes": ["重交通向け", "温度管理"],
+      "basis": "土木工事標準歩掛「舗装工」"
+    }
+  }, {
+    "id": "as_kai4",
+    "name": "改質As(Ⅱ型) t=4cm",
+    "unit": "m²",
+    "price": 2900,
+    "labor": 560,
+    "note": "わだち掘れ対策",
+    "desc": {
+      "steps": ["① 既設面清掃", "② 乳剤散布", "③ 改質合材を舗設（t=4cm）", "④ ローラ転圧"],
+      "machines": "フィニッシャ、ローラ",
+      "notes": ["改質合材は単価高め", "温度管理が重要"],
+      "basis": "土木工事標準歩掛「舗装工」"
+    }
+  }, {
+    "id": "as_kai5",
+    "name": "改質As(Ⅱ型) t=5cm",
+    "unit": "m²",
+    "price": 3400,
+    "labor": 610,
+    "note": "わだち掘れ対策",
+    "desc": {
+      "steps": ["① 既設面清掃", "② 乳剤散布", "③ 改質合材を舗設（t=5cm）", "④ ローラ転圧"],
+      "machines": "フィニッシャ、ローラ",
+      "notes": ["改質合材は単価高め", "交差点・登坂部向き"],
+      "basis": "土木工事標準歩掛「舗装工」"
+    }
+  }, {
+    "id": "as_base5",
+    "name": "基層 粗粒度As t=5cm",
+    "unit": "m²",
+    "price": 2770,
+    "labor": 560,
+    "note": "粗粒度20",
+    "desc": {
+      "steps": ["① 路盤面清掃", "② プライムコート散布", "③ 基層合材を舗設（t=5cm）", "④ ローラ転圧"],
+      "machines": "フィニッシャ、ローラ",
+      "notes": ["表層の下地となる層", "温度管理"],
+      "basis": "土木工事標準歩掛「舗装工」"
+    }
+  }, {
+    "id": "as_base6",
+    "name": "基層 粗粒度As t=6cm",
+    "unit": "m²",
+    "price": 3100,
+    "labor": 620,
+    "note": "粗粒度20",
+    "desc": {
+      "steps": ["① 路盤面清掃", "② プライムコート散布", "③ 基層合材を舗設（t=6cm）", "④ ローラ転圧"],
+      "machines": "フィニッシャ、ローラ",
+      "notes": ["重交通向け基層"],
+      "basis": "土木工事標準歩掛「舗装工」"
+    }
+  }, {
+    "id": "as_ub15",
+    "name": "上層路盤 粒調砕石 t=15cm",
+    "unit": "m²",
+    "price": 1700,
+    "labor": 420,
+    "note": "M-40",
+    "desc": {
+      "steps": ["① 下層路盤面整正", "② 粒度調整砕石を敷均し（t=15cm）", "③ 振動ローラで転圧", "④ 不陸を確認・調整"],
+      "machines": "モーターグレーダ、振動ローラ",
+      "notes": ["所定の締固め密度を確保", "含水比管理"],
+      "basis": "土木工事標準歩掛「路盤工」"
+    }
+  }, {
+    "id": "as_ub20",
+    "name": "上層路盤 粒調砕石 t=20cm",
+    "unit": "m²",
+    "price": 2200,
+    "labor": 520,
+    "note": "M-40・2層施工",
+    "desc": {
+      "steps": ["① 下層路盤面整正", "② 粒度調整砕石を2層に分けて敷均し", "③ 各層を振動ローラで転圧"],
+      "machines": "モーターグレーダ、振動ローラ",
+      "notes": ["20cmは2層施工が基本", "各層10cm程度"],
+      "basis": "土木工事標準歩掛「路盤工」"
+    }
+  }, {
+    "id": "as_ub25",
+    "name": "上層路盤 粒調砕石 t=25cm",
+    "unit": "m²",
+    "price": 2700,
+    "labor": 620,
+    "note": "M-40・2層施工",
+    "desc": {
+      "steps": ["① 下層路盤面整正", "② 粒度調整砕石を2層に分けて敷均し", "③ 各層を振動ローラで転圧"],
+      "machines": "モーターグレーダ、振動ローラ",
+      "notes": ["2層施工", "重交通・重荷重向け"],
+      "basis": "土木工事標準歩掛「路盤工」"
+    }
+  }, {
+    "id": "as_lb10",
+    "name": "下層路盤 RC-40 t=10cm",
+    "unit": "m²",
+    "price": 1070,
+    "labor": 280,
+    "note": "再生砕石",
+    "desc": {
+      "steps": ["① 路床面整正", "② 再生砕石RC-40を敷均し（t=10cm）", "③ 振動ローラで転圧"],
+      "machines": "モーターグレーダ、振動ローラ",
+      "notes": ["再生材は品質確認", "含水比管理"],
+      "basis": "土木工事標準歩掛「路盤工」"
+    }
+  }, {
+    "id": "as_lb15",
+    "name": "下層路盤 RC-40 t=15cm",
+    "unit": "m²",
+    "price": 1470,
+    "labor": 380,
+    "note": "再生砕石",
+    "desc": {
+      "steps": ["① 路床面整正", "② 再生砕石RC-40を敷均し（t=15cm）", "③ 振動ローラで転圧"],
+      "machines": "モーターグレーダ、振動ローラ",
+      "notes": ["品質確認", "含水比管理"],
+      "basis": "土木工事標準歩掛「路盤工」"
+    }
+  }, {
+    "id": "as_lb20",
+    "name": "下層路盤 RC-40 t=20cm",
+    "unit": "m²",
+    "price": 1900,
+    "labor": 480,
+    "note": "再生砕石・2層",
+    "desc": {
+      "steps": ["① 路床面整正", "② 再生砕石を2層に分けて敷均し", "③ 各層を転圧"],
+      "machines": "モーターグレーダ、振動ローラ",
+      "notes": ["2層施工", "軟弱路床は厚め設定"],
+      "basis": "土木工事標準歩掛「路盤工」"
+    }
+  }, {
+    "id": "as_pave",
+    "name": "表層 As舗設（機械選択）",
+    "unit": "m²",
+    "note": "密粒度13 t=5cm　機械で単価変動",
+    "machines": [{
+      "name": "フィニッシャ施工（標準）",
+      "sub": "一般的な車道・駐車場",
+      "price": 3000,
+      "labor": 610
+    }, {
+      "name": "小型機械施工",
+      "sub": "フィニッシャ不使用・狭小部",
+      "price": 3800,
+      "labor": 1100
+    }, {
+      "name": "人力施工",
+      "sub": "超狭小・取合い部",
+      "price": 4800,
+      "labor": 2200
+    }],
+    "desc": {
+      "steps": ["① 既設面清掃・乳剤散布", "② 合材を敷均し（機械 or 人力）", "③ ローラ・プレートで転圧"],
+      "machines": "フィニッシャ／小型舗設機械／人力＋プレート",
+      "notes": ["狭小部は小型・人力で割増", "温度低下が早いため手際よく"],
+      "basis": "土木工事標準歩掛「舗装工（小規模）」"
+    }
+  }, {
+    "id": "as_ol",
+    "name": "オーバーレイ t=5cm",
+    "unit": "m²",
+    "price": 4170,
+    "labor": 730,
+    "note": "Co版上　レベリング＋タック＋表層",
+    "comp": [{
+      "n": "清掃・下地処理",
+      "c": 250
+    }, {
+      "n": "レベリング層（不陸調整As）",
+      "c": 1050
+    }, {
+      "n": "タックコート PK-4",
+      "c": 190
+    }, {
+      "n": "表層 As 密粒度13 t=5cm",
+      "c": 2170
+    }, {
+      "n": "諸経費",
+      "c": 510
+    }],
+    "desc": {
+      "steps": ["① 既設コンクリート面を清掃・下地処理", "② レベリング層で不陸調整", "③ タックコート散布", "④ フィニッシャで表層舗設（t=5cm）", "⑤ ローラ転圧"],
+      "machines": "フィニッシャ、ローラ",
+      "notes": ["Co版の目地・ひび割れはリフレクションクラック対策を別途", "版間の接着確保"],
+      "basis": "土木工事標準歩掛「舗装工」"
+    }
+  }, {
+    "id": "as_rem",
+    "name": "既設As撤去（機械選択）",
+    "unit": "m²",
+    "note": "t=5cm　処分別",
+    "machines": [{
+      "name": "路面切削機",
+      "sub": "大面積・平滑",
+      "price": 900,
+      "labor": 250
+    }, {
+      "name": "BH＋ブレーカ",
+      "sub": "小〜中面積",
+      "price": 1020,
+      "labor": 390
+    }, {
+      "name": "人力＋小型機械",
+      "sub": "狭小部",
+      "price": 1800,
+      "labor": 1100
+    }],
+    "desc": {
+      "steps": ["① 撤去範囲をカッターで縁切り", "② 切削機 or ブレーカで取壊し", "③ As殻をダンプへ積込"],
+      "machines": "路面切削機／バックホウ＋ブレーカ／人力",
+      "notes": ["As殻処分は別計上", "切削は粉じん・水養生に注意"],
+      "basis": "土木工事標準歩掛「舗装版破砕工」"
+    }
+  }, {
+    "id": "as_remhaul",
+    "name": "As殻 運搬・処分",
+    "unit": "m²",
+    "price": 920,
+    "labor": 80,
+    "note": "t=5cm相当・再資源化施設",
+    "desc": {
+      "steps": ["① As殻をダンプに積込", "② 再資源化施設へ運搬", "③ 処分"],
+      "machines": "ダンプ4t",
+      "notes": ["処分費は施設により変動大", "運搬距離で増減"],
+      "basis": "土木工事標準歩掛「運搬工」"
+    }
+  }, {
+    "id": "as_suki",
+    "name": "路床すきとり",
+    "unit": "m²",
+    "price": 650,
+    "labor": 210,
+    "note": "t=15cm　残土別",
+    "desc": {
+      "steps": ["① 所定深さまですきとり", "② 路床面を整正"],
+      "machines": "バックホウ0.45m³",
+      "notes": ["残土運搬・処分は別計上", "軟弱部は置換を検討"],
+      "basis": "土木工事標準歩掛「土工」"
+    }
+  }, {
+    "id": "as_prime",
+    "name": "プライムコート",
+    "unit": "m²",
+    "price": 340,
+    "labor": 70,
+    "note": "PK-3 約1.2L/m²",
+    "desc": {
+      "steps": ["① 路盤面清掃", "② アスファルト乳剤PK-3を散布"],
+      "machines": "ディストリビュータ／散布機",
+      "notes": ["散布量管理", "養生時間確保"],
+      "basis": "土木工事標準歩掛「舗装工」"
+    }
+  }, {
+    "id": "as_tack",
+    "name": "タックコート",
+    "unit": "m²",
+    "price": 190,
+    "labor": 60,
+    "note": "PK-4 約0.4L/m²",
+    "desc": {
+      "steps": ["① 既設面清掃", "② アスファルト乳剤PK-4を散布"],
+      "machines": "散布機",
+      "notes": ["散布量管理", "付着養生"],
+      "basis": "土木工事標準歩掛「舗装工」"
+    }
+  }, {
+    "id": "as_curb",
+    "name": "縁石設置（歩車道境界）",
+    "unit": "m",
+    "price": 4500,
+    "labor": 1800,
+    "note": "基礎別",
+    "desc": {
+      "steps": ["① 床掘・基礎砕石", "② 基礎コンクリート打設", "③ 境界ブロック据付・目地モルタル"],
+      "machines": "バックホウ0.25m³、クレーン（小）",
+      "notes": ["通り・高さの精度確保", "基礎は別途数量計上の場合あり"],
+      "basis": "土木工事標準歩掛「縁石工」"
+    }
+  }, {
+    "id": "as_curbrem",
+    "name": "縁石撤去",
+    "unit": "m",
+    "price": 1200,
+    "labor": 700,
+    "note": "処分別",
+    "desc": {
+      "steps": ["① 既設縁石を取壊し", "② ガラをダンプへ積込・運搬"],
+      "machines": "バックホウ＋ブレーカ",
+      "notes": ["ガラ処分は別計上", "隣接構造物の損傷注意"],
+      "basis": "土木工事標準歩掛「構造物取壊し工」"
+    }
+  }, {
+    "id": "as_furiku",
+    "name": "不陸整正",
+    "unit": "m\u00b2",
+    "note": "締固め機械で単価変動",
+    "machines": [{
+      "name": "モーターグレーダ施工",
+      "sub": "広面積・精度重視",
+      "price": 350,
+      "labor": 120
+    }, {
+      "name": "バックホウ＋人力",
+      "sub": "中規模・一般",
+      "price": 550,
+      "labor": 280
+    }, {
+      "name": "人力整正",
+      "sub": "狭小部・取合い",
+      "price": 1100,
+      "labor": 900
+    }],
+    "desc": {
+      "steps": ["① 路面の凸凹・段差を確認", "② 高い箇所を切削またはすきとり", "③ 低い箇所に材料を補充・敷均し", "④ 振動ローラまたはプレートで転圧", "⑤ 平坦性を確認・手直し"],
+      "machines": "モーターグレーダ／バックホウ／振動ローラ・プレート",
+      "notes": ["舗装打換え前の路盤整正に多用", "平坦性基準（σ≦2.4mm）を確認", "軟弱部は置換または安定処理を別途検討"],
+      "basis": "土木工事標準歩掛「路盤工・整正工」"
+    }
+  }]
+}, {
+  "id": "civil",
+  "label": "土工・運搬",
+  "emoji": "⛏",
+  "bg": "#2e6e6e",
+  "items": [{
+    "id": "cv_dig",
+    "name": "機械掘削（機械選択）",
+    "unit": "m³",
+    "note": "バックホウ各サイズ",
+    "machines": [{
+      "name": "BH 0.1m³級",
+      "sub": "超小型・狭所",
+      "price": 2200,
+      "labor": 900
+    }, {
+      "name": "BH 0.25m³級",
+      "sub": "小型",
+      "price": 1100,
+      "labor": 450
+    }, {
+      "name": "BH 0.45m³級",
+      "sub": "標準",
+      "price": 730,
+      "labor": 330
+    }, {
+      "name": "BH 0.8m³級",
+      "sub": "大型",
+      "price": 560,
+      "labor": 250
+    }],
+    "desc": {
+      "steps": ["① 所定深さまで掘削", "② 掘削土をダンプへ積込", "③ 法面を整形、余掘りは最小限に"],
+      "machines": "バックホウ（0.1〜0.8m³）、ダンプ",
+      "notes": ["湧水時は排水処理を別途", "軟弱地盤は足元養生", "埋設物を事前確認"],
+      "basis": "土木工事標準歩掛「土工（掘削）」"
+    }
+  }, {
+    "id": "cv_handdig",
+    "name": "人力掘削",
+    "unit": "m³",
+    "price": 12250,
+    "labor": 10650,
+    "note": "狭所・補助",
+    "desc": {
+      "steps": ["① スコップ等で人力掘削", "② 掘削土を一輪車等で集積"],
+      "machines": "人力（スコップ・つるはし）",
+      "notes": ["機械が入らない狭所", "埋設物近接部", "出来高が低く高単価"],
+      "basis": "土木工事標準歩掛「土工（人力）」"
+    }
+  }, {
+    "id": "cv_back",
+    "name": "埋戻し・締固め（機械選択）",
+    "unit": "m³",
+    "note": "締固め機械で単価変動",
+    "machines": [{
+      "name": "ランマ・プレート",
+      "sub": "狭所・小規模",
+      "price": 900,
+      "labor": 600
+    }, {
+      "name": "振動ローラ 1.1t",
+      "sub": "中規模",
+      "price": 600,
+      "labor": 370
+    }, {
+      "name": "タイヤローラ 8t",
+      "sub": "大規模",
+      "price": 480,
+      "labor": 280
+    }],
+    "desc": {
+      "steps": ["① 良質土を所定厚で敷均し", "② 締固め機械で転圧", "③ 所定の締固め度を確認"],
+      "machines": "ランマ／振動ローラ／タイヤローラ、バックホウ",
+      "notes": ["1層の敷均し厚を管理", "含水比管理", "構造物際は入念に"],
+      "basis": "土木工事標準歩掛「土工（埋戻）」"
+    }
+  }, {
+    "id": "cv_embank",
+    "name": "盛土 敷均し・締固め（機械選択）",
+    "unit": "m³",
+    "note": "ブルドーザ規格で変動",
+    "machines": [{
+      "name": "ブルドーザ 3t級",
+      "sub": "小規模",
+      "price": 900,
+      "labor": 480
+    }, {
+      "name": "ブルドーザ 6t級",
+      "sub": "中規模",
+      "price": 650,
+      "labor": 350
+    }, {
+      "name": "ブルドーザ 11t級",
+      "sub": "大規模",
+      "price": 480,
+      "labor": 250
+    }],
+    "desc": {
+      "steps": ["① 搬入土を敷均し（1層30cm程度）", "② 各層を締固め", "③ 法面整形"],
+      "machines": "ブルドーザ、振動ローラ、バックホウ",
+      "notes": ["土量変化率を考慮", "含水比・締固め度管理", "雨天時は施工注意"],
+      "basis": "土木工事標準歩掛「土工（盛土）」"
+    }
+  }, {
+    "id": "cv_cut_soil",
+    "name": "切土（土砂）",
+    "unit": "m³",
+    "price": 680,
+    "labor": 300,
+    "note": "バックホウ",
+    "desc": {
+      "steps": ["① 所定法面まで掘削", "② 掘削土をダンプ積込", "③ 法面整形"],
+      "machines": "バックホウ0.8m³、ダンプ",
+      "notes": ["法面勾配を管理", "湧水・崩壊に注意"],
+      "basis": "土木工事標準歩掛「土工（切土）」"
+    }
+  }, {
+    "id": "cv_cut_soft",
+    "name": "切土（軟岩）",
+    "unit": "m³",
+    "price": 1800,
+    "labor": 600,
+    "note": "リッパ・ブレーカ",
+    "desc": {
+      "steps": ["① リッパ・ブレーカで岩を破砕", "② バックホウで積込"],
+      "machines": "大型バックホウ＋ブレーカ、ブルドーザ（リッパ付）",
+      "notes": ["岩質により出来高変動大", "発破不可区間向き"],
+      "basis": "土木工事標準歩掛「土工（岩掘削）」"
+    }
+  }, {
+    "id": "cv_haul3",
+    "name": "土砂運搬 3km",
+    "unit": "m³",
+    "price": 1200,
+    "labor": 350,
+    "note": "ダンプ",
+    "desc": {
+      "steps": ["① 掘削土をダンプに積込", "② 指定場所へ運搬（片道3km）", "③ 荷下ろし"],
+      "machines": "ダンプ4t〜10t",
+      "notes": ["運搬距離・道路状況で変動", "過積載厳禁"],
+      "basis": "土木工事標準歩掛「運搬工」"
+    }
+  }, {
+    "id": "cv_haul10",
+    "name": "土砂運搬 10km",
+    "unit": "m³",
+    "price": 2000,
+    "labor": 400,
+    "note": "ダンプ",
+    "desc": {
+      "steps": ["① ダンプ積込", "② 指定場所へ運搬（片道10km）", "③ 荷下ろし"],
+      "machines": "ダンプ10t",
+      "notes": ["長距離は大型ダンプが有利", "運搬路の確認"],
+      "basis": "土木工事標準歩掛「運搬工」"
+    }
+  }, {
+    "id": "cv_disp",
+    "name": "残土 処分",
+    "unit": "m³",
+    "price": 2500,
+    "labor": 0,
+    "note": "受入施設・地域差大",
+    "desc": {
+      "steps": ["① 受入施設へ搬入", "② 処分費精算"],
+      "machines": "—（処分のみ）",
+      "notes": ["処分単価は施設・土質で大きく変動", "建設発生土と残土で扱い違い"],
+      "basis": "実勢価格"
+    }
+  }, {
+    "id": "cv_load",
+    "name": "発生材 積込（機械選択）",
+    "unit": "m³",
+    "note": "積込機械で変動",
+    "machines": [{
+      "name": "バックホウ 0.45m³",
+      "sub": "標準",
+      "price": 770,
+      "labor": 470
+    }, {
+      "name": "ホイールローダ 0.5m³",
+      "sub": "大量・連続",
+      "price": 600,
+      "labor": 350
+    }],
+    "desc": {
+      "steps": ["① 集積した発生材を機械で積込", "② ダンプへ積載"],
+      "machines": "バックホウ／ホイールローダ",
+      "notes": ["積込効率は集積状態による"],
+      "basis": "土木工事標準歩掛「土工」"
+    }
+  }, {
+    "id": "cv_slope_fill",
+    "name": "法面整形（盛土）",
+    "unit": "m²",
+    "price": 420,
+    "labor": 250,
+    "note": "",
+    "desc": {
+      "steps": ["① 法面を所定勾配に整形", "② 締固め・転圧"],
+      "machines": "バックホウ0.45m³",
+      "notes": ["勾配・通りを管理", "植生工の下地"],
+      "basis": "土木工事標準歩掛「土工（法面整形）」"
+    }
+  }, {
+    "id": "cv_slope_cut",
+    "name": "法面整形（切土）",
+    "unit": "m²",
+    "price": 480,
+    "labor": 280,
+    "note": "",
+    "desc": {
+      "steps": ["① 切土法面を所定勾配に整形", "② 浮石・不陸を除去"],
+      "machines": "バックホウ0.45m³",
+      "notes": ["崩壊・落石に注意", "勾配管理"],
+      "basis": "土木工事標準歩掛「土工（法面整形）」"
+    }
+  }, {
+    "id": "cv_sheetpile",
+    "name": "軽量鋼矢板 打設・引抜",
+    "unit": "m²",
+    "price": 4200,
+    "labor": 1800,
+    "note": "仮設土留め",
+    "desc": {
+      "steps": ["① 鋼矢板を建込み", "② バイブロハンマで打設", "③ 完了後に引抜・存置"],
+      "machines": "バックホウ＋バイブロ、クレーン",
+      "notes": ["近接構造物への影響注意", "材料は損料計上"],
+      "basis": "土木工事標準歩掛「仮設工」"
+    }
+  }, {
+    "id": "cv_basestone",
+    "name": "基礎砕石 RC-40",
+    "unit": "m³",
+    "price": 4510,
+    "labor": 1320,
+    "note": "敷均し・転圧",
+    "desc": {
+      "steps": ["① 砕石を敷均し", "② プレート・ランマで転圧"],
+      "machines": "バックホウ、プレート",
+      "notes": ["所定厚を確保", "構造物基礎の支持力確保"],
+      "basis": "土木工事標準歩掛「基礎工」"
+    }
+  }, {
+    "id": "cv_leveling",
+    "name": "均しコンクリート",
+    "unit": "m³",
+    "price": 37900,
+    "labor": 18450,
+    "note": "18-8-40",
+    "desc": {
+      "steps": ["① 型枠・支持確認", "② 生コン打設", "③ 表面均し"],
+      "machines": "—（人力中心）",
+      "notes": ["生コン単価は要確認", "薄層のため数量に注意"],
+      "basis": "土木工事標準歩掛「コンクリート工」"
+    }
+  }, {
+    "id": "cv_resid",
+    "name": "残土 運搬+処分（5km）",
+    "unit": "m³",
+    "price": 4550,
+    "labor": 550,
+    "note": "運搬5km＋処分",
+    "desc": {
+      "steps": ["① ダンプ積込", "② 5km運搬", "③ 処分"],
+      "machines": "ダンプ4t",
+      "notes": ["処分費変動大", "運搬距離で増減"],
+      "basis": "土木工事標準歩掛「運搬工」"
+    }
+  }, {
+    "id": "cv_clear",
+    "name": "伐開除根",
+    "unit": "m²",
+    "price": 350,
+    "labor": 180,
+    "note": "造成前処理",
+    "desc": {
+      "steps": ["① 草木・立木を伐採", "② 根株を除去", "③ 集積・処分"],
+      "machines": "バックホウ0.45m³",
+      "notes": ["処分は別計上", "大径木は別途"],
+      "basis": "土木工事標準歩掛「土工（伐開）」"
+    }
+  }]
+}, {
+  "id": "concrete",
+  "label": "コンクリート構造物",
+  "emoji": "🏗",
+  "bg": "#5b3a7e",
+  "items": [{
+    "id": "co_pour",
+    "name": "現場打コンクリート（機械選択）",
+    "unit": "m³",
+    "note": "打設方法・配合で変動",
+    "machines": [{
+      "name": "ポンプ車 18N",
+      "sub": "圧送・標準",
+      "price": 24000,
+      "labor": 4800
+    }, {
+      "name": "ポンプ車 21N",
+      "sub": "圧送・やや高強度",
+      "price": 25500,
+      "labor": 4800
+    }, {
+      "name": "ポンプ車 24N",
+      "sub": "圧送・高強度",
+      "price": 27000,
+      "labor": 4800
+    }, {
+      "name": "バケツ打設 18N",
+      "sub": "圧送なし・小規模",
+      "price": 22000,
+      "labor": 7000
+    }],
+    "desc": {
+      "steps": ["① 型枠・配筋確認", "② 生コン打設（圧送 or バケツ）", "③ バイブレータで締固め", "④ 表面仕上げ・養生"],
+      "machines": "コンクリートポンプ車、バイブレータ",
+      "notes": ["生コン単価は要確認", "打継処理・養生管理", "圧送車回送費を別途考慮"],
+      "basis": "土木工事標準歩掛「コンクリート工」"
+    }
+  }, {
+    "id": "co_rebar",
+    "name": "鉄筋工（加工・組立）",
+    "unit": "t",
+    "price": 98000,
+    "labor": 56000,
+    "note": "異形棒鋼",
+    "desc": {
+      "steps": ["① 鉄筋を所定寸法に加工", "② 配筋・結束", "③ かぶり・間隔確認"],
+      "machines": "鉄筋加工機、クレーン（小）",
+      "notes": ["材料費（鋼材）別途または込み確認", "かぶり厚管理", "継手位置に注意"],
+      "basis": "土木工事標準歩掛「鉄筋工」"
+    }
+  }, {
+    "id": "co_form_b",
+    "name": "型枠（基礎）",
+    "unit": "m²",
+    "price": 4200,
+    "labor": 2600,
+    "note": "普通型枠",
+    "desc": {
+      "steps": ["① 型枠を加工・建込み", "② 支保・締付け", "③ 脱型・清掃"],
+      "machines": "—（人力中心）",
+      "notes": ["転用回数を考慮", "通り・垂直精度"],
+      "basis": "土木工事標準歩掛「型枠工」"
+    }
+  }, {
+    "id": "co_form_w",
+    "name": "型枠（擁壁・護岸）",
+    "unit": "m²",
+    "price": 5400,
+    "labor": 3490,
+    "note": "普通型枠",
+    "desc": {
+      "steps": ["① 型枠加工・建込み", "② 支保工設置・締付け", "③ 脱型・清掃"],
+      "machines": "クレーン（小）、人力",
+      "notes": ["高さに応じ支保工", "コンクリート側圧管理"],
+      "basis": "土木工事標準歩掛「型枠工」"
+    }
+  }, {
+    "id": "co_form_steel",
+    "name": "型枠（鋼製）",
+    "unit": "m²",
+    "price": 3800,
+    "labor": 1900,
+    "note": "鋼製型枠・転用",
+    "desc": {
+      "steps": ["① 鋼製型枠を建込み", "② 締付け・通り確認", "③ 脱型"],
+      "machines": "クレーン（小）",
+      "notes": ["大量転用で経済的", "曲面は不向き"],
+      "basis": "土木工事標準歩掛「型枠工」"
+    }
+  }, {
+    "id": "co_noreb",
+    "name": "無筋コンクリート",
+    "unit": "m³",
+    "price": 23000,
+    "labor": 5500,
+    "note": "18N",
+    "desc": {
+      "steps": ["① 型枠・地盤確認", "② 生コン打設", "③ 締固め・仕上げ・養生"],
+      "machines": "ポンプ車／人力、バイブレータ",
+      "notes": ["生コン単価要確認", "養生管理"],
+      "basis": "土木工事標準歩掛「コンクリート工」"
+    }
+  }, {
+    "id": "co_block_ken",
+    "name": "間知ブロック積（機械選択）",
+    "unit": "m²",
+    "note": "クレーン規格で変動",
+    "machines": [{
+      "name": "クレーン 4.9t",
+      "sub": "標準",
+      "price": 18000,
+      "labor": 7500
+    }, {
+      "name": "クレーン 16t",
+      "sub": "大型・高所",
+      "price": 20000,
+      "labor": 7500
+    }],
+    "desc": {
+      "steps": ["① 基礎コンクリート", "② 間知ブロックを据付・積上げ", "③ 胴込・裏込コンクリート", "④ 目地仕上げ"],
+      "machines": "クレーン、バックホウ",
+      "notes": ["裏込材の充填確認", "水抜きパイプ設置", "勾配・通り管理"],
+      "basis": "土木工事標準歩掛「石・ブロック積工」"
+    }
+  }, {
+    "id": "co_block_kara",
+    "name": "空石積（野面石）",
+    "unit": "m²",
+    "price": 15000,
+    "labor": 9000,
+    "note": "練り無し",
+    "desc": {
+      "steps": ["① 基礎づくり", "② 石を噛み合わせて積上げ", "③ 裏込砕石充填"],
+      "machines": "クレーン（小）、人力",
+      "notes": ["熟練を要する", "景観・自然工法向き"],
+      "basis": "土木工事標準歩掛「石積工」"
+    }
+  }, {
+    "id": "co_block_gan",
+    "name": "護岸 コンクリートブロック張",
+    "unit": "m²",
+    "price": 9500,
+    "labor": 3200,
+    "note": "平張",
+    "desc": {
+      "steps": ["① 法面整形・基礎", "② 敷モルタル", "③ ブロックを張付け", "④ 目地仕上げ"],
+      "machines": "クレーン（小）、バックホウ",
+      "notes": ["法面の安定確認", "目地・水抜き"],
+      "basis": "土木工事標準歩掛「ブロック張工」"
+    }
+  }, {
+    "id": "co_l_set",
+    "name": "プレキャストL型擁壁 設置（機械選択）",
+    "unit": "m",
+    "note": "クレーン規格で変動",
+    "machines": [{
+      "name": "クレーン 16t",
+      "sub": "〜H2.0m",
+      "price": 22000,
+      "labor": 6500
+    }, {
+      "name": "クレーン 25t",
+      "sub": "H2.0m〜",
+      "price": 26000,
+      "labor": 7000
+    }],
+    "desc": {
+      "steps": ["① 基礎砕石・均しコン", "② L型擁壁をクレーンで据付", "③ 通り・高さ調整", "④ 目地処理・裏込"],
+      "machines": "ラフテレーンクレーン、バックホウ",
+      "notes": ["基礎の支持力確保", "製品重量に応じクレーン選定", "裏込・水抜き"],
+      "basis": "土木工事標準歩掛「擁壁工」"
+    }
+  }, {
+    "id": "co_joint",
+    "name": "目地・止水板",
+    "unit": "m",
+    "price": 2800,
+    "labor": 1200,
+    "note": "伸縮目地",
+    "desc": {
+      "steps": ["① 目地材を所定位置に設置", "② 止水板取付", "③ シーリング"],
+      "machines": "—（人力）",
+      "notes": ["止水性能の確保", "目地位置の管理"],
+      "basis": "土木工事標準歩掛「コンクリート付帯工」"
+    }
+  }, {
+    "id": "co_demo",
+    "name": "構造物取壊し（無筋）",
+    "unit": "m³",
+    "price": 8500,
+    "labor": 3500,
+    "note": "処分別",
+    "desc": {
+      "steps": ["① ブレーカで取壊し", "② ガラを積込・運搬"],
+      "machines": "バックホウ＋ブレーカ、ダンプ",
+      "notes": ["ガラ処分は別計上", "粉じん・騒音対策", "鉄筋有りは別単価"],
+      "basis": "土木工事標準歩掛「構造物取壊し工」"
+    }
+  }]
+}, {
+  "id": "drain",
+  "label": "排水・管渠",
+  "emoji": "🚿",
+  "bg": "#1d6b8a",
+  "items": [{
+    "id": "dr_u180",
+    "name": "U字溝 180 据付",
+    "unit": "m",
+    "price": 4800,
+    "labor": 2400,
+    "note": "基礎別",
+    "desc": {
+      "steps": ["① 床掘・基礎砕石", "② U字溝を据付", "③ 目地モルタル"],
+      "machines": "バックホウ0.25m³",
+      "notes": ["通り・勾配管理", "基礎別計上の場合あり"],
+      "basis": "土木工事標準歩掛「側溝工」"
+    }
+  }, {
+    "id": "dr_u240",
+    "name": "U字溝 240 据付",
+    "unit": "m",
+    "price": 8950,
+    "labor": 4980,
+    "note": "基礎別",
+    "desc": {
+      "steps": ["① 床掘・基礎砕石", "② U字溝を据付", "③ 目地モルタル"],
+      "machines": "バックホウ0.25m³、クレーン（小）",
+      "notes": ["勾配管理", "基礎は別途の場合あり"],
+      "basis": "土木工事標準歩掛「側溝工」"
+    }
+  }, {
+    "id": "dr_u300",
+    "name": "U字溝 300 据付",
+    "unit": "m",
+    "price": 11000,
+    "labor": 5800,
+    "note": "基礎別",
+    "desc": {
+      "steps": ["① 床掘・基礎", "② 据付", "③ 目地モルタル"],
+      "machines": "クレーン4.9t、バックホウ",
+      "notes": ["重量物はクレーン使用", "勾配管理"],
+      "basis": "土木工事標準歩掛「側溝工」"
+    }
+  }, {
+    "id": "dr_u400",
+    "name": "U字溝 400 据付",
+    "unit": "m",
+    "price": 14500,
+    "labor": 6800,
+    "note": "基礎別",
+    "desc": {
+      "steps": ["① 床掘・基礎", "② クレーンで据付", "③ 目地"],
+      "machines": "クレーン4.9t、バックホウ",
+      "notes": ["重量管理", "勾配・通り"],
+      "basis": "土木工事標準歩掛「側溝工」"
+    }
+  }, {
+    "id": "dr_u500",
+    "name": "U字溝 500 据付",
+    "unit": "m",
+    "price": 18500,
+    "labor": 7800,
+    "note": "基礎別",
+    "desc": {
+      "steps": ["① 床掘・基礎", "② クレーンで据付", "③ 目地"],
+      "machines": "クレーン4.9t〜16t",
+      "notes": ["大型はクレーン規格注意", "基礎支持力"],
+      "basis": "土木工事標準歩掛「側溝工」"
+    }
+  }, {
+    "id": "dr_l300",
+    "name": "L型側溝 300 据付",
+    "unit": "m",
+    "price": 9800,
+    "labor": 5200,
+    "note": "基礎別",
+    "desc": {
+      "steps": ["① 床掘・基礎", "② L型を据付", "③ 目地・すりつけ"],
+      "machines": "クレーン4.9t、バックホウ",
+      "notes": ["路面とのすりつけ", "勾配管理"],
+      "basis": "土木工事標準歩掛「側溝工」"
+    }
+  }, {
+    "id": "dr_l350",
+    "name": "L型側溝 350 据付",
+    "unit": "m",
+    "price": 10960,
+    "labor": 5930,
+    "note": "基礎別",
+    "desc": {
+      "steps": ["① 床掘・基礎", "② L型を据付", "③ 目地・すりつけ"],
+      "machines": "クレーン4.9t、バックホウ",
+      "notes": ["路面すりつけ", "勾配管理"],
+      "basis": "土木工事標準歩掛「側溝工」"
+    }
+  }, {
+    "id": "dr_lid",
+    "name": "側溝蓋掛け（既設）",
+    "unit": "m",
+    "price": 2200,
+    "labor": 1100,
+    "note": "コンクリート蓋",
+    "desc": {
+      "steps": ["① 既設側溝清掃", "② 蓋受け調整", "③ 蓋を設置"],
+      "machines": "クレーン（小）、人力",
+      "notes": ["がたつき防止", "荷重区分の確認"],
+      "basis": "土木工事標準歩掛「側溝工」"
+    }
+  }, {
+    "id": "dr_grating",
+    "name": "グレーチング設置",
+    "unit": "m",
+    "price": 3500,
+    "labor": 1200,
+    "note": "鋼製",
+    "desc": {
+      "steps": ["① 受枠調整", "② グレーチング設置・固定"],
+      "machines": "人力",
+      "notes": ["荷重区分（T-2〜T-25）確認", "がたつき・騒音対策"],
+      "basis": "土木工事標準歩掛「側溝付帯工」"
+    }
+  }, {
+    "id": "dr_hume200",
+    "name": "ヒューム管 φ200 据付",
+    "unit": "m",
+    "price": 5800,
+    "labor": 3200,
+    "note": "床掘・基礎別",
+    "desc": {
+      "steps": ["① 床掘・基礎砕石", "② 管を据付・接合", "③ 埋戻し"],
+      "machines": "バックホウ0.25m³",
+      "notes": ["勾配管理", "接合部の止水"],
+      "basis": "土木工事標準歩掛「管渠工」"
+    }
+  }, {
+    "id": "dr_hume250",
+    "name": "ヒューム管 φ250 据付",
+    "unit": "m",
+    "price": 7200,
+    "labor": 3800,
+    "note": "床掘・基礎別",
+    "desc": {
+      "steps": ["① 床掘・基礎", "② 据付・接合", "③ 埋戻し"],
+      "machines": "バックホウ0.45m³、クレーン（小）",
+      "notes": ["勾配・通り", "止水確認"],
+      "basis": "土木工事標準歩掛「管渠工」"
+    }
+  }, {
+    "id": "dr_hume300",
+    "name": "ヒューム管 φ300 据付（機械選択）",
+    "unit": "m",
+    "note": "クレーン規格で変動",
+    "machines": [{
+      "name": "クレーン 4.9t",
+      "sub": "標準",
+      "price": 14010,
+      "labor": 7090
+    }, {
+      "name": "バックホウ吊り",
+      "sub": "小規模・軽量",
+      "price": 12500,
+      "labor": 6800
+    }],
+    "desc": {
+      "steps": ["① 床掘・基礎", "② 管をクレーンで据付・接合", "③ 埋戻し・転圧"],
+      "machines": "クレーン4.9t／バックホウ",
+      "notes": ["管接合部の止水", "布設後の通水確認", "埋戻し転圧"],
+      "basis": "土木工事標準歩掛「管渠工」"
+    }
+  }, {
+    "id": "dr_hume400",
+    "name": "ヒューム管 φ400 据付",
+    "unit": "m",
+    "price": 18500,
+    "labor": 8500,
+    "note": "クレーン",
+    "desc": {
+      "steps": ["① 床掘・基礎", "② クレーンで据付・接合", "③ 埋戻し"],
+      "machines": "クレーン16t、バックホウ",
+      "notes": ["重量管理", "止水・据付精度"],
+      "basis": "土木工事標準歩掛「管渠工」"
+    }
+  }, {
+    "id": "dr_hume500",
+    "name": "ヒューム管 φ500 据付",
+    "unit": "m",
+    "price": 24000,
+    "labor": 9500,
+    "note": "クレーン",
+    "desc": {
+      "steps": ["① 床掘・基礎", "② クレーン据付・接合", "③ 埋戻し"],
+      "machines": "クレーン16t〜25t",
+      "notes": ["大口径は基礎重要", "止水確認"],
+      "basis": "土木工事標準歩掛「管渠工」"
+    }
+  }, {
+    "id": "dr_vu75",
+    "name": "塩ビ管 VU φ75 布設",
+    "unit": "m",
+    "price": 2200,
+    "labor": 1500,
+    "note": "継手別",
+    "desc": {
+      "steps": ["① 床掘", "② 管布設・接着接合", "③ 埋戻し"],
+      "machines": "人力、バックホウ（小）",
+      "notes": ["接着剤の確実な施工", "勾配管理"],
+      "basis": "土木工事標準歩掛「管布設工」"
+    }
+  }, {
+    "id": "dr_vu100",
+    "name": "塩ビ管 VU φ100 布設",
+    "unit": "m",
+    "price": 4660,
+    "labor": 3000,
+    "note": "継手別",
+    "desc": {
+      "steps": ["① 床掘", "② 管布設・接合", "③ 埋戻し"],
+      "machines": "人力、バックホウ0.25m³",
+      "notes": ["勾配管理", "継手の止水"],
+      "basis": "土木工事標準歩掛「管布設工」"
+    }
+  }, {
+    "id": "dr_vu150",
+    "name": "塩ビ管 VU φ150 布設",
+    "unit": "m",
+    "price": 6180,
+    "labor": 3690,
+    "note": "継手別",
+    "desc": {
+      "steps": ["① 床掘", "② 管布設・接合", "③ 埋戻し"],
+      "machines": "バックホウ0.25m³",
+      "notes": ["勾配管理", "継手止水"],
+      "basis": "土木工事標準歩掛「管布設工」"
+    }
+  }, {
+    "id": "dr_vu200",
+    "name": "塩ビ管 VU φ200 布設（機械選択）",
+    "unit": "m",
+    "note": "床掘機械で変動",
+    "machines": [{
+      "name": "人力床掘併用",
+      "sub": "浅い・狭所",
+      "price": 8500,
+      "labor": 5500
+    }, {
+      "name": "BH 0.25m³",
+      "sub": "標準",
+      "price": 7800,
+      "labor": 4800
+    }],
+    "desc": {
+      "steps": ["① 床掘", "② 管布設・接合", "③ 埋戻し・転圧"],
+      "machines": "バックホウ0.25m³／人力",
+      "notes": ["勾配・通り管理", "止水確認", "埋戻し転圧"],
+      "basis": "土木工事標準歩掛「管布設工」"
+    }
+  }, {
+    "id": "dr_vu250",
+    "name": "塩ビ管 VU φ250 布設",
+    "unit": "m",
+    "price": 9800,
+    "labor": 5600,
+    "note": "BH",
+    "desc": {
+      "steps": ["① 床掘", "② 管布設・接合", "③ 埋戻し"],
+      "machines": "バックホウ0.45m³",
+      "notes": ["勾配管理", "止水"],
+      "basis": "土木工事標準歩掛「管布設工」"
+    }
+  }, {
+    "id": "dr_masu",
+    "name": "集水桝 設置",
+    "unit": "箇所",
+    "price": 66450,
+    "labor": 37780,
+    "note": "現場打/二次製品",
+    "desc": {
+      "steps": ["① 床掘・基礎", "② 桝を設置 or 現場打", "③ 管接続・埋戻し"],
+      "machines": "クレーン（小）、バックホウ",
+      "notes": ["管との接続部止水", "蓋の荷重区分", "規格により単価変動大"],
+      "basis": "土木工事標準歩掛「桝工」"
+    }
+  }, {
+    "id": "dr_doro",
+    "name": "泥除桝 設置",
+    "unit": "箇所",
+    "price": 28000,
+    "labor": 14000,
+    "note": "二次製品",
+    "desc": {
+      "steps": ["① 床掘・基礎", "② 桝設置", "③ 管接続・埋戻し"],
+      "machines": "クレーン（小）、バックホウ",
+      "notes": ["泥溜め深さ確認", "蓋の荷重区分"],
+      "basis": "土木工事標準歩掛「桝工」"
+    }
+  }, {
+    "id": "dr_manhole",
+    "name": "人孔（マンホール）設置",
+    "unit": "箇所",
+    "price": 95000,
+    "labor": 42000,
+    "note": "組立式",
+    "desc": {
+      "steps": ["① 床掘・基礎", "② 底版・側塊を組立", "③ 管接続・調整リング・蓋設置", "④ 埋戻し"],
+      "machines": "クレーン4.9t〜16t、バックホウ",
+      "notes": ["据付精度", "止水・水密試験", "蓋の荷重区分"],
+      "basis": "土木工事標準歩掛「人孔工」"
+    }
+  }, {
+    "id": "dr_3men",
+    "name": "コンクリート三面水路 設置",
+    "unit": "m",
+    "price": 13500,
+    "labor": 6500,
+    "note": "二次製品",
+    "desc": {
+      "steps": ["① 床掘・基礎砕石・均しコン", "② 三面水路を据付", "③ 目地・接続"],
+      "machines": "クレーン4.9t、バックホウ",
+      "notes": ["農業用排水路", "勾配・通り管理", "接続部止水"],
+      "basis": "土木工事標準歩掛「水路工」"
+    }
+  }]
+}, {
+  "id": "agri",
+  "label": "農業土木",
+  "emoji": "🌾",
+  "bg": "#3a6b3a",
+  "items": [{
+    "id": "ag_pipe75",
+    "name": "農業用パイプライン φ75 布設",
+    "unit": "m",
+    "price": 3200,
+    "labor": 2000,
+    "note": "塩ビ・継手別",
+    "desc": {
+      "steps": ["① 床掘", "② 管布設・接合", "③ 埋戻し・転圧"],
+      "machines": "人力、バックホウ（小）",
+      "notes": ["水圧・継手確認", "埋設深さ管理"],
+      "basis": "土地改良工事積算基準「管水路工」"
+    }
+  }, {
+    "id": "ag_pipe100",
+    "name": "農業用パイプライン φ100 布設",
+    "unit": "m",
+    "price": 4660,
+    "labor": 3000,
+    "note": "塩ビ・継手別",
+    "desc": {
+      "steps": ["① 床掘", "② 管布設・接合", "③ 埋戻し"],
+      "machines": "バックホウ0.25m³",
+      "notes": ["継手止水", "埋設深さ"],
+      "basis": "土地改良工事積算基準「管水路工」"
+    }
+  }, {
+    "id": "ag_pipe125",
+    "name": "農業用パイプライン φ125 布設",
+    "unit": "m",
+    "price": 5800,
+    "labor": 3500,
+    "note": "塩ビ・継手別",
+    "desc": {
+      "steps": ["① 床掘", "② 布設・接合", "③ 埋戻し"],
+      "machines": "バックホウ0.25m³",
+      "notes": ["水圧確認", "継手止水"],
+      "basis": "土地改良工事積算基準「管水路工」"
+    }
+  }, {
+    "id": "ag_pipe150",
+    "name": "農業用パイプライン φ150 布設",
+    "unit": "m",
+    "price": 6180,
+    "labor": 3690,
+    "note": "塩ビ・継手別",
+    "desc": {
+      "steps": ["① 床掘", "② 布設・接合", "③ 埋戻し"],
+      "machines": "バックホウ0.25m³",
+      "notes": ["継手止水", "通水確認"],
+      "basis": "土地改良工事積算基準「管水路工」"
+    }
+  }, {
+    "id": "ag_pipe200",
+    "name": "農業用パイプライン φ200 布設",
+    "unit": "m",
+    "price": 8200,
+    "labor": 4500,
+    "note": "塩ビ・継手別",
+    "desc": {
+      "steps": ["① 床掘", "② 布設・接合", "③ 埋戻し"],
+      "machines": "バックホウ0.45m³",
+      "notes": ["大口径は据付注意", "止水確認"],
+      "basis": "土地改良工事積算基準「管水路工」"
+    }
+  }, {
+    "id": "ag_hume300",
+    "name": "ヒューム管 φ300 据付（農業用）",
+    "unit": "m",
+    "price": 14010,
+    "labor": 7090,
+    "note": "クレーン",
+    "desc": {
+      "steps": ["① 床掘・基礎", "② クレーンで据付・接合", "③ 埋戻し"],
+      "machines": "クレーン4.9t、バックホウ",
+      "notes": ["勾配管理", "農業排水路向け"],
+      "basis": "土地改良工事積算基準「管水路工」"
+    }
+  }, {
+    "id": "ag_u300",
+    "name": "用水路 U字溝 300×300 据付",
+    "unit": "m",
+    "price": 12750,
+    "labor": 7090,
+    "note": "基礎別",
+    "desc": {
+      "steps": ["① 床掘・基礎", "② U字溝据付", "③ 目地・接続"],
+      "machines": "クレーン4.9t、バックホウ",
+      "notes": ["通水勾配", "接続部止水"],
+      "basis": "土地改良工事積算基準「水路工」"
+    }
+  }, {
+    "id": "ag_3men",
+    "name": "コンクリート三面水路 設置",
+    "unit": "m",
+    "price": 13500,
+    "labor": 6500,
+    "note": "二次製品",
+    "desc": {
+      "steps": ["① 床掘・基礎・均しコン", "② 三面水路据付", "③ 目地・接続"],
+      "machines": "クレーン4.9t、バックホウ",
+      "notes": ["勾配管理", "接続部止水"],
+      "basis": "土地改良工事積算基準「水路工」"
+    }
+  }, {
+    "id": "ag_repair",
+    "name": "水路補修（モルタル吹付）",
+    "unit": "m²",
+    "price": 4800,
+    "labor": 2200,
+    "note": "既設水路",
+    "desc": {
+      "steps": ["① 既設水路の清掃・ケレン", "② ラス張り（必要時）", "③ モルタル吹付・均し"],
+      "machines": "吹付機、人力",
+      "notes": ["既設の劣化状況確認", "付着確保"],
+      "basis": "土地改良工事積算基準「補修工」"
+    }
+  }, {
+    "id": "ag_pipebase",
+    "name": "管路 床掘・埋戻",
+    "unit": "m",
+    "price": 2650,
+    "labor": 2050,
+    "note": "管径による",
+    "desc": {
+      "steps": ["① 床掘", "② 管布設後の埋戻し・転圧"],
+      "machines": "バックホウ0.25m³",
+      "notes": ["管径・深さで変動", "埋戻し転圧"],
+      "basis": "土地改良工事積算基準「土工」"
+    }
+  }, {
+    "id": "ag_basestone",
+    "name": "水路 基礎砕石",
+    "unit": "m",
+    "price": 2680,
+    "labor": 1580,
+    "note": "",
+    "desc": {
+      "steps": ["① 砕石を敷均し", "② 転圧・不陸調整"],
+      "machines": "バックホウ、プレート",
+      "notes": ["所定厚確保", "支持力"],
+      "basis": "土地改良工事積算基準「基礎工」"
+    }
+  }, {
+    "id": "ag_seki",
+    "name": "堰板・角落とし 設置",
+    "unit": "箇所",
+    "price": 35000,
+    "labor": 12000,
+    "note": "水門付帯",
+    "desc": {
+      "steps": ["① 戸当り設置", "② 堰板・角落とし設置", "③ 動作確認"],
+      "machines": "クレーン（小）、人力",
+      "notes": ["止水性能確認", "開閉動作確認"],
+      "basis": "土地改良工事積算基準「水門工」"
+    }
+  }, {
+    "id": "ag_ankyo",
+    "name": "暗渠排水工（弾丸暗渠）",
+    "unit": "m",
+    "price": 350,
+    "labor": 180,
+    "note": "圃場排水",
+    "desc": {
+      "steps": ["① 弾丸暗渠機で穿孔", "② 疎水材投入（必要時）"],
+      "machines": "トラクタ＋弾丸暗渠機",
+      "notes": ["施工深さ・間隔管理", "土質により適否"],
+      "basis": "土地改良工事積算基準「暗渠排水工」"
+    }
+  }, {
+    "id": "ag_ankyo_pipe",
+    "name": "暗渠排水工（有孔管）",
+    "unit": "m",
+    "price": 1800,
+    "labor": 900,
+    "note": "疎水材込",
+    "desc": {
+      "steps": ["① 床掘", "② 有孔管布設", "③ 疎水材充填・埋戻し"],
+      "machines": "バックホウ0.25m³",
+      "notes": ["疎水材の充填", "勾配管理"],
+      "basis": "土地改良工事積算基準「暗渠排水工」"
+    }
+  }, {
+    "id": "ag_kyusui",
+    "name": "給水栓 設置",
+    "unit": "箇所",
+    "price": 42000,
+    "labor": 12000,
+    "note": "パイプライン付帯",
+    "desc": {
+      "steps": ["① 分岐部加工", "② 給水栓設置", "③ 通水・漏水確認"],
+      "machines": "人力、バックホウ（小）",
+      "notes": ["漏水確認", "操作性確認"],
+      "basis": "土地改良工事積算基準「給水栓工」"
+    }
+  }, {
+    "id": "ag_keihan",
+    "name": "畦畔（けいはん）整備",
+    "unit": "m",
+    "price": 1500,
+    "labor": 800,
+    "note": "盛土・締固め",
+    "desc": {
+      "steps": ["① 既設畦畔の整形", "② 盛土・締固め"],
+      "machines": "バックホウ0.25m³",
+      "notes": ["漏水防止", "通り・高さ管理"],
+      "basis": "土地改良工事積算基準「区画整理工」"
+    }
+  }]
+}, {
+  "id": "road",
+  "label": "道路付属工",
+  "emoji": "🛤",
+  "bg": "#8a4e1e",
+  "items": [{
+    "id": "rd_line_melt",
+    "name": "区画線 白線 t=3mm（溶融型）",
+    "unit": "m",
+    "price": 420,
+    "labor": 150,
+    "note": "幅15cm",
+    "desc": {
+      "steps": ["① 路面清掃・乾燥確認", "② プライマー塗布", "③ 溶融塗料を施工・ガラスビーズ散布"],
+      "machines": "溶融式ライン施工機",
+      "notes": ["路面乾燥が条件", "幅員・かすれ確認"],
+      "basis": "土木工事標準歩掛「区画線工」"
+    }
+  }, {
+    "id": "rd_line_paint",
+    "name": "区画線 白線 t=1mm（塗料型）",
+    "unit": "m",
+    "price": 260,
+    "labor": 110,
+    "note": "幅15cm",
+    "desc": {
+      "steps": ["① 路面清掃", "② 塗料を施工・ビーズ散布"],
+      "machines": "ライン施工機／手動",
+      "notes": ["耐久性は溶融より劣る", "乾燥時間確保"],
+      "basis": "土木工事標準歩掛「区画線工」"
+    }
+  }, {
+    "id": "rd_line_yellow",
+    "name": "区画線 黄線（センターライン）",
+    "unit": "m",
+    "price": 450,
+    "labor": 160,
+    "note": "溶融型 幅15cm",
+    "desc": {
+      "steps": ["① 路面清掃", "② プライマー", "③ 黄色溶融塗料施工"],
+      "machines": "溶融式ライン施工機",
+      "notes": ["追越禁止等の規制線", "施工精度"],
+      "basis": "土木工事標準歩掛「区画線工」"
+    }
+  }, {
+    "id": "rd_guard",
+    "name": "ガードレール 設置",
+    "unit": "m",
+    "price": 6500,
+    "labor": 2200,
+    "note": "Gr-A-2E",
+    "desc": {
+      "steps": ["① 支柱位置の削孔・建込", "② ビームを取付", "③ 通り・高さ調整"],
+      "machines": "支柱打込機、クレーン（小）",
+      "notes": ["支柱の根入れ確保", "種別（強度区分）確認"],
+      "basis": "土木工事標準歩掛「防護柵工」"
+    }
+  }, {
+    "id": "rd_guard_rem",
+    "name": "防護柵 撤去",
+    "unit": "m",
+    "price": 1800,
+    "labor": 1000,
+    "note": "処分別",
+    "desc": {
+      "steps": ["① ビーム取外し", "② 支柱引抜", "③ 積込・運搬"],
+      "machines": "バックホウ、クレーン（小）",
+      "notes": ["処分は別計上", "支柱基礎の処理"],
+      "basis": "土木工事標準歩掛「防護柵工」"
+    }
+  }, {
+    "id": "rd_mirror",
+    "name": "カーブミラー 設置",
+    "unit": "基",
+    "price": 48000,
+    "labor": 12000,
+    "note": "基礎込",
+    "desc": {
+      "steps": ["① 基礎掘削・コンクリート", "② 支柱建込", "③ ミラー取付・角度調整"],
+      "machines": "バックホウ（小）、人力",
+      "notes": ["基礎の安定", "視認角度の調整"],
+      "basis": "土木工事標準歩掛「道路標識工」"
+    }
+  }, {
+    "id": "rd_sign",
+    "name": "道路標識 設置",
+    "unit": "基",
+    "price": 55000,
+    "labor": 13000,
+    "note": "基礎込",
+    "desc": {
+      "steps": ["① 基礎掘削・コンクリート", "② 支柱建込", "③ 標識板取付"],
+      "machines": "バックホウ（小）、クレーン（小）",
+      "notes": ["建築限界の確保", "基礎の安定"],
+      "basis": "土木工事標準歩掛「道路標識工」"
+    }
+  }, {
+    "id": "rd_deli",
+    "name": "視線誘導標（デリネーター）",
+    "unit": "本",
+    "price": 8500,
+    "labor": 2000,
+    "note": "支柱式",
+    "desc": {
+      "steps": ["① 支柱建込", "② 反射体取付"],
+      "machines": "削孔機、人力",
+      "notes": ["設置間隔の管理", "反射体の向き"],
+      "basis": "土木工事標準歩掛「道路付属物工」"
+    }
+  }]
+}, {
+  "id": "slope",
+  "label": "法面工",
+  "emoji": "🌿",
+  "bg": "#2f7d4f",
+  "items": [{
+    "id": "sl_seed",
+    "name": "種子吹付（客土吹付）",
+    "unit": "m²",
+    "price": 1100,
+    "labor": 380,
+    "note": "厚1cm",
+    "desc": {
+      "steps": ["① 法面整形・清掃", "② ラス張り（必要時）", "③ 客土・種子を吹付"],
+      "machines": "吹付機（モルタルガン）",
+      "notes": ["施工時期（発芽期）に注意", "厚さ管理"],
+      "basis": "土木工事標準歩掛「植生工」"
+    }
+  }, {
+    "id": "sl_harishiba",
+    "name": "張芝",
+    "unit": "m²",
+    "price": 1300,
+    "labor": 600,
+    "note": "べた張",
+    "desc": {
+      "steps": ["① 法面整形", "② 芝を張付け", "③ 目土・転圧・散水"],
+      "machines": "人力",
+      "notes": ["活着まで散水管理", "めくれ防止の目串"],
+      "basis": "土木工事標準歩掛「植生工」"
+    }
+  }, {
+    "id": "sl_sujishiba",
+    "name": "筋芝",
+    "unit": "m",
+    "price": 450,
+    "labor": 250,
+    "note": "水平筋",
+    "desc": {
+      "steps": ["① 水平に溝切り", "② 芝を筋状に張付け", "③ 覆土・転圧"],
+      "machines": "人力",
+      "notes": ["間隔管理", "盛土法面向き"],
+      "basis": "土木工事標準歩掛「植生工」"
+    }
+  }, {
+    "id": "sl_mortar",
+    "name": "モルタル吹付 t=10cm（機械選択）",
+    "unit": "m²",
+    "note": "吹付方式で変動",
+    "machines": [{
+      "name": "乾式吹付",
+      "sub": "標準",
+      "price": 6500,
+      "labor": 2400
+    }, {
+      "name": "湿式吹付",
+      "sub": "粉じん少・高品質",
+      "price": 7200,
+      "labor": 2400
+    }],
+    "desc": {
+      "steps": ["① 法面清掃・浮石除去", "② ラス張り・アンカーピン", "③ モルタルを吹付（t=10cm）", "④ 水抜き孔設置"],
+      "machines": "吹付機、コンプレッサ",
+      "notes": ["背面排水（水抜き）必須", "付着・厚さ管理", "粉じん対策"],
+      "basis": "土木工事標準歩掛「吹付工」"
+    }
+  }, {
+    "id": "sl_concrete",
+    "name": "コンクリート吹付 t=15cm",
+    "unit": "m²",
+    "price": 9500,
+    "labor": 3200,
+    "note": "ラス・アンカー込",
+    "desc": {
+      "steps": ["① 法面清掃・整形", "② ラス張り・アンカー", "③ コンクリート吹付（t=15cm）", "④ 水抜き設置"],
+      "machines": "吹付機、コンプレッサ",
+      "notes": ["背面排水必須", "鉄筋・ラスのかぶり", "厚さ管理"],
+      "basis": "土木工事標準歩掛「吹付工」"
+    }
+  }, {
+    "id": "sl_sheet",
+    "name": "植生シート",
+    "unit": "m²",
+    "price": 850,
+    "labor": 350,
+    "note": "張付",
+    "desc": {
+      "steps": ["① 法面整形・清掃", "② 植生シートを張付", "③ 止め釘・目串で固定"],
+      "machines": "人力",
+      "notes": ["めくれ防止", "密着施工"],
+      "basis": "土木工事標準歩掛「植生工」"
+    }
+  }]
+}, {
+  "id": "improve",
+  "label": "地盤改良",
+  "emoji": "🔧",
+  "bg": "#7a5b8e",
+  "items": [{
+    "id": "im_surf",
+    "name": "表層改良（セメント系）",
+    "unit": "m²",
+    "price": 3560,
+    "labor": 1100,
+    "note": "改良厚50cm",
+    "desc": {
+      "steps": ["① 固化材を散布", "② バックホウで原位置混合", "③ 整形・転圧"],
+      "machines": "バックホウ0.45m³、固化材散布機",
+      "notes": ["固化材添加量は配合設計による", "粉じん飛散対策", "養生期間確保"],
+      "basis": "土木工事標準歩掛「地盤改良工」"
+    }
+  }, {
+    "id": "im_stab",
+    "name": "安定処理 混合・転圧",
+    "unit": "m³",
+    "price": 6020,
+    "labor": 1930,
+    "note": "路床安定処理",
+    "desc": {
+      "steps": ["① 固化材添加", "② 混合", "③ 敷均し・転圧"],
+      "machines": "スタビライザ／バックホウ、ローラ",
+      "notes": ["添加量・混合度管理", "所定強度の確認"],
+      "basis": "土木工事標準歩掛「地盤改良工」"
+    }
+  }, {
+    "id": "im_level",
+    "name": "不陸整正・転圧",
+    "unit": "m²",
+    "price": 530,
+    "labor": 210,
+    "note": "既設地盤",
+    "desc": {
+      "steps": ["① 既設地盤の不陸を整正", "② 転圧"],
+      "machines": "モーターグレーダ／バックホウ、ローラ",
+      "notes": ["所定の平坦性確保"],
+      "basis": "土木工事標準歩掛「土工」"
+    }
+  }]
+}, {
+  "id": "exterior",
+  "label": "外構",
+  "emoji": "🏠",
+  "bg": "#a06020",
+  "items": [{
+    "id": "ex_doma10",
+    "name": "土間コン t=10cm",
+    "unit": "m²",
+    "price": 5080,
+    "labor": 2020,
+    "note": "メッシュ・金ゴテ（小面積は割増）",
+    "comp": [{
+      "n": "掘削・すきとり・残土処分",
+      "c": 800
+    }, {
+      "n": "砕石路盤 RC-40 t=10cm",
+      "c": 700
+    }, {
+      "n": "型枠（外周・㎡按分）",
+      "c": 400
+    }, {
+      "n": "ワイヤーメッシュ φ6-150",
+      "c": 550
+    }, {
+      "n": "生コン打設 21N t=10cm＋圧送",
+      "c": 1970
+    }, {
+      "n": "金ゴテ仕上・伸縮目地・養生",
+      "c": 1000
+    }, {
+      "n": "諸経費",
+      "c": 660
+    }],
+    "desc": {
+      "steps": ["① 掘削・すきとり・残土処分", "② 砕石路盤を敷均し・転圧", "③ 型枠・ワイヤーメッシュ設置", "④ 生コン打設（圧送）", "⑤ 金ゴテ仕上げ・伸縮目地・養生"],
+      "machines": "バックホウ（小）、コンクリートポンプ、左官工具",
+      "notes": ["小面積は割増", "生コン単価要確認", "目地割付・水勾配"],
+      "basis": "標準歩掛＋市場相場"
+    }
+  }, {
+    "id": "ex_doma15",
+    "name": "土間コン t=15cm",
+    "unit": "m²",
+    "price": 6180,
+    "labor": 2130,
+    "note": "メッシュ・金ゴテ",
+    "desc": {
+      "steps": ["① 掘削・すきとり・残土処分", "② 砕石路盤", "③ 型枠・メッシュ", "④ 生コン打設", "⑤ 金ゴテ仕上げ・目地・養生"],
+      "machines": "バックホウ（小）、ポンプ、左官工具",
+      "notes": ["重荷重・車両乗入れ向け", "生コン単価要確認"],
+      "basis": "標準歩掛＋市場相場"
+    }
+  }, {
+    "id": "ex_turf",
+    "name": "人工芝 敷設",
+    "unit": "m²",
+    "price": 4100,
+    "labor": 1070,
+    "note": "下地別",
+    "desc": {
+      "steps": ["① 下地整正・転圧", "② 防草シート敷設", "③ 人工芝をカット・敷設", "④ 接着・固定ピン・珪砂充填"],
+      "machines": "人力、プレート",
+      "notes": ["下地（土/砕石/Co）で変動", "水勾配確保", "継ぎ目処理"],
+      "basis": "市場相場"
+    }
+  }, {
+    "id": "ex_bousou",
+    "name": "防草シート 敷設",
+    "unit": "m²",
+    "price": 1310,
+    "labor": 640,
+    "note": "高耐久",
+    "desc": {
+      "steps": ["① 整地・除草", "② シート敷設", "③ 止めピン・目地テープ"],
+      "machines": "人力",
+      "notes": ["重ね幅の確保", "めくれ防止"],
+      "basis": "市場相場"
+    }
+  }, {
+    "id": "ex_masado",
+    "name": "真砂土 整地・転圧",
+    "unit": "m²",
+    "price": 1080,
+    "labor": 560,
+    "note": "",
+    "desc": {
+      "steps": ["① 真砂土を敷均し", "② 転圧・不陸調整"],
+      "machines": "バックホウ（小）、プレート",
+      "notes": ["水勾配", "締固め"],
+      "basis": "市場相場"
+    }
+  }, {
+    "id": "ex_form",
+    "name": "型枠（平面）",
+    "unit": "m²",
+    "price": 5400,
+    "labor": 3490,
+    "note": "転用考慮",
+    "desc": {
+      "steps": ["① 型枠加工・建込", "② 締付け", "③ 脱型・清掃"],
+      "machines": "人力",
+      "notes": ["転用回数を考慮", "通り・精度"],
+      "basis": "標準歩掛"
+    }
+  }]
+}, {
+  "id": "construct",
+  "label": "造成",
+  "emoji": "🚜",
+  "bg": "#7a6620",
+  "items": [{
+    "id": "cs_fill",
+    "name": "盛土 敷均し・締固め",
+    "unit": "m³",
+    "price": 780,
+    "labor": 430,
+    "note": "",
+    "desc": {
+      "steps": ["① 搬入土を敷均し", "② 締固め", "③ 法面整形"],
+      "machines": "ブルドーザ、振動ローラ",
+      "notes": ["土量変化率", "締固め度管理"],
+      "basis": "土木工事標準歩掛「土工」"
+    }
+  }, {
+    "id": "cs_tanbo",
+    "name": "田 埋立（搬入土）",
+    "unit": "m³",
+    "price": 3100,
+    "labor": 700,
+    "note": "購入土・運搬含む",
+    "desc": {
+      "steps": ["① 購入土を搬入", "② 敷均し", "③ 締固め"],
+      "machines": "ダンプ、ブルドーザ、ローラ",
+      "notes": ["購入土・運搬費は距離次第", "軟弱地盤は置換検討"],
+      "basis": "市場相場＋標準歩掛"
+    }
+  }, {
+    "id": "cs_l250",
+    "name": "L型側溝 250 据付",
+    "unit": "m",
+    "price": 10960,
+    "labor": 5930,
+    "note": "基礎別",
+    "desc": {
+      "steps": ["① 床掘・基礎", "② L型据付", "③ 目地・すりつけ"],
+      "machines": "クレーン4.9t、バックホウ",
+      "notes": ["勾配管理", "路面すりつけ"],
+      "basis": "土木工事標準歩掛「側溝工」"
+    }
+  }, {
+    "id": "cs_u240",
+    "name": "U字溝 240 据付",
+    "unit": "m",
+    "price": 8950,
+    "labor": 4980,
+    "note": "基礎別",
+    "desc": {
+      "steps": ["① 床掘・基礎", "② U字溝据付", "③ 目地"],
+      "machines": "クレーン4.9t、バックホウ",
+      "notes": ["勾配管理"],
+      "basis": "土木工事標準歩掛「側溝工」"
+    }
+  }, {
+    "id": "cs_gesui200",
+    "name": "下水管 φ200 布設",
+    "unit": "m",
+    "price": 9390,
+    "labor": 5670,
+    "note": "塩ビ　床掘別",
+    "desc": {
+      "steps": ["① 床掘・基礎", "② 管布設・接合", "③ 埋戻し・転圧"],
+      "machines": "バックホウ0.45m³",
+      "notes": ["勾配管理（重要）", "止水・水密確認"],
+      "basis": "土木工事標準歩掛「管布設工」"
+    }
+  }, {
+    "id": "cs_masu",
+    "name": "集水桝 設置",
+    "unit": "箇所",
+    "price": 66450,
+    "labor": 37780,
+    "note": "",
+    "desc": {
+      "steps": ["① 床掘・基礎", "② 桝設置", "③ 管接続・埋戻し"],
+      "machines": "クレーン（小）、バックホウ",
+      "notes": ["管接続部止水", "蓋荷重区分"],
+      "basis": "土木工事標準歩掛「桝工」"
+    }
+  }, {
+    "id": "cs_slope",
+    "name": "法面整形（切土）",
+    "unit": "m²",
+    "price": 1020,
+    "labor": 680,
+    "note": "",
+    "desc": {
+      "steps": ["① 切土法面を所定勾配に整形", "② 浮石除去"],
+      "machines": "バックホウ0.45m³",
+      "notes": ["崩壊・落石注意", "勾配管理"],
+      "basis": "土木工事標準歩掛「土工」"
+    }
+  }, {
+    "id": "cs_base",
+    "name": "側溝 基礎コンクリート",
+    "unit": "m",
+    "price": 5290,
+    "labor": 3000,
+    "note": "",
+    "desc": {
+      "steps": ["① 床掘", "② 型枠", "③ 生コン打設・均し"],
+      "machines": "バックホウ（小）、人力",
+      "notes": ["支持力確保", "通り・天端高"],
+      "basis": "土木工事標準歩掛「基礎工」"
+    }
+  }]
+}, {
+  "id": "demolish",
+  "label": "構造物撤去工",
+  "emoji": "🏗",
+  "bg": "#7c3d12",
+  "items": [{
+    "id": "dm_con_block",
+    "name": "コンクリート構造物取壊し（機械選択）",
+    "unit": "m³",
+    "note": "無筋・鉄筋コンクリート　処分別",
+    "machines": [{
+      "name": "大型ブレーカ（BH 0.45m³級搭載）",
+      "sub": "一般的な躯体・壁・擁壁",
+      "price": 8500,
+      "labor": 3200
+    }, {
+      "name": "小型ブレーカ（BH 0.1〜0.25m³搭載）",
+      "sub": "狭所・小規模",
+      "price": 12000,
+      "labor": 5500
+    }, {
+      "name": "人力＋ハンドブレーカ",
+      "sub": "超狭小・埋設物近接",
+      "price": 22000,
+      "labor": 18000
+    }],
+    "desc": {
+      "steps": ["① 取壊し範囲を確認・養生設置", "② ブレーカでコンクリートを破砕", "③ 鉄筋はガス切断で処理", "④ ガラをダンプへ積込"],
+      "machines": "バックホウ＋大型／小型ブレーカ、ガス切断機",
+      "notes": ["ガラ・鉄筋処分は別計上", "粉じん・振動対策（近隣への配慮）", "埋設物・隣接構造物の損傷注意", "鉄筋量が多い場合は単価増"],
+      "basis": "土木工事標準歩掛「構造物取壊し工」"
+    }
+  }, {
+    "id": "dm_con_wall",
+    "name": "擁壁取壊し",
+    "unit": "m³",
+    "price": 9200,
+    "labor": 3500,
+    "note": "RC擁壁　ブレーカ施工　処分別",
+    "desc": {
+      "steps": ["① 取壊し範囲をカッターで縁切り", "② バックホウ＋ブレーカで破砕", "③ 鉄筋をガス切断", "④ ガラを積込・搬出"],
+      "machines": "バックホウ 0.45m³＋大型ブレーカ",
+      "notes": ["背面土の崩壊防止措置を先行", "処分費別計上", "隣接地・既設構造物の保護"],
+      "basis": "土木工事標準歩掛「構造物取壊し工」"
+    }
+  }, {
+    "id": "dm_block_wall",
+    "name": "ブロック塀撤去",
+    "unit": "m²",
+    "note": "施工機械で単価変動",
+    "machines": [{
+      "name": "バックホウ施工",
+      "sub": "機械が入れる現場",
+      "price": 3200,
+      "labor": 800
+    }, {
+      "name": "人力撤去",
+      "sub": "狭所・機械搬入不可",
+      "price": 6500,
+      "labor": 5500
+    }],
+    "desc": {
+      "steps": ["① 上部ブロックから順に取壊し", "② 基礎コンクリートをブレーカで破砕", "③ ガラをダンプへ積込"],
+      "machines": "バックホウ 0.25m³／人力＋ハンドブレーカ",
+      "notes": ["倒壊防止・通行人への安全確保", "処分費別計上", "基礎深さにより変動あり"],
+      "basis": "土木工事標準歩掛「構造物取壊し工」"
+    }
+  }, {
+    "id": "dm_gara_haul",
+    "name": "コンガラ 運搬・処分",
+    "unit": "m³",
+    "price": 6500,
+    "labor": 300,
+    "note": "再資源化施設　運搬込み",
+    "desc": {
+      "steps": ["① ガラをダンプに積込", "② 再資源化施設（中間処理場）へ運搬", "③ 処分"],
+      "machines": "ダンプ 4〜10t",
+      "notes": ["処分費は施設・地域により変動", "運搬距離で増減あり", "分別（鉄筋・コン）で処分費変わる場合あり"],
+      "basis": "土木工事標準歩掛「運搬工」"
+    }
+  }, {
+    "id": "dm_pipe_rem",
+    "name": "既設管撤去",
+    "unit": "m",
+    "note": "管径・機械で単価変動",
+    "machines": [{
+      "name": "φ300以下",
+      "sub": "小径管",
+      "price": 4200,
+      "labor": 1800
+    }, {
+      "name": "φ300〜600",
+      "sub": "中径管",
+      "price": 7500,
+      "labor": 3000
+    }, {
+      "name": "φ600超",
+      "sub": "大径管",
+      "price": 13000,
+      "labor": 5500
+    }],
+    "desc": {
+      "steps": ["① 既設管の位置・深さを確認", "② 床掘（管周囲）", "③ 管を切断・吊上げ・撤去", "④ 埋戻し・締固め"],
+      "machines": "バックホウ、クレーン（必要時）",
+      "notes": ["床掘・埋戻しは別途計上の場合あり", "残留水・泥の処理を確認", "接続部・マンホールとの取合い確認"],
+      "basis": "土木工事標準歩掛「管渠工（撤去）」"
+    }
+  }, {
+    "id": "dm_manhole_rem",
+    "name": "既設マンホール撤去",
+    "unit": "箇所",
+    "price": 85000,
+    "labor": 35000,
+    "note": "φ900以下　一式　埋戻し込み",
+    "desc": {
+      "steps": ["① 周囲を床掘", "② 蓋・上部工を撤去", "③ 躯体をブレーカで破砕・撤去", "④ 埋戻し・締固め"],
+      "machines": "バックホウ 0.45m³＋ブレーカ",
+      "notes": ["大型MH（φ1200以上）は別途協議", "接続管の閉塞処理を確認", "処分費別計上"],
+      "basis": "土木工事標準歩掛「構造物取壊し工」"
+    }
+  }, {
+    "id": "dm_pavement_co",
+    "name": "既設コンクリート舗装撤去",
+    "unit": "m²",
+    "note": "t=20cm以下　処分別",
+    "machines": [{
+      "name": "BH＋大型ブレーカ",
+      "sub": "一般・広面積",
+      "price": 2800,
+      "labor": 900
+    }, {
+      "name": "人力＋小型ブレーカ",
+      "sub": "狭小部",
+      "price": 5500,
+      "labor": 4500
+    }],
+    "desc": {
+      "steps": ["① 撤去範囲をカッターで縁切り", "② ブレーカで破砕", "③ ガラをダンプへ積込"],
+      "machines": "バックホウ＋ブレーカ／人力＋ハンドブレーカ",
+      "notes": ["板厚により単価変動", "鉄筋入りの場合はガス切断を別途", "ガラ処分費別計上"],
+      "basis": "土木工事標準歩掛「舗装版破砕工」"
+    }
+  }]
+}];
+var SvgIco = function SvgIco(_ref) {
+  var d = _ref.d,
+    d2 = _ref.d2,
+    ci = _ref.ci,
+    _ref$size = _ref.size,
+    size = _ref$size === void 0 ? 16 : _ref$size,
+    _ref$color = _ref.color,
+    color = _ref$color === void 0 ? "currentColor" : _ref$color,
+    _ref$sw = _ref.sw,
+    sw = _ref$sw === void 0 ? 2 : _ref$sw;
+  return /*#__PURE__*/React.createElement("svg", {
+    width: size,
+    height: size,
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: color,
+    strokeWidth: sw,
+    strokeLinecap: "round",
+    strokeLinejoin: "round"
+  }, ci && /*#__PURE__*/React.createElement("circle", {
+    cx: ci[0],
+    cy: ci[1],
+    r: ci[2]
+  }), /*#__PURE__*/React.createElement("path", {
+    d: d
+  }), d2 && /*#__PURE__*/React.createElement("path", {
+    d: d2
+  }));
+};
+var Plus = function Plus(_ref2) {
+  var _ref2$size = _ref2.size,
+    size = _ref2$size === void 0 ? 16 : _ref2$size,
+    _ref2$color = _ref2.color,
+    color = _ref2$color === void 0 ? "white" : _ref2$color,
+    _ref2$sw = _ref2.sw,
+    sw = _ref2$sw === void 0 ? 2.5 : _ref2$sw;
+  return /*#__PURE__*/React.createElement(SvgIco, {
+    d: "M12 5v14M5 12h14",
+    size: size,
+    color: color,
+    sw: sw
+  });
+};
+var Trash = function Trash(_ref3) {
+  var _ref3$size = _ref3.size,
+    size = _ref3$size === void 0 ? 14 : _ref3$size,
+    _ref3$color = _ref3.color,
+    color = _ref3$color === void 0 ? "#f87171" : _ref3$color;
+  return /*#__PURE__*/React.createElement(SvgIco, {
+    d: "M3 6h18M8 6V4h8v2M19 6l-1.5 14a1 1 0 01-1 .5H7.5a1 1 0 01-1-.5L5 6",
+    size: size,
+    color: color
+  });
+};
+var ChevR = function ChevR(_ref4) {
+  var _ref4$size = _ref4.size,
+    size = _ref4$size === void 0 ? 15 : _ref4$size,
+    _ref4$color = _ref4.color,
+    color = _ref4$color === void 0 ? "#d1d5db" : _ref4$color;
+  return /*#__PURE__*/React.createElement(SvgIco, {
+    d: "m9 18 6-6-6-6",
+    size: size,
+    color: color
+  });
+};
+var XI = function XI(_ref5) {
+  var _ref5$size = _ref5.size,
+    size = _ref5$size === void 0 ? 20 : _ref5$size,
+    _ref5$color = _ref5.color,
+    color = _ref5$color === void 0 ? "currentColor" : _ref5$color;
+  return /*#__PURE__*/React.createElement(SvgIco, {
+    d: "M18 6 6 18M6 6l12 12",
+    size: size,
+    color: color
+  });
+};
+var Ck = function Ck(_ref6) {
+  var _ref6$size = _ref6.size,
+    size = _ref6$size === void 0 ? 9 : _ref6$size,
+    _ref6$color = _ref6.color,
+    color = _ref6$color === void 0 ? "currentColor" : _ref6$color;
+  return /*#__PURE__*/React.createElement(SvgIco, {
+    d: "M20 6 9 17l-5-5",
+    size: size,
+    color: color
+  });
+};
+var Cp = function Cp(_ref7) {
+  var _ref7$size = _ref7.size,
+    size = _ref7$size === void 0 ? 12 : _ref7$size,
+    _ref7$color = _ref7.color,
+    color = _ref7$color === void 0 ? "currentColor" : _ref7$color;
+  return /*#__PURE__*/React.createElement(SvgIco, {
+    d: "M8 4H6a2 2 0 00-2 2v14a2 2 0 002 2h12a2 2 0 002-2v-2M16 4h2a2 2 0 012 2v4",
+    d2: "M12 11l3 3 7-7",
+    size: size,
+    color: color
+  });
+};
+var Rst = function Rst(_ref8) {
+  var _ref8$size = _ref8.size,
+    size = _ref8$size === void 0 ? 14 : _ref8$size,
+    _ref8$color = _ref8.color,
+    color = _ref8$color === void 0 ? "currentColor" : _ref8$color;
+  return /*#__PURE__*/React.createElement(SvgIco, {
+    d: "M3 12a9 9 0 109-9M3 3v4h4",
+    size: size,
+    color: color
+  });
+};
+var FileI = function FileI(_ref9) {
+  var _ref9$size = _ref9.size,
+    size = _ref9$size === void 0 ? 15 : _ref9$size,
+    _ref9$color = _ref9.color,
+    color = _ref9$color === void 0 ? "white" : _ref9$color;
+  return /*#__PURE__*/React.createElement(SvgIco, {
+    d: "M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z",
+    d2: "M14 2v6h6M16 13H8M16 17H8M10 9H8",
+    size: size,
+    color: color
+  });
+};
+var ChD = function ChD(_ref0) {
+  var _ref0$size = _ref0.size,
+    size = _ref0$size === void 0 ? 16 : _ref0$size,
+    _ref0$color = _ref0.color,
+    color = _ref0$color === void 0 ? "currentColor" : _ref0$color;
+  return /*#__PURE__*/React.createElement(SvgIco, {
+    d: "m6 9 6 6 6-6",
+    size: size,
+    color: color
+  });
+};
+var ChU = function ChU(_ref1) {
+  var _ref1$size = _ref1.size,
+    size = _ref1$size === void 0 ? 16 : _ref1$size,
+    _ref1$color = _ref1.color,
+    color = _ref1$color === void 0 ? "currentColor" : _ref1$color;
+  return /*#__PURE__*/React.createElement(SvgIco, {
+    d: "m18 15-6-6-6 6",
+    size: size,
+    color: color
+  });
+};
+var InfoI = function InfoI(_ref10) {
+  var _ref10$size = _ref10.size,
+    size = _ref10$size === void 0 ? 10 : _ref10$size,
+    _ref10$color = _ref10.color,
+    color = _ref10$color === void 0 ? "currentColor" : _ref10$color;
+  return /*#__PURE__*/React.createElement(SvgIco, {
+    ci: [12, 12, 10],
+    d: "M12 16v-4M12 8h.01",
+    size: size,
+    color: color
+  });
+};
+var ListI = function ListI(_ref11) {
+  var _ref11$size = _ref11.size,
+    size = _ref11$size === void 0 ? 10 : _ref11$size,
+    _ref11$color = _ref11.color,
+    color = _ref11$color === void 0 ? "currentColor" : _ref11$color;
+  return /*#__PURE__*/React.createElement(SvgIco, {
+    d: "M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01",
+    size: size,
+    color: color
+  });
+};
+var WrI = function WrI(_ref12) {
+  var _ref12$size = _ref12.size,
+    size = _ref12$size === void 0 ? 14 : _ref12$size,
+    _ref12$color = _ref12.color,
+    color = _ref12$color === void 0 ? "currentColor" : _ref12$color;
+  return /*#__PURE__*/React.createElement(SvgIco, {
+    d: "M14.7 6.3a4 4 0 00-5.6 5.6L3 18l3 3 6.1-6.1a4 4 0 005.6-5.6l-2.5 2.5-2.8-2.8z",
+    size: size,
+    color: color
+  });
+};
+var fmt = function fmt(n) {
+  return Math.round(n).toLocaleString("ja-JP");
+};
+var fmtd = function fmtd(n) {
+  return n.toFixed(1);
+};
+var calcBd = function calcBd(p, l) {
+  var d = Math.round(p / 1.15);
+  return {
+    labor: l,
+    matMac: d - l,
+    overhead: p - d
+  };
+};
+var QP = {
+  "m\xB2": [5, 10, 20, 30, 50, 100, 150, 200],
+  "m\xB3": [1, 2, 5, 10, 20, 50, 100],
+  "m": [5, 10, 20, 30, 50, 100, 150],
+  "\u7B87\u6240": [1, 2, 3, 5, 10],
+  "t": [0.5, 1, 2, 5, 10],
+  "\u57FA": [1, 2, 3, 5],
+  "\u672C": [1, 5, 10, 20, 50],
+  "\u5F0F": [1, 2, 3]
+};
+var ADJS = [{
+  l: "\u5C0F\u898F\u6A21 50\u33A1\u2193",
+  p: 30
+}, {
+  l: "\u7279\u5C0F\u898F\u6A21 10\u33A1\u2193",
+  p: 50
+}, {
+  l: "\u5922\u9593\u4F5C\u696D",
+  p: 25
+}, {
+  l: "\u72ED\u6240\u30FB\u56F0\u96E3\u73FE\u5834",
+  p: 15
+}, {
+  l: "\u4EA4\u901A\u8A98\u5C0E",
+  p: 15
+}, {
+  l: "\u9060\u8DDD\u904B\u641A",
+  p: 15
+}, {
+  l: "\u6025\u5DE5\u4E8B\u30FB\u7279\u6025",
+  p: 20
+}, {
+  l: "\u51AC\u5B63\u30FB\u964D\u96EA\u671F",
+  p: 10
+}];
+var RATES = [["\u30FB\u5065\u5EB7\u4FDD\u967A", 0.05], ["\u30FB\u539A\u751F\u5E74\u91D1", 0.0915], ["\u30FB\u96C7\u7528\u4FDD\u967A", 0.0105], ["\u30FB\u52B4\u707D\u4FDD\u967A", 0.009], ["\u30FB\u5B50\u80B2\u62E1\u51FA\u91D1", 0.0036]];
+var HF_RATE = RATES.reduce(function (s, r) {
+  return s + r[1];
+}, 0);
+function BdPanel(_ref13) {
+  var price = _ref13.price,
+    labor = _ref13.labor,
+    comp = _ref13.comp,
+    unit = _ref13.unit;
+  var bd = calcBd(price, labor),
+    lP = Math.round(bd.labor / price * 100),
+    mP = Math.round(bd.matMac / price * 100),
+    oP = Math.max(100 - lP - mP, 0);
+  return /*#__PURE__*/React.createElement("div", {
+    className: "rounded-xl overflow-hidden mt-2",
+    style: {
+      border: "1px solid #e5e7eb"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "px-3 pt-3 pb-2",
+    style: {
+      background: "#f8fafc"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "text-xs font-semibold text-gray-500 mb-2"
+  }, "\u30B3\u30B9\u30C8\u5185\u8A33 /", unit), /*#__PURE__*/React.createElement("div", {
+    className: "flex rounded-full overflow-hidden mb-2",
+    style: {
+      height: 12
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: "".concat(lP, "%"),
+      background: "#f97316"
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: "".concat(mP, "%"),
+      background: "#3b82f6"
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: "".concat(oP, "%"),
+      background: "#10b981"
+    }
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-cols-3 gap-1"
+  }, [{
+    l: "\u52B4\u52D9\u8CBB",
+    v: bd.labor,
+    p: lP,
+    c: "#f97316"
+  }, {
+    l: "\u6750\u6599+\u6A5F\u68B0",
+    v: bd.matMac,
+    p: mP,
+    c: "#3b82f6"
+  }, {
+    l: "\u8AF8\u7D4C\u8CBB",
+    v: bd.overhead,
+    p: oP,
+    c: "#10b981"
+  }].map(function (x) {
+    return /*#__PURE__*/React.createElement("div", {
+      key: x.l,
+      className: "flex items-start gap-1"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "w-2 h-2 rounded-sm mt-0.5",
+      style: {
+        background: x.c
+      }
+    }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      className: "text-xs font-semibold text-gray-600 leading-tight"
+    }, x.l), /*#__PURE__*/React.createElement("div", {
+      className: "text-xs text-gray-500"
+    }, "\uFFE5", fmt(x.v)), /*#__PURE__*/React.createElement("div", {
+      className: "text-xs font-bold",
+      style: {
+        color: x.c
+      }
+    }, x.p, "%")));
+  }))), comp && comp.length > 0 && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "px-3 py-1.5 text-xs font-bold text-gray-600",
+    style: {
+      background: "white",
+      borderTop: "1px solid #f1f5f9"
+    }
+  }, "\u69CB\u6210\u5DE5\u7A2E"), comp.map(function (c, i) {
+    return /*#__PURE__*/React.createElement("div", {
+      key: i,
+      className: "flex items-start justify-between px-3 py-2",
+      style: {
+        borderTop: "1px solid #f8fafc",
+        background: i % 2 === 0 ? "white" : "#fafbfc"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex-1 mr-2"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "text-xs font-medium text-gray-800"
+    }, c.n)), /*#__PURE__*/React.createElement("div", {
+      className: "text-xs font-bold",
+      style: {
+        color: "#1f3a5f"
+      }
+    }, "\uFFE5", fmt(c.c), /*#__PURE__*/React.createElement("span", {
+      className: "text-gray-400 font-normal"
+    }, "/", unit)));
+  })));
+}
+function DescPanel(_ref14) {
+  var desc = _ref14.desc;
+  if (!desc) return null;
+  return /*#__PURE__*/React.createElement("div", {
+    className: "rounded-xl overflow-hidden mt-2",
+    style: {
+      border: "1px solid #d6e3d6",
+      background: "#f3f8f3"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "px-3 py-3 space-y-2.5"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "text-xs font-bold mb-1",
+    style: {
+      color: "#2f7d4f"
+    }
+  }, "\u65BD\u5DE5\u624B\u9806"), desc.steps.map(function (s, i) {
+    return /*#__PURE__*/React.createElement("div", {
+      key: i,
+      className: "text-xs text-gray-700 leading-relaxed"
+    }, s);
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "text-xs font-bold mb-0.5",
+    style: {
+      color: "#2f7d4f"
+    }
+  }, "\u4F7F\u7528\u6A5F\u68B0"), /*#__PURE__*/React.createElement("div", {
+    className: "text-xs text-gray-700"
+  }, desc.machines)), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "text-xs font-bold mb-0.5",
+    style: {
+      color: "#2f7d4f"
+    }
+  }, "\u6CE8\u610F\u4E8B\u9805"), desc.notes.map(function (s, i) {
+    return /*#__PURE__*/React.createElement("div", {
+      key: i,
+      className: "text-xs text-gray-700 leading-relaxed"
+    }, "\u30FB", s);
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "pt-1",
+    style: {
+      borderTop: "1px solid #e0ece0"
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-xs text-gray-400"
+  }, "\u7A4D\u7B97\u6839\u62E0\uFF1A"), /*#__PURE__*/React.createElement("span", {
+    className: "text-xs text-gray-600"
+  }, desc.basis))));
+}
+function MachineList(_ref15) {
+  var work = _ref15.work,
+    onPick = _ref15.onPick,
+    bg = _ref15.bg;
+  return /*#__PURE__*/React.createElement("div", {
+    className: "space-y-2"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-1.5 mb-1"
+  }, /*#__PURE__*/React.createElement(WrI, {
+    size: 14,
+    color: bg
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "text-sm font-bold",
+    style: {
+      color: bg
+    }
+  }, "\u4F7F\u7528\u6A5F\u68B0\u3092\u9078\u629E")), work.machines.map(function (m, i) {
+    return /*#__PURE__*/React.createElement("button", {
+      key: i,
+      onClick: function onClick() {
+        return onPick(m);
+      },
+      className: "w-full flex items-center justify-between p-3 rounded-xl border-2 active:scale-[0.99]",
+      style: {
+        borderColor: "#e5e7eb",
+        background: "white"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "text-left flex-1 mr-2"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "text-sm font-semibold text-gray-800"
+    }, m.name), m.sub && /*#__PURE__*/React.createElement("div", {
+      className: "text-xs text-gray-400 mt-0.5"
+    }, m.sub)), /*#__PURE__*/React.createElement("div", {
+      className: "text-right flex-shrink-0"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "text-sm font-bold",
+      style: {
+        color: bg
+      }
+    }, "\uFFE5", fmt(m.price), /*#__PURE__*/React.createElement("span", {
+      className: "text-xs font-normal text-gray-400"
+    }, "/", work.unit)), /*#__PURE__*/React.createElement("div", {
+      className: "text-xs",
+      style: {
+        color: "#e65100"
+      }
+    }, "\u52B4\u52D9\uFFE5", fmt(m.labor))), /*#__PURE__*/React.createElement(ChevR, {
+      size: 16,
+      color: "#d1d5db"
+    }));
+  }));
+}
+function AddForm(_ref16) {
+  var work = _ref16.work,
+    machine = _ref16.machine,
+    qty = _ref16.qty,
+    setQty = _ref16.setQty,
+    adjOn = _ref16.adjOn,
+    setAdjOn = _ref16.setAdjOn,
+    cp = _ref16.cp,
+    setCp = _ref16.setCp,
+    mult = _ref16.mult,
+    onAdd = _ref16.onAdd,
+    _ref16$compact = _ref16.compact,
+    compact = _ref16$compact === void 0 ? false : _ref16$compact;
+  var price = machine ? machine.price : work.price,
+    labor = machine ? machine.labor : work.labor;
+  var q = parseFloat(qty) || 0,
+    ps = QP[work.unit] || [1, 5, 10, 20, 50];
+  return /*#__PURE__*/React.createElement("div", {
+    className: compact ? "space-y-3" : "space-y-4"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "rounded-xl p-3",
+    style: {
+      background: "#eef3f7"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "text-xs text-gray-500 mb-0.5"
+  }, "\u30D9\u30FC\u30B9\u5358\u4FA1\uFF08\u7A0E\u629C\u30FB\u53C2\u8003\uFF09", machine && " \uFF0F ".concat(machine.name)), /*#__PURE__*/React.createElement("div", {
+    className: "text-xl font-bold",
+    style: {
+      color: "#1f3a5f"
+    }
+  }, "\uFFE5", fmt(price), /*#__PURE__*/React.createElement("span", {
+    className: "text-sm font-normal text-gray-500 ml-1"
+  }, "/ ", work.unit)), /*#__PURE__*/React.createElement("div", {
+    className: "text-xs mt-0.5",
+    style: {
+      color: "#e65100"
+    }
+  }, "\u52B4\u52D9\u8CBB \uFFE5", fmt(labor), " / ", work.unit)), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "text-sm font-bold text-gray-700 mb-2"
+  }, "\u6570\u91CF", " ", /*#__PURE__*/React.createElement("span", {
+    className: "text-xs font-normal text-gray-400"
+  }, "\uFF08", work.unit, "\uFF09")), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-2 mb-2"
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "number",
+    inputMode: "decimal",
+    value: qty,
+    onChange: function onChange(e) {
+      return setQty(e.target.value);
+    },
+    placeholder: "0",
+    className: "border-2 rounded-xl font-bold text-center outline-none ".concat(compact ? "w-32 px-3 py-2 text-xl" : "flex-1 px-4 py-3 text-2xl"),
+    style: {
+      borderColor: q > 0 ? "#1f3a5f" : "#e5e7eb"
+    }
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "text-gray-500 font-medium"
+  }, work.unit)), /*#__PURE__*/React.createElement("div", {
+    className: "flex flex-wrap gap-1.5"
+  }, ps.map(function (v) {
+    return /*#__PURE__*/React.createElement("button", {
+      key: v,
+      onClick: function onClick() {
+        return setQty(String(v));
+      },
+      className: "text-sm px-2.5 py-1 rounded-lg font-medium",
+      style: {
+        background: qty === String(v) ? "#1f3a5f" : "#f1f5f9",
+        color: qty === String(v) ? "white" : "#64748b"
+      }
+    }, v);
+  }))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "text-xs font-bold text-gray-600 mb-2"
+  }, "\u6761\u4EF6\u30FB\u30D7\u30E9\u30B9\u03B1", " ", /*#__PURE__*/React.createElement("span", {
+    className: "text-gray-400 font-normal"
+  }, "\uFF08\u8907\u6570\u53EF\uFF09")), /*#__PURE__*/React.createElement("div", {
+    className: "flex flex-wrap gap-1.5"
+  }, ADJS.map(function (adj, i) {
+    return /*#__PURE__*/React.createElement("button", {
+      key: i,
+      onClick: function onClick() {
+        return setAdjOn(function (p) {
+          return p.includes(i) ? p.filter(function (x) {
+            return x !== i;
+          }) : [].concat(_toConsumableArray(p), [i]);
+        });
+      },
+      className: "flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-xl border-2 font-semibold",
+      style: {
+        background: adjOn.includes(i) ? "#f97316" : "white",
+        borderColor: adjOn.includes(i) ? "#f97316" : "#e5e7eb",
+        color: adjOn.includes(i) ? "white" : "#64748b"
+      }
+    }, adjOn.includes(i) && /*#__PURE__*/React.createElement(Ck, null), adj.l, /*#__PURE__*/React.createElement("span", {
+      style: {
+        color: adjOn.includes(i) ? "rgba(255,255,255,0.8)" : "#f97316"
+      },
+      className: "font-bold ml-0.5"
+    }, "+", adj.p, "%"));
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-2"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-xs font-semibold text-gray-600"
+  }, "\u30AB\u30B9\u30BF\u30E0\u5897\u6E1B"), /*#__PURE__*/React.createElement("input", {
+    type: "number",
+    inputMode: "decimal",
+    value: cp,
+    onChange: function onChange(e) {
+      return setCp(e.target.value);
+    },
+    placeholder: "0",
+    className: "w-20 border-2 rounded-xl px-2 py-1.5 text-sm font-bold text-center outline-none",
+    style: {
+      borderColor: parseFloat(cp) > 0 ? "#f97316" : "#e5e7eb"
+    }
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "text-sm text-gray-500"
+  }, "%")), q > 0 && /*#__PURE__*/React.createElement("div", {
+    className: "rounded-xl p-3 space-y-1",
+    style: {
+      background: "#f0f4f9",
+      border: "1.5px solid #1f3a5f"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex justify-between text-xs text-gray-600"
+  }, /*#__PURE__*/React.createElement("span", null, fmt(qty), " ", work.unit, " \xD7 \uFFE5", fmt(price)), /*#__PURE__*/React.createElement("span", null, "\uFFE5", fmt(q * price))), mult > 1 && /*#__PURE__*/React.createElement("div", {
+    className: "flex justify-between text-xs",
+    style: {
+      color: "#f97316"
+    }
+  }, /*#__PURE__*/React.createElement("span", null, "\u6761\u4EF6\u5272\u5897\uFF08+", fmtd((mult - 1) * 100), "%\uFF09"), /*#__PURE__*/React.createElement("span", null, "+", "\uFFE5", fmt(q * price * (mult - 1)))), /*#__PURE__*/React.createElement("div", {
+    className: "flex justify-between font-bold text-sm pt-1 border-t border-blue-200",
+    style: {
+      color: "#1f3a5f"
+    }
+  }, /*#__PURE__*/React.createElement("span", null, "\u5C0F\u8A08"), /*#__PURE__*/React.createElement("span", null, "\uFFE5", fmt(q * price * mult))), /*#__PURE__*/React.createElement("div", {
+    className: "text-xs",
+    style: {
+      color: "#e65100"
+    }
+  }, "\u52B4\u52D9\u8CBB \uFFE5", fmt(q * labor * mult), "\uFF08\u6CD5\u5B9A\u798F\u5229\u8CBB \uFFE5", fmt(q * labor * mult * HF_RATE), "\uFF09")), /*#__PURE__*/React.createElement("button", {
+    onClick: onAdd,
+    disabled: !qty || q <= 0,
+    className: "w-full ".concat(compact ? "py-3" : "py-4", " rounded-2xl font-bold text-base active:scale-[0.98]"),
+    style: {
+      background: !qty || q <= 0 ? "#e5e7eb" : "linear-gradient(135deg,#2e6e6e,#1f3a5f)",
+      color: !qty || q <= 0 ? "#9ca3af" : "white"
+    }
+  }, "\u898B\u7A4D\u306B\u8FFD\u52A0 \uFF0B"));
+}
+function EstItem(_ref17) {
+  var item = _ref17.item,
+    idx = _ref17.idx,
+    exp = _ref17.exp,
+    descExp = _ref17.descExp,
+    onToggle = _ref17.onToggle,
+    onToggleDesc = _ref17.onToggleDesc,
+    onRemove = _ref17.onRemove,
+    cc = _ref17.cc;
+  return /*#__PURE__*/React.createElement("div", {
+    className: "bg-white rounded-2xl overflow-hidden shadow-sm",
+    style: {
+      borderLeft: "4px solid ".concat(cc)
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "p-3"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-start gap-2"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0 mt-0.5",
+    style: {
+      background: "#1f3a5f"
+    }
+  }, idx + 1), /*#__PURE__*/React.createElement("div", {
+    className: "flex-1 min-w-0"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "font-bold text-sm text-gray-800"
+  }, item.name), item.machine && /*#__PURE__*/React.createElement("div", {
+    className: "text-xs mt-0.5",
+    style: {
+      color: "#1d4e6b"
+    }
+  }, "🔧 ", item.machine), /*#__PURE__*/React.createElement("div", {
+    className: "text-xs text-gray-500 mt-0.5"
+  }, fmt(item.qty), item.unit, " \xD7 \uFFE5", fmt(item.up), "/", item.unit, item.ps && /*#__PURE__*/React.createElement("span", {
+    className: "ml-1 font-semibold",
+    style: {
+      color: "#f97316"
+    }
+  }, item.ps)), item.al.length > 0 && /*#__PURE__*/React.createElement("div", {
+    className: "flex flex-wrap gap-1 mt-1.5"
+  }, item.al.map(function (l, i) {
+    return /*#__PURE__*/React.createElement("span", {
+      key: i,
+      className: "text-xs rounded-full px-2 py-0.5",
+      style: {
+        background: "#fff3e0",
+        color: "#e65100"
+      }
+    }, l);
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "flex-shrink-0 text-right ml-1"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "text-base font-bold",
+    style: {
+      color: "#1f3a5f"
+    }
+  }, "\uFFE5", fmt(item.total)), /*#__PURE__*/React.createElement("div", {
+    className: "text-xs text-gray-400"
+  }, "\u52B4\u52D9\uFFE5", fmt(item.lt)))), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-2 mt-2 justify-end"
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: onToggle,
+    className: "flex items-center gap-0.5 text-xs font-semibold px-2 py-1 rounded-lg",
+    style: {
+      background: exp ? "#1f3a5f" : "#eef3f7",
+      color: exp ? "white" : "#1f3a5f"
+    }
+  }, /*#__PURE__*/React.createElement(InfoI, {
+    color: exp ? "white" : "#1f3a5f"
+  }), "\u5185\u8A33", exp ? /*#__PURE__*/React.createElement(ChU, {
+    size: 10,
+    color: "white"
+  }) : /*#__PURE__*/React.createElement(ChD, {
+    size: 10,
+    color: "#1f3a5f"
+  })), item.desc && /*#__PURE__*/React.createElement("button", {
+    onClick: onToggleDesc,
+    className: "flex items-center gap-0.5 text-xs font-semibold px-2 py-1 rounded-lg",
+    style: {
+      background: descExp ? "#2f7d4f" : "#eef6ee",
+      color: descExp ? "white" : "#2f7d4f"
+    }
+  }, /*#__PURE__*/React.createElement(ListI, {
+    color: descExp ? "white" : "#2f7d4f"
+  }), "\u4F5C\u696D\u5185\u5BB9", descExp ? /*#__PURE__*/React.createElement(ChU, {
+    size: 10,
+    color: "white"
+  }) : /*#__PURE__*/React.createElement(ChD, {
+    size: 10,
+    color: "#2f7d4f"
+  })), /*#__PURE__*/React.createElement("button", {
+    onClick: onRemove
+  }, /*#__PURE__*/React.createElement(Trash, null))), exp && /*#__PURE__*/React.createElement(BdPanel, {
+    price: item.up,
+    labor: item.labor,
+    comp: item.comp,
+    unit: item.unit
+  }), descExp && /*#__PURE__*/React.createElement(DescPanel, {
+    desc: item.desc
+  })));
+}
+function SumCard(_ref18) {
+  var t = _ref18.t,
+    open = _ref18.open,
+    onToggle = _ref18.onToggle;
+  return /*#__PURE__*/React.createElement("div", {
+    className: "bg-white rounded-2xl overflow-hidden shadow-sm mt-2"
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: onToggle,
+    className: "w-full flex items-center justify-between px-4 py-3",
+    style: {
+      background: "#1f3a5f"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-2"
+  }, /*#__PURE__*/React.createElement(FileI, null), /*#__PURE__*/React.createElement("span", {
+    className: "text-white font-bold text-sm"
+  }, "\u898B\u7A4D\u5408\u8A08")), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-3"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "font-bold text-lg",
+    style: {
+      color: "#fcd34d"
+    }
+  }, "\uFFE5", fmt(t.wt)), open ? /*#__PURE__*/React.createElement(ChU, {
+    size: 16,
+    color: "white"
+  }) : /*#__PURE__*/React.createElement(ChD, {
+    size: 16,
+    color: "white"
+  }))), open && /*#__PURE__*/React.createElement("div", {
+    className: "px-4 py-4 space-y-2 text-sm"
+  }, [["\u5DE5\u4E8B\u8CBB\u5408\u8A08(\u7A0E\u629C)", fmt(t.price), "#374151", 0, 0], ["\u3000\u3046\u3061 \u52B4\u52D9\u8CBB\u5408\u8A08", fmt(t.labor), "#e65100", 0, 0], ["\u3000\u2514 \u6CD5\u5B9A\u798F\u5229\u8CBB(\xD716.46%)", fmt(t.hf), "#f97316", 0, 1], ["\u6D88\u8CBB\u7A0E(10%)", fmt(t.tax), "#888", 0, 0], ["\u7A0E\u8FBC\u5408\u8A08", fmt(t.wt), "#1f3a5f", 1, 0]].map(function (_ref19) {
+    var _ref20 = _slicedToArray(_ref19, 5),
+      l = _ref20[0],
+      v = _ref20[1],
+      c = _ref20[2],
+      big = _ref20[3],
+      sm = _ref20[4];
+    return /*#__PURE__*/React.createElement("div", {
+      key: l,
+      className: "flex justify-between items-center"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "".concat(sm ? "text-xs" : "text-sm", " text-gray-500")
+    }, l), /*#__PURE__*/React.createElement("span", {
+      className: "font-".concat(big ? "extrabold" : "semibold", " ").concat(big ? "text-xl" : "text-sm"),
+      style: {
+        color: c
+      }
+    }, "\uFFE5", v));
+  }), /*#__PURE__*/React.createElement("p", {
+    className: "mt-2 text-xs text-gray-400 bg-gray-50 rounded-lg p-2 leading-relaxed"
+  }, "\u203B\u53C2\u8003\u5024\u3002\u52B4\u52D9\u8CBB\u306F\u798F\u4E95\u770C\u516C\u5171\u5DE5\u4E8B\u8A2D\u8A08\u52B4\u52D9\u5358\u4FA1R7.3\u30D9\u30FC\u30B9\u3002\u6CD5\u5B9A\u798F\u5229\u8CBB\u306F\u52B4\u52D9\u8CBB\xD716.46%\u3002\u6700\u7D42\u5358\u4FA1\u306F\u73FE\u5834\u6761\u4EF6\u30FB\u6700\u65B0\u6750\u6599\u8CBB\u3067\u78BA\u5B9A\u3057\u3066\u304F\u3060\u3055\u3044\u3002")));
+}
+function IField(_ref21) {
+  var label = _ref21.label,
+    value = _ref21.value,
+    _onChange = _ref21.onChange,
+    ph = _ref21.ph;
+  return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "text-xs text-gray-500 mb-1 font-medium"
+  }, label), /*#__PURE__*/React.createElement("input", {
+    value: value,
+    onChange: function onChange(e) {
+      return _onChange(e.target.value);
+    },
+    placeholder: ph,
+    className: "w-full text-sm border border-gray-200 rounded-lg px-2.5 py-1.5 outline-none",
+    onFocus: function onFocus(e) {
+      return e.target.style.borderColor = "#2e6e6e";
+    },
+    onBlur: function onBlur(e) {
+      return e.target.style.borderColor = "#e5e7eb";
+    }
+  }));
+}
+function exportExcel(items, T, cname, wname, wplace, proj) {
+  var X = window.XLSX;
+  if (!items.length) {
+    alert("工種を追加してください");
+    return;
+  }
+  var d = new Date(),
+    ry = d.getFullYear() - 2019 + 1;
+  var ds = "\u898B\u7A4D\u65E5\uFF1A\u4EE4\u548C".concat(ry, "\u5E74").concat(d.getMonth() + 1, "\u6708").concat(d.getDate(), "\u65E5");
+  var JP = "Noto Sans CJK SC",
+    YG = "Yu Gothic",
+    MS = "ＭＳ Ｐゴシック",
+    MSG = "ＭＳ ゴシック";
+  var Tw = function Tw(style, rgb) {
+    return {
+      style: style,
+      color: {
+        rgb: rgb
+      }
+    };
+  };
+  var T808 = Tw("thin", "FF808080"),
+    T404 = Tw("medium", "FF404040");
+  var allT = function allT(r, g, b, l) {
+    return {
+      top: r || T808,
+      bottom: g || T808,
+      left: b || T808,
+      right: l || T808
+    };
+  };
+  var HDf = "FFD9E1F2",
+    SECf = "FFF2F2F2",
+    TOTf = "FFFCE4D6";
+  function mk(v, o) {
+    o = o || {};
+    var c = {};
+    if (o.f) {
+      c.t = "n";
+      c.f = o.f;
+    } else if (typeof v === "number") {
+      c.t = "n";
+      c.v = v;
+    } else {
+      c.t = "s";
+      c.v = v == null ? "" : v;
+    }
+    if (o.z) c.z = o.z;
+    c.s = {
+      font: {
+        name: o.fn || JP,
+        sz: o.sz || 10,
+        bold: !!o.bold,
+        color: {
+          rgb: o.color || "FF000000"
+        }
+      },
+      alignment: {
+        horizontal: o.h || "left",
+        vertical: "center",
+        wrapText: !!o.wrap
+      }
+    };
+    if (o.fill) c.s.fill = {
+      patternType: "solid",
+      fgColor: {
+        rgb: o.fill
+      }
+    };
+    if (o.border !== false) c.s.border = o.border || allT();
+    return c;
+  }
+  var ws = {},
+    merges = [],
+    enc = X.utils.encode_cell;
+  var P = function P(r, c, cell) {
+    ws[enc({
+      r: r - 1,
+      c: c - 1
+    })] = cell;
+  };
+  var M = function M(r1, c1, r2, c2) {
+    return merges.push({
+      s: {
+        r: r1 - 1,
+        c: c1 - 1
+      },
+      e: {
+        r: r2 - 1,
+        c: c2 - 1
+      }
+    });
+  };
+  var BL = function BL(r, c) {
+    if (!ws[enc({
+      r: r - 1,
+      c: c - 1
+    })]) ws[enc({
+      r: r - 1,
+      c: c - 1
+    })] = mk("", {
+      border: false
+    });
+  };
+  var TOTAL = items.length;
+  var rI0 = 13,
+    rChok = rI0 + TOTAL,
+    rShoHd = rChok + 1,
+    rGenba = rShoHd + 1;
+  var rIppan = rGenba + 1,
+    rHou = rIppan + 1,
+    rIns0 = rHou + 1,
+    rShokei = rIns0 + 5;
+  var rDisc = rShokei + 1,
+    rBlank = rDisc + 1,
+    rSub = rBlank + 1,
+    rTax = rSub + 1,
+    rGokei = rTax + 1;
+  var rTeiHd = rGokei + 2,
+    rRoumu = rTeiHd + 1,
+    rNote0 = rRoumu + 1;
+
+  // 行1: タイトル
+  P(1, 1, mk("御　見　積　書", {
+    sz: 18,
+    bold: true,
+    h: "center",
+    border: false
+  }));
+  M(1, 1, 1, 7);
+
+  // 行3: 客先/日付
+  var bMed = allT({
+    style: "medium",
+    color: "FF404040"
+  }, {
+    style: "medium",
+    color: "FF404040"
+  }, null, null);
+  P(3, 1, mk((cname || "") + "　御中", {
+    fn: YG,
+    sz: 12,
+    bold: true,
+    border: bMed
+  }));
+  P(3, 2, mk("", {
+    border: bMed
+  }));
+  P(3, 3, mk("", {
+    border: bMed
+  }));
+  M(3, 1, 3, 3);
+  P(3, 5, mk(ds, {
+    h: "right",
+    border: false
+  }));
+  M(3, 5, 3, 7);
+
+  // 行4,5
+  P(4, 5, mk("株式会社　豊岡組", {
+    sz: 12,
+    bold: true,
+    h: "right",
+    border: false
+  }));
+  M(4, 5, 4, 7);
+  P(5, 1, mk("下記のとおり御見積申し上げます。", {
+    sz: 10,
+    border: false
+  }));
+  M(5, 1, 5, 3);
+  P(5, 5, mk("代表取締役　豊岡　強志", {
+    h: "right",
+    border: false
+  }));
+  M(5, 5, 5, 7);
+
+  // 行6: 御見積金額
+  P(6, 1, mk("御見積金額（税込）", {
+    sz: 11,
+    bold: true,
+    border: false
+  }));
+  M(6, 1, 6, 2);
+  P(6, 3, mk(null, {
+    f: "F".concat(rGokei),
+    fn: YG,
+    sz: 10,
+    bold: true,
+    h: "right",
+    z: '#,##0"円"',
+    border: false
+  }));
+  M(6, 3, 6, 4);
+  P(6, 5, mk("福井県坂井市春江町江留上本町3-12", {
+    sz: 9,
+    h: "right",
+    border: false
+  }));
+  M(6, 5, 6, 7);
+
+  // 行7: 税抜
+  P(7, 1, mk("　　　　　　　　　　（税抜）", {
+    fn: MS,
+    sz: 10,
+    border: false
+  }));
+  M(7, 1, 7, 2);
+  P(7, 3, mk(null, {
+    f: "F".concat(rSub),
+    fn: YG,
+    sz: 10,
+    h: "right",
+    z: '#,##0"円"',
+    border: false
+  }));
+  M(7, 3, 7, 4);
+  P(7, 5, mk("TEL (0776)51-0166", {
+    fn: YG,
+    sz: 9,
+    h: "right",
+    border: false
+  }));
+  M(7, 5, 7, 7);
+
+  // 行8,9: 工事名・場所
+  P(8, 1, mk("工　事　名：　" + (wname || proj || ""), {
+    fn: MS,
+    sz: 10,
+    border: false
+  }));
+  M(8, 1, 8, 4);
+  P(9, 1, mk("工事場所：" + (wplace || ""), {
+    sz: 10,
+    border: false
+  }));
+  M(9, 1, 9, 4);
+
+  // 行11: ヘッダー
+  var HH = ["名　称", "工種・種別", "数量", "単位", "単価", "金　額", "備　考"];
+  HH.forEach(function (h, i) {
+    return P(11, i + 1, mk(h, {
+      bold: true,
+      h: "center",
+      fill: HDf
+    }));
+  });
+
+  // 行12: 直接工事費
+  P(12, 1, mk("【直接工事費】", {
+    bold: true,
+    fill: SECf,
+    wrap: true
+  }));
+  M(12, 1, 12, 7);
+  for (var c = 2; c <= 7; c++) {
+    var k = enc({
+      r: 11,
+      c: c - 1
+    });
+    if (!ws[k]) ws[k] = mk("", {
+      border: allT(T808, T808, null, null)
+    });
+  }
+
+  // 明細行
+  items.forEach(function (it, i) {
+    var r = rI0 + i,
+      unitP = Math.round(it.up / 1.15);
+    var nm = it.name + (it.machine ? "\uFF08".concat(it.machine, "\uFF09") : "");
+    var al = (it.al || []).join("・");
+    P(r, 1, mk(nm, {
+      wrap: true
+    }));
+    P(r, 2, mk(al, {
+      wrap: true
+    }));
+    P(r, 3, mk(it.qty, {
+      fn: YG,
+      h: "center",
+      z: "0.0"
+    }));
+    P(r, 4, mk(it.unit, {
+      h: "center"
+    }));
+    P(r, 5, mk(unitP, {
+      fn: YG,
+      h: "right",
+      z: "#,##0"
+    }));
+    P(r, 6, mk(null, {
+      f: "IF(C".concat(r, "=\"\",\"\",C").concat(r, "*E").concat(r, ")"),
+      fn: YG,
+      h: "right",
+      z: "#,##0"
+    }));
+    P(r, 7, mk("", {
+      sz: 9,
+      wrap: true
+    }));
+  });
+
+  // 直工計
+  var mrgB = function mrgB(r) {
+    P(r, 1, mk("直接工事費　計", {
+      bold: true,
+      h: "right",
+      border: allT(T808, T808, T808, null)
+    }));
+    M(r, 1, r, 5);
+    for (var _c = 2; _c <= 4; _c++) ws[enc({
+      r: r - 1,
+      c: _c - 1
+    })] = mk("", {
+      border: allT(T808, T808, null, null)
+    });
+    ws[enc({
+      r: r - 1,
+      c: 4
+    })] = mk("", {
+      border: allT(T808, T808, null, T808)
+    });
+    P(r, 6, mk(null, {
+      f: "SUM(F".concat(rI0, ":F").concat(rI0 + TOTAL - 1, ")"),
+      fn: YG,
+      bold: true,
+      h: "right",
+      z: "#,##0"
+    }));
+    P(r, 7, mk(""));
+  };
+  mrgB(rChok);
+
+  // 諸経費ヘッダー
+  P(rShoHd, 1, mk("【諸経費】", {
+    bold: true,
+    fill: SECf,
+    wrap: true
+  }));
+  M(rShoHd, 1, rShoHd, 7);
+  for (var _c2 = 2; _c2 <= 7; _c2++) ws[enc({
+    r: rShoHd - 1,
+    c: _c2 - 1
+  })] = mk("", {
+    border: allT(T808, T808, null, null)
+  });
+
+  // 現場管理費
+  P(rGenba, 1, mk("現場管理費", {
+    wrap: true
+  }));
+  P(rGenba, 2, mk("安全・労務管理・保険料等", {
+    fn: MSG,
+    sz: 9,
+    wrap: true
+  }));
+  for (var _c3 = 3; _c3 <= 5; _c3++) P(rGenba, _c3, mk(""));
+  P(rGenba, 6, mk(null, {
+    f: "F".concat(rChok, "*0.15"),
+    fn: YG,
+    h: "right",
+    z: "#,##0"
+  }));
+  P(rGenba, 7, mk("直工×15％", {
+    sz: 9,
+    wrap: true
+  }));
+
+  // 一般管理費
+  P(rIppan, 1, mk("一般管理費等", {
+    wrap: true
+  }));
+  P(rIppan, 2, mk("本社経費", {
+    wrap: true
+  }));
+  for (var _c4 = 3; _c4 <= 5; _c4++) P(rIppan, _c4, mk(""));
+  P(rIppan, 6, mk(null, {
+    f: "(F".concat(rChok, "+F").concat(rGenba, ")*0.1"),
+    fn: YG,
+    h: "right",
+    z: "#,##0"
+  }));
+  P(rIppan, 7, mk("工事原価×10％", {
+    sz: 9,
+    wrap: true
+  }));
+
+  // 法定福利費
+  P(rHou, 1, mk("法定福利費", {
+    bold: true,
+    wrap: true,
+    border: allT(T808, T808, T808, null)
+  }));
+  ws[enc({
+    r: rHou - 1,
+    c: 1
+  })] = mk("", {
+    border: allT(T808, T808, null, T808)
+  });
+  M(rHou, 1, rHou, 2);
+  for (var _c5 = 3; _c5 <= 5; _c5++) P(rHou, _c5, mk(""));
+  P(rHou, 6, mk(null, {
+    f: "SUM(F".concat(rIns0, ":F").concat(rIns0 + 4, ")"),
+    fn: YG,
+    bold: true,
+    h: "right",
+    z: "#,##0"
+  }));
+  P(rHou, 7, mk("事業主負担分", {
+    fn: MSG,
+    sz: 9,
+    wrap: true
+  }));
+
+  // 保険料率
+  var RATES = [["　・健康保険", 0.05], ["　・厚生年金", 0.0915], ["　・雇用保険", 0.0105], ["　・労災保険", 0.009], ["　・子ども・子育て拠出金", 0.0036]];
+  RATES.forEach(function (_ref22, i) {
+    var _ref23 = _slicedToArray(_ref22, 2),
+      nm = _ref23[0],
+      rt = _ref23[1];
+    var r = rIns0 + i;
+    P(r, 1, mk(nm, {
+      sz: 9,
+      wrap: true,
+      border: allT(T808, T808, T808, null)
+    }));
+    ws[enc({
+      r: r - 1,
+      c: 1
+    })] = mk("", {
+      border: allT(T808, T808, null, T808)
+    });
+    M(r, 1, r, 2);
+    for (var _c6 = 3; _c6 <= 4; _c6++) P(r, _c6, mk(""));
+    P(r, 5, mk(rt, {
+      fn: YG,
+      h: "right",
+      z: "0.00%"
+    }));
+    P(r, 6, mk(null, {
+      f: "ROUND($F$".concat(rRoumu, "*E").concat(r, ",0)"),
+      fn: YG,
+      sz: 9,
+      h: "right",
+      z: "#,##0"
+    }));
+    P(r, 7, mk(i === 4 ? "事業主負担" : "", {
+      fn: MSG,
+      sz: 9,
+      wrap: true
+    }));
+  });
+
+  // 諸経費計
+  P(rShokei, 1, mk("諸経費　計", {
+    bold: true,
+    h: "right",
+    border: allT(T808, T808, T808, null)
+  }));
+  M(rShokei, 1, rShokei, 5);
+  for (var _c7 = 2; _c7 <= 4; _c7++) ws[enc({
+    r: rShokei - 1,
+    c: _c7 - 1
+  })] = mk("", {
+    border: allT(T808, T808, null, null)
+  });
+  ws[enc({
+    r: rShokei - 1,
+    c: 4
+  })] = mk("", {
+    border: allT(T808, T808, null, T808)
+  });
+  P(rShokei, 6, mk(null, {
+    f: "F".concat(rGenba, "+F").concat(rIppan, "+F").concat(rHou),
+    fn: YG,
+    bold: true,
+    h: "right",
+    z: "#,##0"
+  }));
+  P(rShokei, 7, mk(""));
+
+  // 値引き空白行
+  P(rDisc, 1, mk("", {
+    border: allT(T808, T808, T808, null)
+  }));
+  for (var _c8 = 2; _c8 <= 5; _c8++) ws[enc({
+    r: rDisc - 1,
+    c: _c8 - 1
+  })] = mk("", {
+    border: allT(T808, T808, null, null)
+  });
+  P(rDisc, 6, mk("", {
+    border: allT(),
+    z: "#,##0"
+  }));
+  P(rDisc, 7, mk("", {
+    border: allT(T808, T808, null, T808)
+  }));
+
+  // 小計・消費税・合計
+  var totRow = function totRow(r, label, f, bold, fill, sz) {
+    var kw = fill ? {
+      fill: fill
+    } : {};
+    P(r, 1, mk(label, _objectSpread({
+      bold: bold,
+      sz: sz || 10,
+      h: "right",
+      border: allT(T808, T808, T808, null)
+    }, kw)));
+    M(r, 1, r, 5);
+    for (var _c9 = 2; _c9 <= 4; _c9++) {
+      ws[enc({
+        r: r - 1,
+        c: _c9 - 1
+      })] = mk("", _objectSpread({
+        border: allT(T808, T808, null, null)
+      }, kw));
+    }
+    ws[enc({
+      r: r - 1,
+      c: 4
+    })] = mk("", _objectSpread({
+      border: allT(T808, T808, null, T808)
+    }, kw));
+    P(r, 6, mk(null, _objectSpread({
+      f: f,
+      fn: YG,
+      bold: bold,
+      sz: sz || 10,
+      h: "right",
+      z: "#,##0"
+    }, kw)));
+    P(r, 7, mk("", _objectSpread({}, kw)));
+  };
+  totRow(rSub, "小計（税抜）", "F".concat(rChok, "+F").concat(rShokei, "-IF(ISNUMBER(F").concat(rDisc, "),F").concat(rDisc, ",0)"), true);
+  totRow(rTax, "消費税（10%）", "ROUND(F".concat(rSub, "*0.1,0)"), true);
+  totRow(rGokei, "合　計（税込）", "F".concat(rSub, "+F").concat(rTax), true, TOTf, 12);
+
+  // 算定前提
+  P(rTeiHd, 1, mk("【算定前提（青字＝入力欄）】", {
+    bold: true,
+    fill: SECf
+  }));
+  M(rTeiHd, 1, rTeiHd, 7);
+  for (var _c0 = 2; _c0 <= 7; _c0++) ws[enc({
+    r: rTeiHd - 1,
+    c: _c0 - 1
+  })] = mk("", {
+    border: allT(T808, T808, null, null)
+  });
+
+  // 労務費
+  var lab = items.reduce(function (s, i) {
+    return s + i.lt;
+  }, 0);
+  P(rRoumu, 1, mk("対象労務費（法定福利費の算定基礎）", {
+    sz: 9,
+    border: allT(T808, T808, T808, null)
+  }));
+  M(rRoumu, 1, rRoumu, 3);
+  ws[enc({
+    r: rRoumu - 1,
+    c: 1
+  })] = mk("", {
+    border: allT(T808, T808, null, null)
+  });
+  ws[enc({
+    r: rRoumu - 1,
+    c: 2
+  })] = mk("", {
+    border: allT(T808, T808, null, T808)
+  });
+  M(rRoumu, 4, rRoumu, 5);
+  ws[enc({
+    r: rRoumu - 1,
+    c: 3
+  })] = mk("", {
+    border: allT(T808, T808, T808, null)
+  });
+  ws[enc({
+    r: rRoumu - 1,
+    c: 4
+  })] = mk("", {
+    border: allT(T808, T808, null, T808)
+  });
+  P(rRoumu, 6, mk(lab, {
+    fn: YG,
+    sz: 10,
+    color: "FF0000FF",
+    h: "right",
+    z: "#,##0"
+  }));
+  P(rRoumu, 7, mk("円", {
+    sz: 9
+  }));
+
+  // 注記
+  var notes = ["※ 法定福利費は標準見積書に基づき別建てで明示。料率は事業主負担分の目安（令和7年度）で、自社の実負担率に合わせて調整してください。", "※ 現場管理費・一般管理費等は豊岡組見積の諸経費算定の目安です。最終単価は現場条件・最新材料費で確定してください。", "※ 健康保険料率は協会けんぽ事業主負担分。40〜64歳は介護保険分（約0.8％）を加算してください。"];
+  notes.forEach(function (n, i) {
+    P(rNote0 + i, 1, mk(n, {
+      sz: 8,
+      wrap: true,
+      border: false
+    }));
+    M(rNote0 + i, 1, rNote0 + i, 7);
+  });
+
+  // シート設定
+  ws["!ref"] = "A1:G".concat(rNote0 + notes.length - 1);
+  ws["!merges"] = merges;
+  ws["!cols"] = [{
+    wch: 17
+  }, {
+    wch: 24
+  }, {
+    wch: 7.43
+  }, {
+    wch: 7
+  }, {
+    wch: 11
+  }, {
+    wch: 13
+  }, {
+    wch: 15
+  }];
+  // 行高
+  var baseH = 24.95,
+    rows = [];
+  for (var r = 0; r <= rNote0 + notes.length; r++) {
+    var h = baseH;
+    if (r === 0) h = 30;else if (r === 2) h = 18.75;else if (r === 3 || r === 4) h = 15;else if (r === 5) h = 15.75;else if (r === 6) h = 15;else if (r === 8) h = 15;else if (r === 10) h = 24.95;else if (r === 11) h = 30;else if (r >= 12 && r < 12 + TOTAL) h = 25.5; // item行
+    else if (r === rChok - 1) h = 24.95;else if (r === rShoHd - 1) h = 30;else if (r === rHou - 1) h = 26.25;else if (r === rTeiHd - 1 || r === rRoumu - 1) h = 15;else if (r >= rNote0 - 1) h = 24;
+    rows.push({
+      hpt: h
+    });
+  }
+  ws["!rows"] = rows;
+  ws["!pageSetup"] = {
+    paperSize: 9,
+    orientation: "portrait",
+    fitToPage: true,
+    fitToWidth: 1,
+    fitToHeight: 0
+  };
+  var wb = {
+    SheetNames: ["見積書"],
+    Sheets: {
+      "見積書": ws
+    }
+  };
+  var safe = (wname || proj || "工事").replace(/[\/\\:*?"<>|]/g, "");
+  X.writeFile(wb, "\u898B\u7A4D\u66F8_".concat(safe, "_").concat(ry).concat(d.getMonth() + 1).concat(String(d.getDate()).padStart(2, "0"), ".xlsx"));
+}
+function App() {
+  var _useState = useState([]),
+    _useState2 = _slicedToArray(_useState, 2),
+    items = _useState2[0],
+    setItems = _useState2[1];
+  var _useState3 = useState(0),
+    _useState4 = _slicedToArray(_useState3, 2),
+    cat = _useState4[0],
+    setCat = _useState4[1];
+  var _useState5 = useState(null),
+    _useState6 = _slicedToArray(_useState5, 2),
+    sw = _useState6[0],
+    setSw = _useState6[1];
+  var _useState7 = useState(null),
+    _useState8 = _slicedToArray(_useState7, 2),
+    smach = _useState8[0],
+    setSmach = _useState8[1];
+  var _useState9 = useState("work"),
+    _useState0 = _slicedToArray(_useState9, 2),
+    phase = _useState0[0],
+    setPhase = _useState0[1];
+  var _useState1 = useState(""),
+    _useState10 = _slicedToArray(_useState1, 2),
+    qty = _useState10[0],
+    setQty = _useState10[1];
+  var _useState11 = useState([]),
+    _useState12 = _slicedToArray(_useState11, 2),
+    adjOn = _useState12[0],
+    setAdjOn = _useState12[1];
+  var _useState13 = useState(""),
+    _useState14 = _slicedToArray(_useState13, 2),
+    cp = _useState14[0],
+    setCp = _useState14[1];
+  var _useState15 = useState(false),
+    _useState16 = _slicedToArray(_useState15, 2),
+    tax = _useState16[0],
+    setTax = _useState16[1];
+  var _useState17 = useState(false),
+    _useState18 = _slicedToArray(_useState17, 2),
+    sheet = _useState18[0],
+    setSheet = _useState18[1];
+  var _useState19 = useState(""),
+    _useState20 = _slicedToArray(_useState19, 2),
+    proj = _useState20[0],
+    setProj = _useState20[1];
+  var _useState21 = useState(""),
+    _useState22 = _slicedToArray(_useState21, 2),
+    cname = _useState22[0],
+    setCname = _useState22[1];
+  var _useState23 = useState(""),
+    _useState24 = _slicedToArray(_useState23, 2),
+    wname = _useState24[0],
+    setWname = _useState24[1];
+  var _useState25 = useState(""),
+    _useState26 = _slicedToArray(_useState25, 2),
+    wplace = _useState26[0],
+    setWplace = _useState26[1];
+  var _useState27 = useState(false),
+    _useState28 = _slicedToArray(_useState27, 2),
+    showSum = _useState28[0],
+    setShowSum = _useState28[1];
+  var _useState29 = useState(false),
+    _useState30 = _slicedToArray(_useState29, 2),
+    copied = _useState30[0],
+    setCopied = _useState30[1];
+  var _useState31 = useState(null),
+    _useState32 = _slicedToArray(_useState31, 2),
+    lExp = _useState32[0],
+    setLExp = _useState32[1];
+  var _useState33 = useState(null),
+    _useState34 = _slicedToArray(_useState33, 2),
+    lDesc = _useState34[0],
+    setLDesc = _useState34[1];
+  var _useState35 = useState(new Set()),
+    _useState36 = _slicedToArray(_useState35, 2),
+    eExp = _useState36[0],
+    setEExp = _useState36[1];
+  var _useState37 = useState(new Set()),
+    _useState38 = _slicedToArray(_useState37, 2),
+    eDesc = _useState38[0],
+    setEDesc = _useState38[1];
+  var _useState39 = useState(false),
+    _useState40 = _slicedToArray(_useState39, 2),
+    showInfo = _useState40[0],
+    setShowInfo = _useState40[1];
+  var _useState41 = useState(false),
+    _useState42 = _slicedToArray(_useState41, 2),
+    paneBd = _useState42[0],
+    setPaneBd = _useState42[1];
+  var _useState43 = useState(false),
+    _useState44 = _slicedToArray(_useState43, 2),
+    paneDesc = _useState44[0],
+    setPaneDesc = _useState44[1];
+  var mult = 1 + adjOn.reduce(function (s, i) {
+    return s + ADJS[i].p;
+  }, 0) / 100 + (parseFloat(cp) || 0) / 100;
+  var T = useMemo(function () {
+    var price = items.reduce(function (s, i) {
+        return s + i.total;
+      }, 0),
+      labor = items.reduce(function (s, i) {
+        return s + i.lt;
+      }, 0);
+    return {
+      price: price,
+      labor: labor,
+      hf: labor * HF_RATE,
+      tax: price * 0.1,
+      wt: price * 1.1
+    };
+  }, [items]);
+  var resetSel = function resetSel() {
+    setSw(null);
+    setSmach(null);
+    setQty("");
+    setAdjOn([]);
+    setCp("");
+    setPaneBd(false);
+    setPaneDesc(false);
+  };
+  var pickWork = function pickWork(w) {
+    resetSel();
+    setSw(w);
+    setPhase(w.machines ? "machine" : "qty");
+  };
+  var pickMachine = function pickMachine(m) {
+    setSmach(m);
+    setPhase("qty");
+  };
+  var addItem = function addItem() {
+    var q = parseFloat(qty);
+    if (!sw || !q || q <= 0) return;
+    var price = smach ? smach.price : sw.price,
+      labor = smach ? smach.labor : sw.labor;
+    var al = [].concat(_toConsumableArray(adjOn.map(function (i) {
+      return "".concat(ADJS[i].l, " +").concat(ADJS[i].p, "%");
+    })), _toConsumableArray(parseFloat(cp) > 0 ? ["\u30AB\u30B9\u30BF\u30E0 +".concat(cp, "%")] : []));
+    setItems(function (p) {
+      return [].concat(_toConsumableArray(p), [{
+        id: Date.now(),
+        name: sw.name,
+        machine: smach ? smach.name : null,
+        unit: sw.unit,
+        up: price,
+        labor: labor,
+        comp: sw.comp,
+        desc: sw.desc,
+        qty: q,
+        total: Math.round(price * q * mult),
+        lt: Math.round(labor * q * mult),
+        al: al,
+        ps: mult > 1 ? "\xD7".concat(fmtd((mult - 1) * 100), "%\u5897") : ""
+      }]);
+    });
+    resetSel();
+    setPhase("work");
+    setSheet(false);
+  };
+  var delItem = function delItem(id) {
+    return setItems(function (p) {
+      return p.filter(function (i) {
+        return i.id !== id;
+      });
+    });
+  };
+  var reset = function reset() {
+    setItems([]);
+    setProj("");
+    setShowSum(false);
+  };
+  var togSet = function togSet(setter) {
+    return function (id) {
+      return setter(function (p) {
+        var n = new Set(p);
+        n.has(id) ? n.delete(id) : n.add(id);
+        return n;
+      });
+    };
+  };
+  var togE = togSet(setEExp),
+    togED = togSet(setEDesc);
+  var copy = function copy() {
+    var dt = new Date().toLocaleDateString("ja-JP", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit"
+    });
+    var t = ["\u300A\u8C4A\u5CA1\u7D44 \u73FE\u5834\u898B\u7A4D\u300B", cname ? "\u5B9B\u5148\uFF1A".concat(cname) : "", wname || proj ? "\u5DE5\u4E8B\u540D\uFF1A".concat(wname || proj) : "", wplace ? "\u5834\u6240\uFF1A".concat(wplace) : "", "\u4F5C\u6210\u65E5\uFF1A".concat(dt), "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500"].concat(_toConsumableArray(items.map(function (it, i) {
+      return "".concat(i + 1, ". ").concat(it.name).concat(it.machine ? "\uFF08" + it.machine + "\uFF09" : "", "\n   ").concat(fmt(it.qty)).concat(it.unit, " \xD7 \uFFE5").concat(fmt(it.up), "/").concat(it.unit).concat(it.ps ? " " + it.ps : "", "\n   \u5C0F\u8A08 \uFFE5").concat(fmt(it.total));
+    })), ["\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500", "\u5DE5\u4E8B\u8CBB\u5408\u8A08(\u7A0E\u629C)\uFF1A\uFFE5".concat(fmt(T.price)), "\u6D88\u8CBB\u7A0E(10%)\uFF1A\uFFE5".concat(fmt(T.tax)), "\u7A0E\u8FBC\u5408\u8A08\uFF1A\uFFE5".concat(fmt(T.wt)), "", "\u203B\u53C2\u8003\u5024\u3002\u6700\u7D42\u5358\u4FA1\u306F\u73FE\u5834\u6761\u4EF6\u30FB\u6700\u65B0\u6750\u6599\u8CBB\u3067\u78BA\u5B9A\u8981\u3002"]).filter(Boolean).join("\n");
+    navigator.clipboard && navigator.clipboard.writeText(t).then(function () {
+      setCopied(true);
+      setTimeout(function () {
+        return setCopied(false);
+      }, 2500);
+    });
+  };
+  var CAT = DATA[cat];
+  var catC = function catC(name) {
+    var _iterator = _createForOfIteratorHelper(DATA),
+      _step;
+    try {
+      for (_iterator.s(); !(_step = _iterator.n()).done;) {
+        var c = _step.value;
+        if (c.items.find(function (w) {
+          return w.name === name;
+        })) return c.bg;
+      }
+    } catch (err) {
+      _iterator.e(err);
+    } finally {
+      _iterator.f();
+    }
+    return "#999";
+  };
+  var Tabs = function Tabs(_ref24) {
+    var compact = _ref24.compact;
+    return /*#__PURE__*/React.createElement("div", {
+      className: "flex overflow-x-auto gap-2 ".concat(compact ? "px-4 py-2" : "px-3 py-2.5"),
+      style: {
+        scrollbarWidth: "none",
+        flexShrink: 0,
+        borderBottom: "1px solid #f1f5f9"
+      }
+    }, DATA.map(function (c, i) {
+      return /*#__PURE__*/React.createElement("button", {
+        key: c.id,
+        onClick: function onClick() {
+          setCat(i);
+          setLExp(null);
+          setLDesc(null);
+        },
+        className: "flex-shrink-0 text-xs px-3 py-2 rounded-full font-semibold",
+        style: {
+          background: cat === i ? c.bg : "#f1f5f9",
+          color: cat === i ? "white" : "#64748b"
+        }
+      }, c.emoji, " ", c.label);
+    }));
+  };
+  var WorkRow = function WorkRow(_ref25) {
+    var w = _ref25.w,
+      desktop = _ref25.desktop;
+    var iE = lExp === w.id,
+      iD = lDesc === w.id,
+      showP = w.machines ? null : w.price;
+    return /*#__PURE__*/React.createElement("div", {
+      style: {
+        borderBottom: "1px solid #f8fafc"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center ".concat(desktop ? "px-4 py-2.5 hover:bg-blue-50 cursor-pointer" : "px-4 py-3")
+    }, /*#__PURE__*/React.createElement("button", {
+      className: "flex-1 flex items-start text-left",
+      onClick: function onClick() {
+        return pickWork(w);
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex-1 mr-2"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "text-sm font-semibold text-gray-800 leading-snug"
+    }, w.name, w.machines && /*#__PURE__*/React.createElement("span", {
+      className: "ml-1 text-xs font-normal",
+      style: {
+        color: "#1d4e6b"
+      }
+    }, "\uD83D\uDD27\u6A5F\u68B0\u9078\u629E")), w.note && /*#__PURE__*/React.createElement("div", {
+      className: "text-xs text-gray-400 mt-0.5"
+    }, w.note)), /*#__PURE__*/React.createElement("div", {
+      className: "flex-shrink-0 text-right mr-2"
+    }, showP !== null ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+      className: "text-sm font-bold",
+      style: {
+        color: CAT.bg
+      }
+    }, "\uFFE5", fmt(showP), /*#__PURE__*/React.createElement("span", {
+      className: "text-xs font-normal text-gray-400"
+    }, "/", w.unit)), /*#__PURE__*/React.createElement("div", {
+      className: "text-xs",
+      style: {
+        color: "#e65100"
+      }
+    }, "\u52B4\u52D9\uFFE5", fmt(w.labor))) : /*#__PURE__*/React.createElement("div", {
+      className: "text-xs font-semibold",
+      style: {
+        color: CAT.bg
+      }
+    }, "\u6A5F\u68B0\u3067\u9078\u629E", /*#__PURE__*/React.createElement("br", null), /*#__PURE__*/React.createElement("span", {
+      className: "font-normal text-gray-400"
+    }, "/", w.unit))), /*#__PURE__*/React.createElement(ChevR, {
+      size: 15,
+      color: "#d1d5db"
+    }))), /*#__PURE__*/React.createElement("div", {
+      className: "flex gap-1.5 px-4 pb-2 -mt-1"
+    }, /*#__PURE__*/React.createElement("button", {
+      onClick: function onClick() {
+        setLExp(iE ? null : w.id);
+        setLDesc(null);
+      },
+      className: "flex items-center gap-0.5 text-xs font-semibold px-2 py-0.5 rounded-lg",
+      style: {
+        background: iE ? CAT.bg : "#f1f5f9",
+        color: iE ? "white" : "#64748b"
+      }
+    }, /*#__PURE__*/React.createElement(InfoI, {
+      color: iE ? "white" : "#64748b"
+    }), "\u5185\u8A33"), w.desc && /*#__PURE__*/React.createElement("button", {
+      onClick: function onClick() {
+        setLDesc(iD ? null : w.id);
+        setLExp(null);
+      },
+      className: "flex items-center gap-0.5 text-xs font-semibold px-2 py-0.5 rounded-lg",
+      style: {
+        background: iD ? "#2f7d4f" : "#eef6ee",
+        color: iD ? "white" : "#2f7d4f"
+      }
+    }, /*#__PURE__*/React.createElement(ListI, {
+      color: iD ? "white" : "#2f7d4f"
+    }), "\u4F5C\u696D\u5185\u5BB9")), iE && !w.machines && /*#__PURE__*/React.createElement("div", {
+      className: "px-4 pb-3"
+    }, /*#__PURE__*/React.createElement(BdPanel, {
+      price: w.price,
+      labor: w.labor,
+      comp: w.comp,
+      unit: w.unit
+    })), iD && /*#__PURE__*/React.createElement("div", {
+      className: "px-4 pb-3"
+    }, /*#__PURE__*/React.createElement(DescPanel, {
+      desc: w.desc
+    })));
+  };
+  var XlBtn = function XlBtn(_ref26) {
+    var full = _ref26.full;
+    return /*#__PURE__*/React.createElement("button", {
+      onClick: function onClick() {
+        return exportExcel(items, T, cname, wname, wplace, proj);
+      },
+      disabled: !items.length,
+      className: "flex items-center justify-center gap-1.5 font-bold rounded-xl ".concat(full ? "w-full py-3 text-base rounded-2xl" : "px-3 py-2 text-xs"),
+      style: {
+        background: !items.length ? "#e5e7eb" : "#1f6b3e",
+        color: !items.length ? "#9ca3af" : "white"
+      }
+    }, /*#__PURE__*/React.createElement(FileI, {
+      size: full ? 15 : 12
+    }), "\u898B\u7A4D\u66F8\u3092Excel\u51FA\u529B");
+  };
+  var SelPanel = function SelPanel(_ref27) {
+    var compact = _ref27.compact;
+    return /*#__PURE__*/React.createElement("div", {
+      className: compact ? "p-4 space-y-3" : "px-4 py-4 space-y-4"
+    }, /*#__PURE__*/React.createElement("button", {
+      onClick: function onClick() {
+        if (phase === "qty" && sw.machines) {
+          setPhase("machine");
+          setSmach(null);
+        } else {
+          resetSel();
+          setPhase("work");
+        }
+      },
+      className: "text-sm font-semibold flex items-center gap-1",
+      style: {
+        color: "#2e6e6e"
+      }
+    }, "← ", phase === "qty" && sw.machines ? "\u6A5F\u68B0\u3092\u9078\u3073\u76F4\u3059" : "\u5DE5\u7A2E\u3092\u9078\u3073\u76F4\u3059"), /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center justify-between"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "font-bold text-gray-800 text-sm flex-1"
+    }, sw.name, smach && /*#__PURE__*/React.createElement("span", {
+      className: "text-xs font-normal ml-1",
+      style: {
+        color: "#1d4e6b"
+      }
+    }, "\uFF0F", smach.name)), /*#__PURE__*/React.createElement("div", {
+      className: "flex gap-1.5 flex-shrink-0"
+    }, (!sw.machines || smach) && /*#__PURE__*/React.createElement("button", {
+      onClick: function onClick() {
+        return setPaneBd(function (p) {
+          return !p;
+        });
+      },
+      className: "flex items-center gap-0.5 text-xs px-2 py-1 rounded-lg font-semibold",
+      style: {
+        background: paneBd ? "#1f3a5f" : "#eef3f7",
+        color: paneBd ? "white" : "#1f3a5f"
+      }
+    }, /*#__PURE__*/React.createElement(InfoI, {
+      color: paneBd ? "white" : "#1f3a5f"
+    }), "\u5185\u8A33"), sw.desc && /*#__PURE__*/React.createElement("button", {
+      onClick: function onClick() {
+        return setPaneDesc(function (p) {
+          return !p;
+        });
+      },
+      className: "flex items-center gap-0.5 text-xs px-2 py-1 rounded-lg font-semibold",
+      style: {
+        background: paneDesc ? "#2f7d4f" : "#eef6ee",
+        color: paneDesc ? "white" : "#2f7d4f"
+      }
+    }, /*#__PURE__*/React.createElement(ListI, {
+      color: paneDesc ? "white" : "#2f7d4f"
+    }), "\u4F5C\u696D\u5185\u5BB9"))), paneBd && (!sw.machines || smach) && /*#__PURE__*/React.createElement(BdPanel, {
+      price: smach ? smach.price : sw.price,
+      labor: smach ? smach.labor : sw.labor,
+      comp: sw.comp,
+      unit: sw.unit
+    }), paneDesc && /*#__PURE__*/React.createElement(DescPanel, {
+      desc: sw.desc
+    }), phase === "machine" && /*#__PURE__*/React.createElement(MachineList, {
+      work: sw,
+      onPick: pickMachine,
+      bg: CAT.bg
+    }), phase === "qty" && /*#__PURE__*/React.createElement(AddForm, {
+      work: sw,
+      machine: smach,
+      qty: qty,
+      setQty: setQty,
+      adjOn: adjOn,
+      setAdjOn: setAdjOn,
+      cp: cp,
+      setCp: setCp,
+      mult: mult,
+      onAdd: addItem,
+      compact: compact
+    }));
+  };
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: "'Hiragino Kaku Gothic ProN','Noto Sans JP',system-ui,sans-serif",
+      userSelect: "none"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "hidden md:flex md:flex-col",
+    style: {
+      height: "100vh",
+      background: "#f1f5f9"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex-shrink-0 flex items-center gap-4 px-6 py-3",
+    style: {
+      background: "linear-gradient(135deg,#1f3a5f,#2e6e6e)",
+      boxShadow: "0 2px 12px rgba(0,0,0,0.2)"
+    }
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "text-xs font-medium",
+    style: {
+      color: "rgba(255,255,255,0.6)"
+    }
+  }, "\u682A\u5F0F\u4F1A\u793E\u8C4A\u5CA1\u7D44"), /*#__PURE__*/React.createElement("div", {
+    className: "text-lg font-bold text-white"
+  }, "\u73FE\u5834\u898B\u7A4D\u30A2\u30D7\u30EA")), /*#__PURE__*/React.createElement("div", {
+    className: "flex-1 mx-2"
+  }, /*#__PURE__*/React.createElement("input", {
+    value: proj,
+    onChange: function onChange(e) {
+      return setProj(e.target.value);
+    },
+    placeholder: "\uD83D\uDCCD \u73FE\u5834\u540D\uFF08\u4EFB\u610F\uFF09",
+    className: "text-sm px-3 py-1.5 rounded-lg outline-none",
+    style: {
+      background: "rgba(255,255,255,0.15)",
+      color: "white",
+      width: 200
+    }
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-2"
+  }, ["\u7A0E\u629C", "\u7A0E\u8FBC(10%)"].map(function (l, i) {
+    return /*#__PURE__*/React.createElement("button", {
+      key: l,
+      onClick: function onClick() {
+        return setTax(i === 1);
+      },
+      className: "text-xs px-3 py-1.5 rounded-full font-semibold",
+      style: {
+        background: tax === (i === 1) ? "#fcd34d" : "rgba(255,255,255,0.15)",
+        color: tax === (i === 1) ? "#1f3a5f" : "rgba(255,255,255,0.8)"
+      }
+    }, l);
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "text-right ml-2"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "text-xs",
+    style: {
+      color: "rgba(255,255,255,0.6)"
+    }
+  }, tax ? "\u7A0E\u8FBC" : "\u7A0E\u629C", "\u5408\u8A08"), /*#__PURE__*/React.createElement("div", {
+    className: "text-2xl font-bold",
+    style: {
+      color: "#fcd34d"
+    }
+  }, "\uFFE5", fmt(tax ? T.wt : T.price))), items.length > 0 && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("button", {
+    onClick: copy,
+    className: "flex items-center gap-1 text-xs px-3 py-1.5 rounded-full font-semibold",
+    style: {
+      background: "rgba(255,255,255,0.2)",
+      color: "white"
+    }
+  }, /*#__PURE__*/React.createElement(Cp, {
+    color: "white"
+  }), copied ? "\u6E08\u2713" : "\u30B3\u30D4\u30FC"), /*#__PURE__*/React.createElement("button", {
+    onClick: reset,
+    className: "text-xs px-2 py-1.5 rounded-full",
+    style: {
+      background: "rgba(255,80,80,0.3)",
+      color: "rgba(255,200,200,0.9)"
+    }
+  }, /*#__PURE__*/React.createElement(Rst, {
+    color: "rgba(255,200,200,0.9)"
+  }))))), /*#__PURE__*/React.createElement("div", {
+    className: "flex-1 flex overflow-hidden"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex flex-col overflow-hidden bg-white",
+    style: {
+      width: "56%",
+      borderRight: "1px solid #e5e7eb"
+    }
+  }, /*#__PURE__*/React.createElement(Tabs, {
+    compact: true
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "flex-1 overflow-y-auto"
+  }, CAT.items.map(function (w) {
+    return /*#__PURE__*/React.createElement(WorkRow, {
+      key: w.id,
+      w: w,
+      desktop: true
+    });
+  })), sw ? /*#__PURE__*/React.createElement("div", {
+    className: "flex-shrink-0 overflow-y-auto",
+    style: {
+      maxHeight: "56%",
+      borderTop: "2px solid #1f3a5f",
+      background: "#f8fafc"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between px-4 py-2",
+    style: {
+      background: "#1f3a5f"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "text-white font-bold text-sm truncate"
+  }, "📐 ", sw.name), /*#__PURE__*/React.createElement("button", {
+    onClick: function onClick() {
+      resetSel();
+      setPhase("work");
+    },
+    className: "text-xs px-2 py-1 rounded-lg flex-shrink-0",
+    style: {
+      background: "rgba(255,80,80,0.3)",
+      color: "rgba(255,220,220,0.9)"
+    }
+  }, /*#__PURE__*/React.createElement(XI, {
+    size: 13,
+    color: "rgba(255,220,220,0.9)"
+  }))), /*#__PURE__*/React.createElement(SelPanel, {
+    compact: true
+  })) : /*#__PURE__*/React.createElement("div", {
+    className: "flex-shrink-0 px-4 py-3 text-center text-sm text-gray-400 border-t border-gray-100",
+    style: {
+      background: "#f8fafc"
+    }
+  }, "\uD83D\uDC46 \u5DE5\u7A2E\u3092\u30AF\u30EA\u30C3\u30AF\u3057\u3066\u8FFD\u52A0")), /*#__PURE__*/React.createElement("div", {
+    className: "flex flex-col flex-1 overflow-hidden",
+    style: {
+      background: "#f1f5f9"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex-shrink-0 bg-white",
+    style: {
+      borderBottom: "1px solid #e5e7eb"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between px-5 py-2.5"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "font-bold text-gray-700 text-sm"
+  }, "\u898B\u7A4D\u66F8\u60C5\u5831"), /*#__PURE__*/React.createElement(XlBtn, {
+    full: false
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-cols-3 gap-3 px-5 pb-3"
+  }, /*#__PURE__*/React.createElement(IField, {
+    label: "\u5B9B\u5148",
+    value: cname,
+    onChange: setCname,
+    ph: "(\u682A)\u25CB\u25CB \u5FA1\u4E2D"
+  }), /*#__PURE__*/React.createElement(IField, {
+    label: "\u5DE5\u4E8B\u540D",
+    value: wname,
+    onChange: setWname,
+    ph: "\u25CB\u25CB\u5DE5\u4E8B"
+  }), /*#__PURE__*/React.createElement(IField, {
+    label: "\u5DE5\u4E8B\u5834\u6240",
+    value: wplace,
+    onChange: setWplace,
+    ph: "\u5742\u4E95\u5E02\u25CB\u25CB"
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "flex-shrink-0 px-5 py-2 bg-white font-bold text-gray-700",
+    style: {
+      borderBottom: "1px solid #e5e7eb",
+      marginTop: 1
+    }
+  }, "\u898B\u7A4D\u660E\u7D30 ", items.length > 0 && /*#__PURE__*/React.createElement("span", {
+    className: "text-gray-400 font-normal text-sm ml-1"
+  }, "(", items.length, "\u5DE5\u7A2E)")), /*#__PURE__*/React.createElement("div", {
+    className: "flex-1 overflow-y-auto px-4 py-4 space-y-2"
+  }, items.length === 0 ? /*#__PURE__*/React.createElement("div", {
+    className: "flex flex-col items-center justify-center py-20 text-center text-gray-400"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "text-5xl mb-3"
+  }, "📋"), /*#__PURE__*/React.createElement("div", {
+    className: "text-base font-semibold"
+  }, "\u898B\u7A4D\u304C\u307E\u3060\u3042\u308A\u307E\u305B\u3093"), /*#__PURE__*/React.createElement("div", {
+    className: "text-sm mt-1"
+  }, "\u2190 \u5DE6\u306E\u5DE5\u7A2E\u30EA\u30B9\u30C8\u304B\u3089\u9078\u3093\u3067\u8FFD\u52A0")) : /*#__PURE__*/React.createElement(React.Fragment, null, items.map(function (it, i) {
+    return /*#__PURE__*/React.createElement(EstItem, {
+      key: it.id,
+      item: it,
+      idx: i,
+      cc: catC(it.name),
+      exp: eExp.has(it.id),
+      descExp: eDesc.has(it.id),
+      onToggle: function onToggle() {
+        return togE(it.id);
+      },
+      onToggleDesc: function onToggleDesc() {
+        return togED(it.id);
+      },
+      onRemove: function onRemove() {
+        return delItem(it.id);
+      }
+    });
+  }), /*#__PURE__*/React.createElement(SumCard, {
+    t: T,
+    open: showSum,
+    onToggle: function onToggle() {
+      return setShowSum(function (p) {
+        return !p;
+      });
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "pt-2"
+  }, /*#__PURE__*/React.createElement(XlBtn, {
+    full: true
+  }))))))), /*#__PURE__*/React.createElement("div", {
+    className: "md:hidden min-h-screen",
+    style: {
+      background: "#f1f5f9"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "sticky top-0 z-20",
+    style: {
+      background: "linear-gradient(135deg,#1f3a5f,#2e6e6e)"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "px-4 pt-4 pb-2"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-start justify-between"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "text-xs font-medium",
+    style: {
+      color: "rgba(255,255,255,0.6)"
+    }
+  }, "\u682A\u5F0F\u4F1A\u793E\u8C4A\u5CA1\u7D44"), /*#__PURE__*/React.createElement("div", {
+    className: "text-xl font-bold text-white"
+  }, "\u73FE\u5834\u898B\u7A4D\u30A2\u30D7\u30EA")), /*#__PURE__*/React.createElement("div", {
+    className: "text-right"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "text-xs mb-0.5",
+    style: {
+      color: "rgba(255,255,255,0.6)"
+    }
+  }, tax ? "\u7A0E\u8FBC" : "\u7A0E\u629C", "\u5408\u8A08"), /*#__PURE__*/React.createElement("div", {
+    className: "text-2xl font-bold",
+    style: {
+      color: "#fcd34d"
+    }
+  }, "\uFFE5", fmt(tax ? T.wt : T.price)), items.length > 0 && /*#__PURE__*/React.createElement("div", {
+    className: "text-xs",
+    style: {
+      color: "rgba(255,255,255,0.5)"
+    }
+  }, items.length, "\u5DE5\u7A2E"))), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-2 mt-2.5"
+  }, ["\u7A0E\u629C", "\u7A0E\u8FBC(10%)"].map(function (l, i) {
+    return /*#__PURE__*/React.createElement("button", {
+      key: l,
+      onClick: function onClick() {
+        return setTax(i === 1);
+      },
+      className: "text-xs px-3 py-1 rounded-full font-semibold",
+      style: {
+        background: tax === (i === 1) ? "#fcd34d" : "rgba(255,255,255,0.15)",
+        color: tax === (i === 1) ? "#1f3a5f" : "rgba(255,255,255,0.8)"
+      }
+    }, l);
+  }), items.length > 0 && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("button", {
+    onClick: copy,
+    className: "ml-auto text-xs px-3 py-1 rounded-full flex items-center gap-1 font-semibold",
+    style: {
+      background: "rgba(255,255,255,0.2)",
+      color: "white"
+    }
+  }, /*#__PURE__*/React.createElement(Cp, {
+    color: "white"
+  }), copied ? "\u6E08\u2713" : "\u30B3\u30D4\u30FC"), /*#__PURE__*/React.createElement("button", {
+    onClick: reset,
+    className: "text-xs px-2 py-1 rounded-full",
+    style: {
+      background: "rgba(255,80,80,0.3)",
+      color: "rgba(255,200,200,0.9)"
+    }
+  }, /*#__PURE__*/React.createElement(Rst, {
+    color: "rgba(255,200,200,0.9)"
+  }))))), /*#__PURE__*/React.createElement("div", {
+    className: "mx-4 mb-2"
+  }, /*#__PURE__*/React.createElement("input", {
+    value: proj,
+    onChange: function onChange(e) {
+      return setProj(e.target.value);
+    },
+    placeholder: "\uD83D\uDCCD \u73FE\u5834\u540D\uFF08\u4EFB\u610F\uFF09",
+    className: "w-full text-sm px-3 py-2 rounded-lg outline-none",
+    style: {
+      background: "rgba(255,255,255,0.15)",
+      color: "white"
+    }
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "bg-white",
+    style: {
+      borderBottom: "1px solid #e5e7eb"
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: function onClick() {
+      return setShowInfo(function (p) {
+        return !p;
+      });
+    },
+    className: "w-full flex items-center justify-between px-4 py-2.5"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-sm font-semibold text-gray-700"
+  }, "\uD83D\uDCC4 \u898B\u7A4D\u66F8\u60C5\u5831\uFF08\u5B9B\u5148\u30FB\u5DE5\u4E8B\u540D\u30FB\u5834\u6240\uFF09"), showInfo ? /*#__PURE__*/React.createElement(ChU, {
+    size: 16,
+    color: "#9ca3af"
+  }) : /*#__PURE__*/React.createElement(ChD, {
+    size: 16,
+    color: "#9ca3af"
+  })), showInfo && /*#__PURE__*/React.createElement("div", {
+    className: "px-4 pb-3 space-y-2"
+  }, /*#__PURE__*/React.createElement(IField, {
+    label: "\u5B9B\u5148",
+    value: cname,
+    onChange: setCname,
+    ph: "(\u682A)\u25CB\u25CB \u5FA1\u4E2D"
+  }), /*#__PURE__*/React.createElement(IField, {
+    label: "\u5DE5\u4E8B\u540D",
+    value: wname,
+    onChange: setWname,
+    ph: "\u25CB\u25CB\u5DE5\u4E8B"
+  }), /*#__PURE__*/React.createElement(IField, {
+    label: "\u5DE5\u4E8B\u5834\u6240",
+    value: wplace,
+    onChange: setWplace,
+    ph: "\u5742\u4E95\u5E02\u25CB\u25CB"
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "px-3 pt-3 pb-32 space-y-2"
+  }, items.length === 0 ? /*#__PURE__*/React.createElement("div", {
+    className: "flex flex-col items-center justify-center py-20 text-center"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "text-6xl mb-4"
+  }, "📋"), /*#__PURE__*/React.createElement("div", {
+    className: "text-base font-bold text-gray-600"
+  }, "\u5DE5\u7A2E\u3092\u8FFD\u52A0\u3057\u3066\u304F\u3060\u3055\u3044"), /*#__PURE__*/React.createElement("div", {
+    className: "text-sm text-gray-400 mt-1"
+  }, "\u53F3\u4E0B\u306E \uFF0B \u304B\u3089\u8FFD\u52A0")) : /*#__PURE__*/React.createElement(React.Fragment, null, items.map(function (it, i) {
+    return /*#__PURE__*/React.createElement(EstItem, {
+      key: it.id,
+      item: it,
+      idx: i,
+      cc: catC(it.name),
+      exp: eExp.has(it.id),
+      descExp: eDesc.has(it.id),
+      onToggle: function onToggle() {
+        return togE(it.id);
+      },
+      onToggleDesc: function onToggleDesc() {
+        return togED(it.id);
+      },
+      onRemove: function onRemove() {
+        return delItem(it.id);
+      }
+    });
+  }), /*#__PURE__*/React.createElement(SumCard, {
+    t: T,
+    open: showSum,
+    onToggle: function onToggle() {
+      return setShowSum(function (p) {
+        return !p;
+      });
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "pt-1"
+  }, /*#__PURE__*/React.createElement(XlBtn, {
+    full: true
+  })))), /*#__PURE__*/React.createElement("button", {
+    onClick: function onClick() {
+      setSheet(true);
+      resetSel();
+      setPhase("work");
+      setLExp(null);
+      setLDesc(null);
+    },
+    className: "fixed bottom-6 right-5 z-20 active:scale-95",
+    style: {
+      width: 64,
+      height: 64,
+      borderRadius: "50%",
+      background: "linear-gradient(135deg,#2e6e6e,#1f3a5f)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      boxShadow: "0 8px 24px rgba(31,58,95,0.4)"
+    }
+  }, /*#__PURE__*/React.createElement(Plus, {
+    size: 30,
+    color: "white",
+    sw: 2.5
+  })), sheet && /*#__PURE__*/React.createElement("div", {
+    className: "fixed inset-0 z-30 flex flex-col justify-end"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "absolute inset-0 bg-black/50",
+    onClick: function onClick() {
+      return setSheet(false);
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "relative bg-white flex flex-col",
+    style: {
+      borderRadius: "22px 22px 0 0",
+      maxHeight: "92vh",
+      boxShadow: "0 -8px 40px rgba(0,0,0,0.2)"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex justify-center pt-3 pb-1"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "w-12 h-1 rounded-full bg-gray-200"
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between px-4 pb-2.5 pt-1 border-b border-gray-100"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "font-bold text-base text-gray-800"
+  }, phase === "work" ? "\u5DE5\u7A2E\u3092\u9078\u3076" : phase === "machine" ? "\u6A5F\u68B0\u3092\u9078\u3076" : sw && sw.name), /*#__PURE__*/React.createElement("button", {
+    onClick: function onClick() {
+      return setSheet(false);
+    },
+    className: "p-1 text-gray-400"
+  }, /*#__PURE__*/React.createElement(XI, null))), /*#__PURE__*/React.createElement("div", {
+    className: "overflow-y-auto flex-1"
+  }, phase === "work" ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(Tabs, {
+    compact: false
+  }), /*#__PURE__*/React.createElement("div", null, CAT.items.map(function (w) {
+    return /*#__PURE__*/React.createElement(WorkRow, {
+      key: w.id,
+      w: w,
+      desktop: false
+    });
+  }))) : sw && /*#__PURE__*/React.createElement(SelPanel, {
+    compact: false
+  }))))));
+}
+ReactDOM.createRoot(document.getElementById('root')).render(/*#__PURE__*/React.createElement(App, null));
+
+</script>
+</body>
+</html>

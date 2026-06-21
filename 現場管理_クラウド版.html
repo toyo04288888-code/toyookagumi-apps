@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>現場管理表</title>
+<style>
+  :root{
+    --bg:#f4f1ea;
+    --panel:#ffffff;
+    --ink:#1f2421;
+    --ink-soft:#6b6f6a;
+    --line:#e4e0d6;
+    --accent:#e8590c;        /* 工事オレンジ */
+    --accent-dark:#c44a06;
+    --s-mada:#9aa0a6;        /* 未着手 グレー */
+    --s-mada-bg:#eceef0;
+    --s-now:#f0a500;         /* 施工中 アンバー */
+    --s-now-bg:#fff3d6;
+    --s-done:#2f9e44;        /* 完了 グリーン */
+    --s-done-bg:#e3f5e8;
+    --shadow:0 1px 2px rgba(31,36,33,.06),0 6px 18px rgba(31,36,33,.07);
+    --radius:18px;
+    font-size:17px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic UI","Yu Gothic",Meiryo,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    line-height:1.5;
+    min-height:100vh;
+    padding-bottom:120px;
+  }
+  .wrap{max-width:560px;margin:0 auto;padding:0 16px;}
+
+  /* ヘッダー */
+  header{
+    position:sticky;top:0;z-index:30;
+    background:linear-gradient(180deg,var(--bg) 70%,rgba(244,241,234,.0));
+    padding:18px 16px 8px;
+  }
+  header .wrap{padding:0;}
+  .title-row{display:flex;align-items:baseline;justify-content:space-between;gap:8px;}
+  h1{font-size:1.45rem;margin:0;letter-spacing:.02em;font-weight:800;}
+  .today{font-size:.82rem;color:var(--ink-soft);font-weight:600;}
+  .sub{font-size:.8rem;color:var(--ink-soft);margin-top:2px;}
+
+  /* フィルタタブ */
+  .tabs{
+    display:flex;gap:7px;margin-top:14px;overflow-x:auto;padding-bottom:4px;
+    scrollbar-width:none;
+  }
+  .tabs::-webkit-scrollbar{display:none;}
+  .tab{
+    flex:0 0 auto;border:none;cursor:pointer;
+    background:var(--panel);color:var(--ink-soft);
+    border:1.5px solid var(--line);
+    border-radius:999px;padding:9px 16px;font-size:.92rem;font-weight:700;
+    display:flex;align-items:center;gap:7px;transition:.15s;
+    font-family:inherit;
+  }
+  .tab .cnt{
+    background:var(--line);color:var(--ink-soft);
+    border-radius:999px;min-width:22px;height:22px;padding:0 6px;
+    display:inline-flex;align-items:center;justify-content:center;
+    font-size:.78rem;font-weight:800;
+  }
+  .tab.on{background:var(--ink);color:#fff;border-color:var(--ink);}
+  .tab.on .cnt{background:rgba(255,255,255,.22);color:#fff;}
+
+  /* カード一覧 */
+  main{margin-top:14px;}
+  .card{
+    background:var(--panel);border-radius:var(--radius);
+    box-shadow:var(--shadow);margin-bottom:13px;overflow:hidden;
+    border:1px solid var(--line);
+    animation:pop .25s ease both;
+  }
+  @keyframes pop{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+  .card-top{display:flex;align-items:stretch;}
+  .card-body{flex:1;padding:15px 14px 13px;cursor:pointer;min-width:0;}
+  .card-name{font-size:1.18rem;font-weight:800;line-height:1.3;word-break:break-word;}
+  .card-meta{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:9px;}
+  .meta{font-size:.85rem;color:var(--ink-soft);display:flex;align-items:center;gap:5px;font-weight:600;}
+  .meta svg{width:15px;height:15px;flex:0 0 auto;opacity:.65;}
+  .card-memo{
+    margin-top:9px;font-size:.86rem;color:var(--ink-soft);
+    background:var(--bg);border-radius:10px;padding:7px 10px;
+    display:flex;gap:6px;line-height:1.45;
+  }
+
+  /* ステータスバッジ（タップで切替） */
+  .status-btn{
+    flex:0 0 92px;border:none;cursor:pointer;font-family:inherit;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:4px;font-weight:800;font-size:.95rem;color:#fff;
+    transition:.12s;position:relative;
+  }
+  .status-btn:active{filter:brightness(.92);}
+  .status-btn .dot{
+    width:11px;height:11px;border-radius:50%;background:rgba(255,255,255,.9);
+    box-shadow:0 0 0 4px rgba(255,255,255,.25);
+  }
+  .status-btn .tap{font-size:.62rem;font-weight:700;opacity:.85;letter-spacing:.04em;}
+  .st-mada{background:var(--s-mada);}
+  .st-now{background:var(--s-now);}
+  .st-done{background:var(--s-done);}
+
+  /* 空状態 */
+  .empty{
+    text-align:center;color:var(--ink-soft);padding:54px 20px;
+  }
+  .empty .ico{font-size:2.4rem;}
+  .empty p{margin:10px 0 0;font-weight:600;}
+
+  /* 追加ボタン（FAB） */
+  .fab{
+    position:fixed;left:50%;transform:translateX(-50%);bottom:24px;z-index:40;
+    background:var(--accent);color:#fff;border:none;cursor:pointer;
+    font-family:inherit;font-weight:800;font-size:1.05rem;
+    padding:16px 30px;border-radius:999px;
+    box-shadow:0 8px 24px rgba(232,89,12,.4);
+    display:flex;align-items:center;gap:9px;transition:.15s;
+  }
+  .fab:active{transform:translateX(-50%) scale(.96);background:var(--accent-dark);}
+  .fab svg{width:22px;height:22px;}
+
+  /* 編集シート */
+  .scrim{
+    position:fixed;inset:0;background:rgba(31,36,33,.45);z-index:50;
+    opacity:0;pointer-events:none;transition:.2s;
+  }
+  .scrim.on{opacity:1;pointer-events:auto;}
+  .sheet{
+    position:fixed;left:0;right:0;bottom:0;z-index:60;
+    background:var(--panel);border-radius:24px 24px 0 0;
+    max-width:560px;margin:0 auto;
+    transform:translateY(110%);transition:transform .26s cubic-bezier(.32,.72,0,1);
+    max-height:92vh;overflow-y:auto;
+    padding:8px 18px calc(24px + env(safe-area-inset-bottom));
+  }
+  .sheet.on{transform:translateY(0);}
+  .grab{width:42px;height:5px;border-radius:999px;background:var(--line);margin:8px auto 4px;}
+  .sheet h2{font-size:1.15rem;margin:6px 2px 18px;font-weight:800;}
+  .field{margin-bottom:18px;}
+  .field > label{display:block;font-size:.84rem;font-weight:800;color:var(--ink-soft);margin-bottom:8px;letter-spacing:.02em;}
+  .field input[type=text], .field input[type=date], .field textarea{
+    width:100%;font-family:inherit;font-size:1.05rem;color:var(--ink);
+    background:var(--bg);border:1.5px solid var(--line);border-radius:13px;
+    padding:13px 14px;outline:none;transition:.15s;
+  }
+  .field input:focus,.field textarea:focus{border-color:var(--accent);background:#fff;}
+  .field textarea{resize:none;min-height:74px;line-height:1.5;}
+  .req{color:var(--accent);}
+
+  /* ステータス選択（大きい3ボタン） */
+  .status-pick{display:flex;gap:9px;}
+  .status-pick button{
+    flex:1;border:2px solid var(--line);background:var(--panel);cursor:pointer;
+    font-family:inherit;font-weight:800;font-size:.98rem;color:var(--ink-soft);
+    border-radius:14px;padding:15px 4px;transition:.13s;
+    display:flex;flex-direction:column;align-items:center;gap:6px;
+  }
+  .status-pick button .d{width:13px;height:13px;border-radius:50%;}
+  .status-pick button[data-v=未着手] .d{background:var(--s-mada);}
+  .status-pick button[data-v=施工中] .d{background:var(--s-now);}
+  .status-pick button[data-v=完了] .d{background:var(--s-done);}
+  .status-pick button.sel[data-v=未着手]{border-color:var(--s-mada);background:var(--s-mada-bg);color:var(--ink);}
+  .status-pick button.sel[data-v=施工中]{border-color:var(--s-now);background:var(--s-now-bg);color:var(--ink);}
+  .status-pick button.sel[data-v=完了]{border-color:var(--s-done);background:var(--s-done-bg);color:var(--ink);}
+
+  /* 担当クイックチップ */
+  .chips{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:9px;}
+  .chip{
+    border:1.5px solid var(--line);background:var(--panel);cursor:pointer;
+    font-family:inherit;font-weight:700;font-size:.9rem;color:var(--ink-soft);
+    border-radius:999px;padding:8px 15px;transition:.12s;
+  }
+  .chip.sel{background:var(--ink);color:#fff;border-color:var(--ink);}
+
+  .dates{display:flex;gap:10px;align-items:center;}
+  .dates input{flex:1;}
+  .dates span{color:var(--ink-soft);font-weight:700;}
+
+  .sheet-actions{display:flex;gap:10px;margin-top:6px;}
+  .btn-save{
+    flex:1;background:var(--accent);color:#fff;border:none;cursor:pointer;
+    font-family:inherit;font-weight:800;font-size:1.08rem;
+    padding:16px;border-radius:14px;transition:.13s;
+  }
+  .btn-save:active{background:var(--accent-dark);}
+  .btn-del{
+    background:none;border:none;cursor:pointer;color:#c92a2a;
+    font-family:inherit;font-weight:800;font-size:.95rem;padding:16px 14px;
+  }
+  .btn-del:active{opacity:.6;}
+
+  .loading{text-align:center;color:var(--ink-soft);padding:40px;font-weight:600;}
+  .saved-flash{
+    position:fixed;top:14px;left:50%;transform:translateX(-50%) translateY(-80px);
+    background:var(--s-done);color:#fff;font-weight:800;font-size:.92rem;
+    padding:11px 22px;border-radius:999px;z-index:90;box-shadow:var(--shadow);
+    transition:transform .3s cubic-bezier(.32,.72,0,1);
+  }
+  .saved-flash.on{transform:translateX(-50%) translateY(0);}
+  /* 合言葉ロック画面 */
+  .lock-screen{
+    position:fixed;inset:0;z-index:200;background:var(--bg);
+    display:none;align-items:center;justify-content:center;padding:24px;
+  }
+  .lock-box{
+    background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+    box-shadow:var(--shadow);padding:36px 26px;text-align:center;max-width:340px;width:100%;
+  }
+  .lock-ico{font-size:2.4rem;}
+  .lock-box h2{font-size:1.3rem;margin:10px 0 4px;font-weight:800;}
+  .lock-box p{color:var(--ink-soft);font-size:.92rem;margin:0 0 18px;font-weight:600;}
+  .lock-box input{
+    width:100%;font-family:inherit;font-size:1.3rem;text-align:center;letter-spacing:.3em;
+    background:var(--bg);border:1.5px solid var(--line);border-radius:13px;
+    padding:14px;outline:none;margin-bottom:12px;
+  }
+  .lock-box input:focus{border-color:var(--accent);background:#fff;}
+  .lock-box button{
+    width:100%;background:var(--accent);color:#fff;border:none;cursor:pointer;
+    font-family:inherit;font-weight:800;font-size:1.05rem;padding:14px;border-radius:13px;
+  }
+  .lock-box button:active{background:var(--accent-dark);}
+  .lock-err{color:#c92a2a;font-size:.86rem;font-weight:700;margin-top:10px;min-height:1.2em;}
+  /* 合計サマリー */
+  .summary{
+    display:flex;align-items:center;gap:10px;margin-top:14px;flex-wrap:wrap;
+  }
+  .sum-item{
+    background:var(--panel);border:1px solid var(--line);border-radius:14px;
+    padding:9px 15px;flex:1 1 auto;min-width:92px;
+  }
+  .sum-label{font-size:.72rem;font-weight:800;color:var(--ink-soft);letter-spacing:.04em;}
+  .sum-val{font-size:1.12rem;font-weight:800;margin-top:2px;line-height:1.2;word-break:break-all;}
+  .sum-profit{color:var(--accent);}
+  .excel-btn{
+    flex:0 0 auto;border:none;cursor:pointer;font-family:inherit;
+    background:var(--s-done);color:#fff;font-weight:800;font-size:.9rem;
+    border-radius:14px;padding:11px 15px;display:flex;align-items:center;gap:7px;
+    transition:.13s;
+  }
+  .excel-btn:active{filter:brightness(.92);}
+  .excel-btn svg{width:18px;height:18px;}
+  .meta-profit{color:var(--accent);font-weight:700;}
+  .meta-year{background:var(--ink);color:#fff;border-radius:999px;padding:2px 10px;font-weight:800;font-size:.78rem;}
+  .rate-hint{margin-top:8px;font-size:.92rem;font-weight:800;color:var(--accent);min-height:1.2em;}
+  /* 年度選択 */
+  .year-bar{display:flex;align-items:center;gap:10px;margin-top:14px;}
+  .year-label{font-size:.8rem;font-weight:800;color:var(--ink-soft);letter-spacing:.04em;}
+  .year-sel{
+    flex:1;font-family:inherit;font-size:1.05rem;font-weight:800;color:var(--ink);
+    background:var(--panel);border:1.5px solid var(--line);border-radius:13px;
+    padding:11px 14px;outline:none;cursor:pointer;
+    -webkit-appearance:none;appearance:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23667' stroke-width='3'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;background-position:right 14px center;
+  }
+  .year-sel:focus{border-color:var(--accent);}
+  /* 編集シート内の年度選択 */
+  .field select{
+    width:100%;font-family:inherit;font-size:1.05rem;color:var(--ink);
+    background:var(--bg);border:1.5px solid var(--line);border-radius:13px;
+    padding:13px 14px;outline:none;-webkit-appearance:none;appearance:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23667' stroke-width='3'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;background-position:right 14px center;
+  }
+  .field select:focus{border-color:var(--accent);background:#fff;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="title-row">
+      <h1>現場管理表</h1>
+      <span class="today" id="today"></span>
+    </div>
+    <div class="sub" id="sub">読み込み中…</div>
+
+    <div class="year-bar">
+      <label class="year-label" for="yearSel">年度</label>
+      <select id="yearSel" class="year-sel"></select>
+    </div>
+
+    <div class="summary">
+      <div class="sum-item">
+        <div class="sum-label">受注合計</div>
+        <div class="sum-val" id="sumAmount">¥0</div>
+      </div>
+      <div class="sum-item">
+        <div class="sum-label">粗利合計</div>
+        <div class="sum-val sum-profit" id="sumProfit">¥0</div>
+      </div>
+      <div class="sum-item">
+        <div class="sum-label">粗利率</div>
+        <div class="sum-val sum-profit" id="sumRate">—</div>
+      </div>
+      <button class="excel-btn" id="excelBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 8l6 8M15 8l-6 8"/></svg>
+        Excel出力
+      </button>
+    </div>
+
+    <div class="tabs" id="tabs"></div>
+  </div>
+</header>
+
+<main class="wrap" id="list">
+  <div class="loading">読み込み中…</div>
+</main>
+
+<button class="fab" id="fab">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+  現場を追加
+</button>
+
+<!-- 編集シート -->
+<div class="scrim" id="scrim"></div>
+<div class="sheet" id="sheet">
+  <div class="grab"></div>
+  <h2 id="sheetTitle">現場を追加</h2>
+
+  <div class="field">
+    <label>現場名 <span class="req">*</span></label>
+    <input type="text" id="f-name" placeholder="例）舗装工事（春江地区）（坂井市）" autocomplete="off">
+  </div>
+
+  <div class="field">
+    <label>年度</label>
+    <select id="f-year"></select>
+  </div>
+
+  <div class="field">
+    <label>状況</label>
+    <div class="status-pick" id="f-status">
+      <button type="button" data-v="未着手"><span class="d"></span>未着手</button>
+      <button type="button" data-v="施工中"><span class="d"></span>施工中</button>
+      <button type="button" data-v="完了"><span class="d"></span>完了</button>
+    </div>
+  </div>
+
+  <div class="field">
+    <label>担当</label>
+    <input type="text" id="f-person" placeholder="例）専務" autocomplete="off">
+  </div>
+
+  <div class="field">
+    <label>金額（受注金額）</label>
+    <input type="text" id="f-amount" inputmode="numeric" placeholder="例）1,200,000 または 130万" autocomplete="off">
+  </div>
+
+  <div class="field">
+    <label>粗利</label>
+    <input type="text" id="f-profit" inputmode="numeric" placeholder="例）300,000 または 30万" autocomplete="off">
+    <div class="rate-hint" id="rateHint"></div>
+  </div>
+
+  <div class="field">
+    <label>工期</label>
+    <div class="dates">
+      <input type="date" id="f-start">
+      <span>〜</span>
+      <input type="date" id="f-end">
+    </div>
+  </div>
+
+  <div class="field">
+    <label>工事概要</label>
+    <textarea id="f-memo" placeholder="例）幅員5m・延長120m 表層t=5cm／生コン手配済み など"></textarea>
+  </div>
+
+  <div class="sheet-actions">
+    <button class="btn-save" id="save">保存する</button>
+    <button class="btn-del" id="del" style="display:none">削除</button>
+  </div>
+</div>
+
+<div class="saved-flash" id="flash">保存しました</div>
+
+<!-- 合言葉ロック -->
+<div class="lock-screen" id="lockScreen">
+  <div class="lock-box">
+    <div class="lock-ico">🔒</div>
+    <h2>現場管理表</h2>
+    <p>合言葉を入力してください</p>
+    <input type="password" id="lockInput" inputmode="numeric" placeholder="合言葉" autocomplete="off">
+    <button id="lockBtn">開く</button>
+    <div class="lock-err" id="lockErr"></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+<script>
+(function(){
+  "use strict";
+
+  /* ============================================================
+     ▼▼▼ Supabaseの設定（設定済み） ▼▼▼
+     ============================================================ */
+  var SUPABASE_URL = "https://cfvppxqwdtwwucnaurtb.supabase.co";
+  var SUPABASE_KEY = "sb_publishable_Ib5hD2wXpa7iuQkSvpyExQ_owiHvngd";
+  var PASSCODE     = "0428";   // 社内で使う合言葉（自由に変更）
+  /* ============================================================
+     ▲▲▲ 書き換えるのはここまで ▲▲▲
+     ============================================================ */
+
+  var STATUSES = ["未着手","施工中","完了"];
+  var STATUS_CLASS = {"未着手":"st-mada","施工中":"st-now","完了":"st-done"};
+  var STATUS_NEXT  = {"未着手":"施工中","施工中":"完了","完了":"未着手"};
+
+  // ---- 合言葉ロック ----
+  var lockScreen = document.getElementById("lockScreen");
+  if(PASSCODE && sessionStorage.getItem("genba_unlocked") !== "1"){
+    lockScreen.style.display = "flex";
+    setTimeout(function(){ document.getElementById("lockInput").focus(); }, 100);
+    var tryUnlock = function(){
+      if(document.getElementById("lockInput").value === PASSCODE){
+        sessionStorage.setItem("genba_unlocked","1");
+        lockScreen.style.display = "none";
+      }else{
+        document.getElementById("lockErr").textContent = "合言葉が違います";
+      }
+    };
+    document.getElementById("lockBtn").onclick = tryUnlock;
+    document.getElementById("lockInput").addEventListener("keydown", function(e){
+      if(e.key === "Enter") tryUnlock();
+    });
+  }
+
+  var sites = [];
+  var filter = "すべて";
+  var editingId = null;
+  var pickedStatus = "未着手";
+
+  // ---- 年度ロジック（4月〜翌3月） ----
+  function currentFY(){
+    var d = new Date();
+    return (d.getMonth()+1) >= 4 ? d.getFullYear() : d.getFullYear()-1;
+  }
+  function fyFromDateStr(ds){
+    if(!ds) return null;
+    var p = String(ds).split("-");
+    if(p.length < 2) return null;
+    var y = +p[0], m = +p[1];
+    if(!y || !m) return null;
+    return m >= 4 ? y : y-1;
+  }
+  // その現場の年度（未設定なら工期開始から推定、それも無ければ今年度）
+  function effFY(s){
+    if(s.fiscal_year) return Number(s.fiscal_year);
+    var f = fyFromDateStr(s.start);
+    return f != null ? f : currentFY();
+  }
+  function fyLabel(y){ return y + "年度（R" + (y-2018) + "）"; }
+
+  var yearFilter = currentFY();   // 表示中の年度（"all"で全年度）
+
+  // ---- 日付表示 ----
+  var now = new Date();
+  var wd = ["日","月","火","水","木","金","土"][now.getDay()];
+  document.getElementById("today").textContent =
+    (now.getMonth()+1)+"月"+now.getDate()+"日("+wd+")";
+
+  // ---- クラウド通信（Supabase REST） ----
+  function headers(){
+    return {
+      "apikey": SUPABASE_KEY,
+      "Authorization": "Bearer " + SUPABASE_KEY,
+      "Content-Type": "application/json"
+    };
+  }
+  // DB列名 ⇔ アプリ内のキー名 の変換
+  function toRow(s){
+    var fy = (s.fiscal_year!=null && s.fiscal_year!=="") ? Number(s.fiscal_year) : null;
+    return { id:s.id, name:s.name, status:s.status, person:s.person||"",
+             amount:s.amount||"", profit:s.profit||"", fiscal_year:fy,
+             start_date:s.start||"", end_date:s.end||"",
+             memo:s.memo||"", updated:s.updated||Date.now() };
+  }
+  function fromRow(r){
+    return { id:r.id, name:r.name, status:r.status, person:r.person||"",
+             amount:r.amount||"", profit:r.profit||"", fiscal_year:r.fiscal_year||null,
+             start:r.start_date||"", end:r.end_date||"",
+             memo:r.memo||"", updated:r.updated||0 };
+  }
+
+  async function load(){
+    try{
+      var res = await fetch(SUPABASE_URL + "/rest/v1/sites?select=*", { headers: headers() });
+      if(!res.ok) throw new Error("HTTP " + res.status);
+      var rows = await res.json();
+      sites = rows.map(fromRow);
+    }catch(e){
+      console.error("読み込み失敗:", e);
+      document.getElementById("sub").textContent = "⚠ クラウドに接続できません（設定を確認してください）";
+    }
+    render();
+  }
+  // 1件だけ保存（追加・更新の両方）
+  async function saveSite(s){
+    try{
+      await fetch(SUPABASE_URL + "/rest/v1/sites", {
+        method: "POST",
+        headers: Object.assign({ "Prefer": "resolution=merge-duplicates" }, headers()),
+        body: JSON.stringify(toRow(s))
+      });
+    }catch(e){ console.error("保存失敗:", e); alert("保存に失敗しました。通信環境を確認してください。"); }
+  }
+  // 1件だけ削除
+  async function deleteSite(id){
+    try{
+      await fetch(SUPABASE_URL + "/rest/v1/sites?id=eq." + encodeURIComponent(id), {
+        method: "DELETE", headers: headers()
+      });
+    }catch(e){ console.error("削除失敗:", e); }
+  }
+
+  function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+
+  // ---- 年度メニュー ----
+  // 表示候補の年度一覧（データ内＋今年度＋来年度）を新しい順で返す
+  function yearsList(){
+    var set = {};
+    sites.forEach(function(s){ set[effFY(s)] = true; });
+    set[currentFY()] = true;
+    set[currentFY()+1] = true;
+    var arr = Object.keys(set).map(Number).sort(function(a,b){ return b-a; });
+    return arr;
+  }
+  // ヘッダーの年度メニューを作る
+  function renderYearSelect(){
+    var sel = document.getElementById("yearSel");
+    var years = yearsList();
+    var html = '<option value="all">全年度</option>';
+    years.forEach(function(y){
+      html += '<option value="'+y+'">'+fyLabel(y)+'</option>';
+    });
+    sel.innerHTML = html;
+    sel.value = (yearFilter === "all") ? "all" : String(yearFilter);
+  }
+  document.getElementById("yearSel").onchange = function(){
+    yearFilter = (this.value === "all") ? "all" : Number(this.value);
+    render();
+  };
+  // 編集シートの年度メニューを作る
+  function populateYearField(selected){
+    var sel = document.getElementById("f-year");
+    var years = yearsList();
+    if(years.indexOf(selected) === -1) years.unshift(selected);
+    years.sort(function(a,b){ return b-a; });
+    sel.innerHTML = years.map(function(y){
+      return '<option value="'+y+'">'+fyLabel(y)+'</option>';
+    }).join("");
+    sel.value = String(selected);
+  }
+
+  // 選択中の年度に属する現場（"all"なら全件）
+  function sitesInYear(){
+    if(yearFilter === "all") return sites.slice();
+    return sites.filter(function(s){ return effFY(s) === yearFilter; });
+  }
+
+  // ---- 描画 ----
+  function counts(){
+    var inYear = sitesInYear();
+    var c = {"すべて":inYear.length,"施工中":0,"未着手":0,"完了":0};
+    inYear.forEach(function(s){ if(c[s.status]!=null) c[s.status]++; });
+    return c;
+  }
+
+  function renderTabs(){
+    var c = counts();
+    var order = ["すべて","施工中","未着手","完了"];
+    var html = order.map(function(t){
+      return '<button class="tab'+(filter===t?' on':'')+'" data-f="'+t+'">'+
+             t+'<span class="cnt">'+(c[t]||0)+'</span></button>';
+    }).join("");
+    document.getElementById("tabs").innerHTML = html;
+    document.querySelectorAll("#tabs .tab").forEach(function(b){
+      b.onclick = function(){ filter = b.getAttribute("data-f"); render(); };
+    });
+  }
+
+  function fmtDate(d){
+    if(!d) return "";
+    var p = d.split("-"); if(p.length<3) return d;
+    return (+p[1])+"/"+(+p[2]);
+  }
+
+  // 金額文字列を数値に変換（"130万"→1300000、"1,200,000"→1200000 など）
+  function parseMoney(v){
+    if(v==null) return 0;
+    var t = String(v).trim();
+    if(!t) return 0;
+    // 全角数字→半角
+    t = t.replace(/[０-９．]/g, function(c){ return String.fromCharCode(c.charCodeAt(0)-0xFEE0); });
+    t = t.replace(/[，]/g, ",").replace(/[￥¥\s,円]/g, "");
+    if(/[億万]/.test(t)){
+      var val = 0;
+      var mo = t.match(/([\d.]+)億/); if(mo) val += parseFloat(mo[1])*1e8;
+      var mm = t.match(/([\d.]+)万/); if(mm) val += parseFloat(mm[1])*1e4;
+      var mr = t.match(/万([\d.]+)$/); if(mr) val += parseFloat(mr[1]);
+      return isFinite(val) ? val : 0;
+    }
+    var n = parseFloat(t);
+    return isFinite(n) ? n : 0;
+  }
+  // 数値を ¥1,300,000 形式に
+  function fmtMoney(n){ return "¥" + Math.round(n).toLocaleString("ja-JP"); }
+  // 粗利率（%）。受注金額が0なら null
+  function profitRate(s){
+    var a = parseMoney(s.amount);
+    if(a <= 0) return null;
+    return parseMoney(s.profit) / a * 100;
+  }
+
+  function fmtAmount(a){
+    if(!a) return "";
+    var n = parseMoney(a);
+    if(n > 0) return fmtMoney(n);
+    return String(a).trim();
+  }
+
+  function metaHTML(s){
+    var bits = [];
+    if(yearFilter === "all"){
+      bits.push('<span class="meta meta-year">'+effFY(s)+'年度</span>');
+    }
+    if(s.person){
+      bits.push('<span class="meta"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>'+esc(s.person)+'</span>');
+    }
+    if(s.amount){
+      bits.push('<span class="meta"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18M7 7h10M7 12h10"/></svg>'+esc(fmtAmount(s.amount))+'</span>');
+    }
+    if(s.profit){
+      var rate = profitRate(s);
+      var rateTxt = (rate!=null) ? '（'+rate.toFixed(1)+'%）' : '';
+      bits.push('<span class="meta meta-profit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg>粗利 '+esc(fmtAmount(s.profit))+rateTxt+'</span>');
+    }
+    if(s.start || s.end){
+      bits.push('<span class="meta"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>'+fmtDate(s.start)+(s.end?"〜"+fmtDate(s.end):"〜")+'</span>');
+    }
+    return bits.length ? '<div class="card-meta">'+bits.join("")+'</div>' : "";
+  }
+
+  function render(){
+    renderYearSelect();
+    renderTabs();
+    var sub = document.getElementById("sub");
+    var c = counts();
+    sub.textContent = "進行中 "+c["施工中"]+"件 ・ 未着手 "+c["未着手"]+"件 ・ 完了 "+c["完了"]+"件";
+
+    var inYear = sitesInYear();
+
+    // 合計サマリー（選択年度の全現場）
+    var totalAmt = 0, totalProfit = 0;
+    inYear.forEach(function(s){ totalAmt += parseMoney(s.amount); totalProfit += parseMoney(s.profit); });
+    var totalRate = totalAmt > 0 ? (totalProfit/totalAmt*100) : null;
+    document.getElementById("sumAmount").textContent = fmtMoney(totalAmt);
+    document.getElementById("sumProfit").textContent = fmtMoney(totalProfit);
+    document.getElementById("sumRate").textContent   = (totalRate!=null ? totalRate.toFixed(1)+"%" : "—");
+
+    var list = document.getElementById("list");
+    var view = inYear.filter(function(s){ return filter==="すべて" || s.status===filter; });
+
+    // 並び順：施工中 → 未着手 → 完了
+    var rank = {"施工中":0,"未着手":1,"完了":2};
+    view.sort(function(a,b){ return (rank[a.status]-rank[b.status]) || (b.updated-a.updated); });
+
+    if(view.length===0){
+      list.innerHTML = '<div class="empty"><div class="ico">🏗️</div><p>'+
+        (inYear.length===0 ? "この年度の現場はまだありません。<br>下の「現場を追加」から登録してください。" : "この区分の現場はありません")+
+        '</p></div>';
+      return;
+    }
+
+    list.innerHTML = view.map(function(s){
+      return '<div class="card">'+
+        '<div class="card-top">'+
+          '<div class="card-body" data-edit="'+s.id+'">'+
+            '<div class="card-name">'+esc(s.name)+'</div>'+
+            metaHTML(s)+
+            (s.memo ? '<div class="card-memo">📋 '+esc(s.memo)+'</div>' : '')+
+          '</div>'+
+          '<button class="status-btn '+STATUS_CLASS[s.status]+'" data-toggle="'+s.id+'">'+
+            '<span class="dot"></span>'+s.status+
+            '<span class="tap">タップで変更</span>'+
+          '</button>'+
+        '</div>'+
+      '</div>';
+    }).join("");
+
+    document.querySelectorAll("[data-toggle]").forEach(function(b){
+      b.onclick = function(){ toggleStatus(b.getAttribute("data-toggle")); };
+    });
+    document.querySelectorAll("[data-edit]").forEach(function(b){
+      b.onclick = function(){ openSheet(b.getAttribute("data-edit")); };
+    });
+  }
+
+  function esc(t){
+    return String(t==null?"":t).replace(/[&<>"]/g,function(m){
+      return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m];
+    });
+  }
+
+  // ---- ステータス1タップ切替 ----
+  async function toggleStatus(id){
+    var s = sites.find(function(x){ return x.id===id; });
+    if(!s) return;
+    s.status = STATUS_NEXT[s.status];
+    s.updated = Date.now();
+    render();
+    await saveSite(s);
+  }
+
+  // ---- 編集シート ----
+  var scrim = document.getElementById("scrim");
+  var sheet = document.getElementById("sheet");
+
+  function setStatusPick(v){
+    pickedStatus = v;
+    document.querySelectorAll("#f-status button").forEach(function(b){
+      b.classList.toggle("sel", b.getAttribute("data-v")===v);
+    });
+  }
+
+  function updateRateHint(){
+    var a = parseMoney(document.getElementById("f-amount").value);
+    var p = parseMoney(document.getElementById("f-profit").value);
+    var hint = document.getElementById("rateHint");
+    if(a > 0 && p !== 0){
+      hint.textContent = "粗利率 " + (p/a*100).toFixed(1) + "%";
+    }else{
+      hint.textContent = "";
+    }
+  }
+
+  // 入力中に3桁カンマを付ける（「130万」のような表記はそのまま残す）
+  function formatNumberInput(el){
+    var raw = el.value;
+    // 全角数字→半角
+    raw = raw.replace(/[０-９]/g, function(c){ return String.fromCharCode(c.charCodeAt(0)-0xFEE0); });
+    var digits = raw.replace(/,/g, "");
+    // 数字以外（万・億など）が混ざっていれば整形しない
+    if(!/^\d*$/.test(digits)){ el.value = raw; updateRateHint(); return; }
+    if(digits === ""){ el.value = ""; updateRateHint(); return; }
+    // カーソル位置をなるべく保つ
+    var pos = el.selectionStart;
+    var digitsBefore = raw.slice(0, pos).replace(/,/g, "").length;
+    var formatted = Number(digits).toLocaleString("en-US");
+    el.value = formatted;
+    var newPos = formatted.length, count = 0;
+    for(var i=0; i<formatted.length; i++){
+      if(/\d/.test(formatted[i])) count++;
+      if(count >= digitsBefore){ newPos = i+1; break; }
+    }
+    try{ el.setSelectionRange(newPos, newPos); }catch(e){}
+    updateRateHint();
+  }
+
+  function openSheet(id){
+    editingId = id || null;
+    var del = document.getElementById("del");
+    if(id){
+      var s = sites.find(function(x){ return x.id===id; });
+      document.getElementById("sheetTitle").textContent = "現場を編集";
+      document.getElementById("f-name").value = s.name||"";
+      document.getElementById("f-person").value = s.person||"";
+      document.getElementById("f-amount").value = s.amount||"";
+      document.getElementById("f-profit").value = s.profit||"";
+      document.getElementById("f-start").value = s.start||"";
+      document.getElementById("f-end").value = s.end||"";
+      document.getElementById("f-memo").value = s.memo||"";
+      setStatusPick(s.status||"未着手");
+      populateYearField(effFY(s));
+      del.style.display = "block";
+    }else{
+      document.getElementById("sheetTitle").textContent = "現場を追加";
+      document.getElementById("f-name").value = "";
+      document.getElementById("f-person").value = "";
+      document.getElementById("f-amount").value = "";
+      document.getElementById("f-profit").value = "";
+      document.getElementById("f-start").value = "";
+      document.getElementById("f-end").value = "";
+      document.getElementById("f-memo").value = "";
+      setStatusPick("未着手");
+      populateYearField(yearFilter === "all" ? currentFY() : yearFilter);
+      del.style.display = "none";
+    }
+    formatNumberInput(document.getElementById("f-amount"));
+    formatNumberInput(document.getElementById("f-profit"));
+    updateRateHint();
+    scrim.classList.add("on");
+    sheet.classList.add("on");
+  }
+  function closeSheet(){
+    scrim.classList.remove("on");
+    sheet.classList.remove("on");
+    editingId = null;
+  }
+
+  document.querySelectorAll("#f-status button").forEach(function(b){
+    b.onclick = function(){ setStatusPick(b.getAttribute("data-v")); };
+  });
+  document.getElementById("f-amount").addEventListener("input", function(){ formatNumberInput(this); });
+  document.getElementById("f-profit").addEventListener("input", function(){ formatNumberInput(this); });
+
+  document.getElementById("fab").onclick = function(){ openSheet(null); };
+  scrim.onclick = closeSheet;
+
+  // ---- Excel一覧出力 ----
+  document.getElementById("excelBtn").onclick = function(){
+    if(typeof XLSX === "undefined"){
+      alert("Excel機能の読み込みに失敗しました。通信環境を確認して、ページを再読み込みしてください。");
+      return;
+    }
+    var exportSites = sitesInYear();
+    if(exportSites.length === 0){ alert("出力する現場がありません。"); return; }
+
+    // 並び順：施工中 → 未着手 → 完了
+    var rank = {"施工中":0,"未着手":1,"完了":2};
+    var rows = exportSites.slice().sort(function(a,b){
+      return (rank[a.status]-rank[b.status]) || (b.updated-a.updated);
+    });
+
+    var header = ["年度","現場名","状況","担当","受注金額","粗利","粗利率","工期開始","工期終了","工事概要"];
+    var aoa = [header];
+    var totalAmt = 0, totalProfit = 0;
+
+    rows.forEach(function(s){
+      var amt = parseMoney(s.amount);
+      var prof = parseMoney(s.profit);
+      var rate = amt > 0 ? prof/amt : null;
+      totalAmt += amt; totalProfit += prof;
+      aoa.push([
+        effFY(s)+"年度", s.name || "", s.status || "", s.person || "",
+        amt || 0, prof || 0, rate,
+        s.start || "", s.end || "", s.memo || ""
+      ]);
+    });
+    // 合計行
+    var totalRate = totalAmt > 0 ? totalProfit/totalAmt : null;
+    aoa.push(["合計","","","",totalAmt,totalProfit,totalRate,"","",""]);
+
+    var ws = XLSX.utils.aoa_to_sheet(aoa);
+    ws["!cols"] = [{wch:11},{wch:30},{wch:8},{wch:8},{wch:14},{wch:14},{wch:9},{wch:12},{wch:12},{wch:40}];
+
+    var lastRow = aoa.length;
+    for(var r = 0; r < lastRow; r++){
+      for(var col = 0; col < header.length; col++){
+        var addr = XLSX.utils.encode_cell({r:r, c:col});
+        if(!ws[addr]) continue;
+        ws[addr].s = ws[addr].s || {};
+        // ヘッダー行
+        if(r === 0){
+          ws[addr].s = {
+            font:{bold:true, color:{rgb:"FFFFFF"}},
+            fill:{fgColor:{rgb:"2F8A4C"}},
+            alignment:{horizontal:"center", vertical:"center"},
+            border:{bottom:{style:"thin",color:{rgb:"CCCCCC"}}}
+          };
+        }
+        // 合計行
+        if(r === lastRow-1){
+          ws[addr].s.font = {bold:true};
+          ws[addr].s.fill = {fgColor:{rgb:"F0EDE6"}};
+        }
+        // 金額・粗利の列（4,5）は円表示、粗利率（6）は%表示
+        if(col === 4 || col === 5){ ws[addr].z = '"¥"#,##0'; }
+        if(col === 6 && ws[addr].v != null){ ws[addr].z = '0.0%'; }
+      }
+    }
+
+    var wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "現場一覧");
+    var ylabel = (yearFilter === "all") ? "全年度" : (yearFilter + "年度");
+    var d = new Date();
+    var fname = "現場一覧_" + ylabel + "_" + d.getFullYear() +
+      ("0"+(d.getMonth()+1)).slice(-2) + ("0"+d.getDate()).slice(-2) + ".xlsx";
+    XLSX.writeFile(wb, fname);
+  };
+
+  function flash(){
+    var f = document.getElementById("flash");
+    f.classList.add("on");
+    setTimeout(function(){ f.classList.remove("on"); }, 1400);
+  }
+
+  document.getElementById("save").onclick = async function(){
+    var name = document.getElementById("f-name").value.trim();
+    if(!name){
+      var n = document.getElementById("f-name");
+      n.focus(); n.style.borderColor = "#c92a2a";
+      setTimeout(function(){ n.style.borderColor=""; }, 1200);
+      return;
+    }
+    var data = {
+      name: name,
+      status: pickedStatus,
+      fiscal_year: Number(document.getElementById("f-year").value),
+      person: document.getElementById("f-person").value.trim(),
+      amount: document.getElementById("f-amount").value.trim(),
+      profit: document.getElementById("f-profit").value.trim(),
+      start: document.getElementById("f-start").value,
+      end: document.getElementById("f-end").value,
+      memo: document.getElementById("f-memo").value.trim(),
+      updated: Date.now()
+    };
+    if(editingId){
+      var s = sites.find(function(x){ return x.id===editingId; });
+      Object.assign(s, data);
+      closeSheet();
+      render();
+      await saveSite(s);
+    }else{
+      data.id = uid();
+      sites.push(data);
+      closeSheet();
+      render();
+      await saveSite(data);
+    }
+    flash();
+  };
+
+  document.getElementById("del").onclick = async function(){
+    if(!editingId) return;
+    if(!confirm("この現場を削除しますか？")) return;
+    var idToDelete = editingId;
+    sites = sites.filter(function(x){ return x.id!==idToDelete; });
+    closeSheet();
+    render();
+    await deleteSite(idToDelete);
+  };
+
+  load();
+
+  // 10秒ごとに自動更新（編集中は邪魔しない）
+  setInterval(function(){
+    if(!sheet.classList.contains("on")){ load(); }
+  }, 10000);
+  // 画面に戻ってきた時も更新
+  document.addEventListener("visibilitychange", function(){
+    if(document.visibilityState === "visible" && !sheet.classList.contains("on")){ load(); }
+  });
+})();
+</script>
+</body>
+</html>

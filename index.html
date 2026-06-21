@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>豊岡組 工事日報（監督）</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{--navy:#1f3a5f;--navy2:#2c4f80;--orange:#e8732b;--bg:#f4f6f9;--card:#fff;
+    --line:#dde3ea;--txt:#1c2733;--muted:#6b7888;--ok:#1f9d57;--warn:#c8412b;--soft:#eef2f7}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;
+    background:var(--bg);color:var(--txt);font-size:15px;line-height:1.5}
+  header{background:var(--navy);color:#fff;padding:10px 14px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:30}
+  header .logo{font-weight:700;font-size:17px}
+  header .mode{margin-left:auto;font-size:12px;background:rgba(255,255,255,.15);padding:3px 9px;border-radius:20px}
+  nav{display:flex;background:var(--navy2);position:sticky;top:44px;z-index:29;overflow:auto}
+  nav button{flex:1;min-width:90px;background:none;border:none;color:#cfe;padding:11px 6px;font-size:14px;cursor:pointer;border-bottom:3px solid transparent;font-weight:600}
+  nav button.active{color:#fff;border-bottom-color:var(--orange);background:rgba(0,0,0,.12)}
+  main{max-width:920px;margin:0 auto;padding:14px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:14px}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
+  .fld{display:flex;flex-direction:column;gap:4px}
+  .fld label{font-size:12px;color:var(--muted);font-weight:600}
+  input,select,textarea{font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--txt);width:100%}
+  textarea{resize:vertical}
+  input:focus,select:focus,textarea:focus{outline:2px solid var(--navy2);outline-offset:-1px}
+  button.btn{background:var(--navy);color:#fff;border:none;padding:9px 16px;border-radius:8px;font-weight:700;cursor:pointer;font-size:14px}
+  button.btn.org{background:var(--orange)}
+  button.btn.sm{padding:6px 11px;font-size:13px}
+  button.ghost{background:#fff;border:1px solid var(--line);color:var(--txt);padding:7px 12px;border-radius:8px;cursor:pointer}
+  h2{font-size:16px;margin:0 0 12px;display:flex;align-items:center;gap:8px}
+  h2 .bar{width:5px;height:18px;background:var(--orange);border-radius:3px;display:inline-block}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th,td{padding:6px 7px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+  th{background:var(--soft);font-size:12px;color:var(--muted)}
+  .sec-tbl input,.sec-tbl select{padding:6px 7px}
+  .reiwa{font-weight:700;color:var(--navy);white-space:nowrap}
+  .muted{color:var(--muted);font-size:13px}
+  .chkrow{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+  .chkrow label{display:flex;gap:4px;align-items:center;font-size:13px;font-weight:500;color:var(--txt);width:auto}
+  .chkrow input{width:auto}
+  .del{color:var(--warn);cursor:pointer;background:none;border:none;font-size:18px;line-height:1}
+  .right{margin-left:auto}
+  .empty{text-align:center;color:var(--muted);padding:24px}
+  .flexsp{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .judge{display:flex;gap:6px}
+  .judge button{border:1px solid var(--line);background:#fff;border-radius:6px;padding:4px 9px;cursor:pointer;font-size:13px}
+  .judge button.on-ok{background:var(--ok);color:#fff;border-color:var(--ok)}
+  .judge button.on-ng{background:var(--warn);color:#fff;border-color:var(--warn)}
+  code{background:var(--soft);padding:1px 5px;border-radius:4px;font-size:13px}
+  details summary{cursor:pointer}
+  .hanko{display:inline-flex;align-items:center;justify-content:center;width:54px;height:54px;
+    border:2.5px solid #c8412b;border-radius:50%;color:#c8412b;font-weight:700;font-size:13px;
+    line-height:1.05;text-align:center;padding:3px;box-sizing:border-box;transform:rotate(-4deg)}
+
+  /* ===== 印刷（A4） ===== */
+  #printArea{display:none}
+  @media print{
+    @page{size:A4 portrait;margin:8mm}
+    body{background:#fff}
+    header,nav,#editorTabs,#listTab,#setteiTab,.noprint{display:none !important}
+    main{padding:0;max-width:none}
+    #printArea{display:block}
+    .sheet{display:flex;flex-direction:column;height:281mm}
+    .sheet .fixed{flex:0 0 auto}
+    .sheet .grow{display:flex;flex-direction:column;min-height:0}
+    .sheet .grow>table{flex:1 1 auto;height:100%}
+  }
+  .sheet{font-size:11px;color:#000;line-height:1.35}
+  .sheet table{border-collapse:collapse;width:100%}
+  .sheet td,.sheet th{border:1px solid #000;padding:3px 5px;vertical-align:top}
+  .sheet .ttl{font-size:18px;font-weight:700;letter-spacing:8px;text-align:center}
+  .sheet .stamp{width:60px;height:46px;text-align:center;font-size:9px}
+  .sheet .lbl{background:#f0f0f0;font-weight:600;white-space:nowrap;width:1%}
+  .sheet .small{font-size:10px}
+  .sheet .hanko-sm{display:flex;align-items:center;justify-content:center;width:40px;height:40px;
+    border:1.5px solid #c8412b;border-radius:50%;color:#c8412b;font-weight:700;font-size:9px;
+    line-height:1.05;margin:2px auto 0;padding:2px;box-sizing:border-box;text-align:center;transform:rotate(-4deg)}
+</style>
+</head>
+<body>
+<header>
+  <span class="logo">豊岡組 工事日報</span>
+  <span class="mode" id="modeBadge">―</span>
+</header>
+<nav>
+  <button data-tab="editor" class="active">日報を書く</button>
+  <button data-tab="list">過去の日報</button>
+  <button data-tab="settei">設定</button>
+</nav>
+
+<main>
+<!-- ============ 入力 ============ -->
+<section id="editorTabs">
+  <div class="card">
+    <div class="flexsp" style="margin-bottom:10px">
+      <h2 style="margin:0"><span class="bar"></span>基本情報</h2>
+    </div>
+    <div class="row" style="margin-bottom:12px;align-items:center;gap:14px">
+      <div class="fld" style="flex:0 1 220px"><label>記入者（監督）</label>
+        <select id="f_writer"><option value="">選択…</option></select></div>
+      <div id="writerStamp"></div>
+    </div>
+    <div class="row">
+      <div class="fld" style="flex:1 1 150px"><label>工事番号</label><input id="f_kojino" list="kojinoList" placeholder="37-015"></div>
+      <div class="fld" style="flex:1 1 160px"><label>日付</label><input type="date" id="f_date"></div>
+      <div class="fld" style="flex:0 1 auto"><label>和暦</label><div class="reiwa" id="f_reiwa" style="padding:8px 0">―</div></div>
+      <div class="fld" style="flex:1 1 120px"><label>天気</label><input id="f_weather" list="weatherList" placeholder="晴 / 雨時々曇 など"></div>
+      <div class="fld" style="flex:0 1 110px"><label>気温(℃)</label><input type="number" id="f_temp"></div>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <div class="fld" style="flex:2 1 320px"><label>工事名</label><input id="f_kojiname" list="kojiList"></div>
+      <div class="fld" style="flex:1 1 160px"><label>工事場所</label><input id="f_place" list="placeList"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="flexsp" style="margin-bottom:8px">
+      <h2 style="margin:0"><span class="bar"></span>作業内容</h2>
+      <button class="btn sm right" id="addWork">＋行</button>
+    </div>
+    <table class="sec-tbl"><thead><tr><th style="width:38%">工種</th><th>作業内容</th><th style="width:30px"></th></tr></thead>
+      <tbody id="worksBody"></tbody></table>
+  </div>
+
+  <div class="card">
+    <div class="flexsp" style="margin-bottom:8px">
+      <h2 style="margin:0"><span class="bar"></span>使用機械</h2>
+      <button class="btn sm right" id="addMachine">＋機械</button>
+    </div>
+    <table class="sec-tbl"><thead><tr><th style="width:50%">機械</th><th>台数・備考</th><th style="width:30px"></th></tr></thead>
+      <tbody id="machineBody"></tbody></table>
+  </div>
+
+  <div class="card">
+    <h2><span class="bar"></span>監督備考</h2>
+    <textarea id="f_meeting" rows="2"></textarea>
+  </div>
+
+  <div class="card">
+    <div class="flexsp" style="margin-bottom:8px">
+      <h2 style="margin:0"><span class="bar"></span>購買品</h2>
+      <button class="btn sm right" id="addBuy">＋行</button>
+    </div>
+    <table class="sec-tbl"><thead><tr><th>購買品</th><th>購入先</th><th style="width:100px">数量</th>
+      <th style="width:30px"></th></tr></thead>
+      <tbody id="buyBody"></tbody></table>
+  </div>
+
+  <div class="card">
+    <div class="flexsp" style="margin-bottom:8px">
+      <h2 style="margin:0"><span class="bar"></span>作業者</h2>
+      <button class="btn sm right" id="addWorker">＋作業者</button>
+    </div>
+    <table class="sec-tbl"><thead><tr><th>名前</th>
+      <th style="width:90px">開始</th><th style="width:90px">終了</th><th style="width:70px">休み</th><th style="width:30px"></th></tr></thead>
+      <tbody id="workerBody"></tbody></table>
+    <div class="muted" style="margin-top:6px">※ 名前・時間は原価管理アプリで人工・労務費に使えます。</div>
+  </div>
+
+  <div class="card noprint">
+    <div class="row">
+      <button class="btn org" id="saveReport">この日報を保存</button>
+      <button class="ghost" id="printReport">印刷プレビュー</button>
+      <button class="ghost" id="excelReport">Excel出力</button>
+      <button class="ghost" id="clearReport">新規（クリア）</button>
+      <span class="muted right" id="editFlag"></span>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 一覧 ============ -->
+<section id="listTab" style="display:none">
+  <div class="card">
+    <h2><span class="bar"></span>過去の日報</h2>
+    <div class="row" style="margin-bottom:12px">
+      <div class="fld" style="flex:2 1 200px"><label>現場で絞る</label><select id="fGenba"></select></div>
+      <div class="fld" style="flex:1 1 140px"><label>記入者で絞る</label><select id="fWriter"></select></div>
+      <div class="fld" style="flex:1 1 140px"><label>月で絞る</label><select id="fMonth"></select></div>
+      <button class="ghost" id="clearFilters">絞り込み解除</button>
+    </div>
+    <div id="reportList"></div>
+  </div>
+</section>
+
+<!-- ============ 設定 ============ -->
+<section id="setteiTab" style="display:none">
+  <div class="card">
+    <h2><span class="bar"></span>保存モード</h2>
+    <div class="row">
+      <div class="fld" style="flex:1 1 220px"><label>保存先</label>
+        <select id="set_mode"><option value="local">この端末に保存（ローカル）</option>
+          <option value="cloud">クラウド共有（Supabase）</option></select></div>
+    </div>
+    <div id="cloudFields" style="display:none">
+      <div class="row" style="margin-top:10px">
+        <div class="fld" style="flex:1 1 100%"><label>Supabase Project URL</label><input id="set_url" placeholder="https://xxxx.supabase.co"></div>
+        <div class="fld" style="flex:1 1 100%"><label>anon / publishable key</label><input id="set_key" placeholder="sb_publishable_..."></div>
+      </div>
+    </div>
+    <div class="row" style="margin-top:12px"><button class="btn" id="saveSettings">設定を保存</button>
+      <span class="muted right" id="connStatus"></span></div>
+    <details style="margin-top:12px"><summary class="muted">クラウド用テーブル作成SQL</summary>
+<pre style="white-space:pre-wrap;font-size:12px">create table if not exists kantoku_nippou(
+  id uuid primary key default gen_random_uuid(),
+  koji_no text, koji_name text, report_date date,
+  data jsonb, created_at timestamptz default now());
+alter table kantoku_nippou enable row level security;
+create policy "all kn" on kantoku_nippou for all using(true) with check(true);
+
+create table if not exists app_config(
+  id text primary key, value jsonb);
+alter table app_config enable row level security;
+create policy "all cfg" on app_config for all using(true) with check(true);</pre></details>
+  </div>
+  <div class="card">
+    <h2><span class="bar"></span>作業者の追加</h2>
+    <div class="fld"><label>基本名簿に追加する名前（改行またはカンマ区切り）</label><textarea id="set_workers" rows="3"></textarea></div>
+    <button class="btn" id="saveWorkers" style="margin-top:10px">追加を保存</button>
+    <div class="muted" style="margin-top:8px" id="workerNote"></div>
+  </div>
+  <div class="card">
+    <h2><span class="bar"></span>バックアップ</h2>
+    <div class="flexsp">
+      <button class="ghost" id="backupBtn">JSON書き出し</button>
+      <label class="ghost" style="cursor:pointer">JSON読み込み<input type="file" id="restoreInput" accept=".json" style="display:none"></label>
+    </div>
+  </div>
+</section>
+</main>
+
+<div id="printArea"></div>
+
+<datalist id="workerList"></datalist>
+<datalist id="kojiList"></datalist>
+<datalist id="kojinoList"></datalist>
+<datalist id="weatherList"></datalist>
+<datalist id="placeList"></datalist>
+<datalist id="machineList"></datalist>
+<datalist id="kindList">
+  <option value="構造物撤去工"><option value="仮設工"><option value="土工"><option value="舗装工">
+  <option value="排水構造物工"><option value="管渠工"><option value="暗渠排水工"><option value="法面工"><option value="付帯工">
+</datalist>
+
+<script>
+const LS={mode:'tk_kn_mode',url:'tk_kn_url',key:'tk_kn_key',list:'tk_kn_list',workers:'tk_kn_workers'};
+const WD=['日','月','火','水','木','金','土'];
+const $=id=>document.getElementById(id);
+const esc=s=>(s||'').toString().replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+const uid=()=>(crypto.randomUUID?crypto.randomUUID():'id'+Date.now()+Math.random());
+let state={mode:'local',sb:null,reports:[],editId:null,cloudWorkers:[],lastError:null,r:newReport()};
+
+function newReport(){return{koji_no:'',report_date:new Date().toISOString().slice(0,10),weather:'',temp:'',
+  writer:'',koji_name:'',place:'',works:[{kind:'',content:''}],machines:[{machine:'',memo:''}],meeting:'',
+  purchases:[{item:'',supplier:'',qty:''}],
+  workers:[{name:'',start:'8:00',end:'17:00',off:false}]};}
+
+const DEFAULT_WORKERS=['坂本','桜田','白崎','武内','谷口','豊岡敦志','豊岡強志','本郷','道本'];
+function localExtras(){let a=[];const raw=localStorage.getItem(LS.workers);
+  if(raw){try{const p=JSON.parse(raw);if(Array.isArray(p))a=p;}catch(e){}}return a;}
+function getWorkers(){
+  const extra=(state.mode==='cloud'&&state.sb)?(state.cloudWorkers||[]):localExtras();
+  return[...new Set([...DEFAULT_WORKERS,...extra])];}
+function extrasOnly(){return getWorkers().filter(w=>!DEFAULT_WORKERS.includes(w));}
+async function saveExtras(arr){
+  arr=[...new Set(arr.filter(w=>!DEFAULT_WORKERS.includes(w)))];
+  if(state.mode==='cloud'&&state.sb){
+    state.cloudWorkers=arr;
+    try{await state.sb.from('app_config').upsert({id:'workers',value:arr});}catch(e){alert('クラウド保存に失敗しました。app_configテーブルが作成済みか確認してください。');}
+  }else{localStorage.setItem(LS.workers,JSON.stringify(arr));}
+}
+
+/* ===== ストア ===== */
+const Store={
+  isCloud(){return state.mode==='cloud'&&state.sb;},
+  async load(){
+    if(this.isCloud()){const r=await state.sb.from('kantoku_nippou').select('*').order('report_date',{ascending:false});
+      state.lastError = r.error ? ('読み込みエラー：'+(r.error.message||JSON.stringify(r.error))) : null;
+      state.reports=(r.data||[]).map(x=>Object.assign({id:x.id,created_at:x.created_at},x.data||{},
+        {koji_no:x.koji_no,koji_name:x.koji_name,report_date:x.report_date}));
+      try{const c=await state.sb.from('app_config').select('value').eq('id','workers').maybeSingle();
+        state.cloudWorkers=(c.data&&Array.isArray(c.data.value))?c.data.value:[];}catch(e){state.cloudWorkers=[];}}
+    else{state.lastError=null;state.reports=JSON.parse(localStorage.getItem(LS.list)||'[]');}
+  },
+  rowFor(r){return{koji_no:r.koji_no,koji_name:r.koji_name,report_date:r.report_date,data:r};},
+  async save(r){
+    if(this.isCloud()){
+      if(r.id){const {error}=await state.sb.from('kantoku_nippou').update(this.rowFor(r)).eq('id',r.id);return error;}
+      else{const {data,error}=await state.sb.from('kantoku_nippou').insert(this.rowFor(r)).select();
+        if(!error&&data&&data[0])r.id=data[0].id;return error;}
+    }else{
+      if(r.id){const i=state.reports.findIndex(x=>x.id===r.id);state.reports[i]=r;}
+      else{r.id=uid();r.created_at=new Date().toISOString();state.reports.unshift(r);}
+      localStorage.setItem(LS.list,JSON.stringify(state.reports));return null;
+    }
+  },
+  async del(id){
+    if(this.isCloud()){await state.sb.from('kantoku_nippou').delete().eq('id',id);}
+    else{state.reports=state.reports.filter(x=>x.id!==id);localStorage.setItem(LS.list,JSON.stringify(state.reports));}
+  }
+};
+
+/* ===== タブ ===== */
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');
+  ['editor','list','settei'].forEach(t=>$(t==='editor'?'editorTabs':t==='list'?'listTab':'setteiTab').style.display='none');
+  $(b.dataset.tab==='editor'?'editorTabs':b.dataset.tab==='list'?'listTab':'setteiTab').style.display='block';
+  if(b.dataset.tab==='list')renderList();
+});
+
+/* ===== 基本情報 ===== */
+function bindBasic(){
+  const m={f_kojino:'koji_no',f_weather:'weather',f_temp:'temp',f_kojiname:'koji_name',f_place:'place',
+    f_meeting:'meeting'};
+  Object.entries(m).forEach(([id,k])=>$(id).oninput=e=>state.r[k]=e.target.value);
+  $('f_date').oninput=e=>{state.r.report_date=e.target.value;updateReiwa();};
+  $('f_writer').onchange=e=>{state.r.writer=e.target.value;updateWriterStamp();};
+}
+function renderWriterOptions(){
+  const cur=state.r.writer||'';
+  $('f_writer').innerHTML='<option value="">選択…</option>'+
+    getWorkers().map(w=>`<option ${w===cur?'selected':''}>${esc(w)}</option>`).join('');
+}
+function updateWriterStamp(){
+  const w=state.r.writer;
+  $('writerStamp').innerHTML=w?`<div class="hanko">${esc(w)}</div>`:'<span class="muted">選ぶと押印されます</span>';
+}
+function updateReiwa(){
+  const d=state.r.report_date?new Date(state.r.report_date+'T00:00:00'):null;
+  if(!d||isNaN(d)){$('f_reiwa').textContent='―';return;}
+  const ry=d.getFullYear()-2018;
+  $('f_reiwa').textContent=`令和${ry}年${d.getMonth()+1}月${d.getDate()}日（${WD[d.getDay()]}）`;
+}
+function loadBasicToForm(){
+  $('f_kojino').value=state.r.koji_no||'';$('f_date').value=state.r.report_date||'';
+  $('f_weather').value=state.r.weather||'';$('f_temp').value=state.r.temp||'';
+  $('f_kojiname').value=state.r.koji_name||'';$('f_place').value=state.r.place||'';
+  $('f_meeting').value=state.r.meeting||'';
+  renderWriterOptions();updateWriterStamp();
+  updateReiwa();
+}
+
+/* ===== 作業内容 ===== */
+function renderWorks(){
+  const tb=$('worksBody');tb.innerHTML='';
+  state.r.works.forEach(w=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td><input class="k" list="kindList" value="${esc(w.kind)}"></td>
+      <td><input class="c" value="${esc(w.content)}"></td><td><button class="del">×</button></td>`;
+    tr.querySelector('.k').oninput=e=>w.kind=e.target.value;
+    tr.querySelector('.c').oninput=e=>w.content=e.target.value;
+    tr.querySelector('.del').onclick=()=>{state.r.works.splice(state.r.works.indexOf(w),1);renderWorks();};
+    tb.appendChild(tr);
+  });
+}
+$('addWork').onclick=()=>{state.r.works.push({kind:'',content:''});renderWorks();};
+
+/* ===== 使用機械 ===== */
+const DEFAULT_MACHINES=['0.45BH','0.25BH(UU)','0.25BH','0.10BH(新)','0.10BH(旧)','フィニッシャ','コンバインド','タイヤローラ','マカダムローラ'];
+function renderMachine(){
+  const tb=$('machineBody');tb.innerHTML='';
+  state.r.machines.forEach(m=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td><input class="m" list="machineList" value="${esc(m.machine)}" placeholder="機械を選択／入力（リース機もOK）"></td>
+      <td><input class="mm" value="${esc(m.memo)}" placeholder="台数・備考など"></td><td><button class="del">×</button></td>`;
+    tr.querySelector('.m').oninput=e=>m.machine=e.target.value;
+    tr.querySelector('.mm').oninput=e=>m.memo=e.target.value;
+    tr.querySelector('.del').onclick=()=>{state.r.machines.splice(state.r.machines.indexOf(m),1);renderMachine();};
+    tb.appendChild(tr);
+  });
+}
+$('addMachine').onclick=()=>{state.r.machines.push({machine:'',memo:''});renderMachine();};
+
+/* ===== 購買品検査 ===== */
+function renderBuy(){
+  const tb=$('buyBody');tb.innerHTML='';
+  state.r.purchases.forEach(p=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td><input class="i"></td><td><input class="s"></td><td><input class="q"></td>
+      <td><button class="del">×</button></td>`;
+    const set=(sel,k)=>{const el=tr.querySelector(sel);el.value=p[k]||'';el.oninput=e=>p[k]=e.target.value;};
+    set('.i','item');set('.s','supplier');set('.q','qty');
+    tr.querySelector('.del').onclick=()=>{state.r.purchases.splice(state.r.purchases.indexOf(p),1);renderBuy();};
+    tb.appendChild(tr);
+  });
+}
+$('addBuy').onclick=()=>{state.r.purchases.push({item:'',supplier:'',qty:''});renderBuy();};
+
+/* ===== 作業者 ===== */
+function renderWorker(){
+  const tb=$('workerBody');tb.innerHTML='';
+  state.r.workers.forEach(w=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td><input class="n" list="workerList"></td>
+      <td><input class="s" placeholder="8:00"></td><td><input class="e" placeholder="17:00"></td>
+      <td style="text-align:center"><input type="checkbox" class="off" style="width:auto"></td>
+      <td><button class="del">×</button></td>`;
+    const n=tr.querySelector('.n');n.value=w.name;n.oninput=e=>w.name=e.target.value;
+    const s=tr.querySelector('.s'),e2=tr.querySelector('.e'),off=tr.querySelector('.off');
+    s.value=w.start;e2.value=w.end;off.checked=!!w.off;
+    s.oninput=ev=>w.start=ev.target.value;e2.oninput=ev=>w.end=ev.target.value;
+    const tog=()=>{s.disabled=off.checked;e2.disabled=off.checked;};
+    off.onchange=()=>{w.off=off.checked;tog();};tog();
+    tr.querySelector('.del').onclick=()=>{state.r.workers.splice(state.r.workers.indexOf(w),1);renderWorker();};
+    tb.appendChild(tr);
+  });
+}
+$('addWorker').onclick=()=>{state.r.workers.push({name:'',start:'8:00',end:'17:00',off:false});renderWorker();};
+
+function renderAll(){loadBasicToForm();renderWorks();renderMachine();renderBuy();renderWorker();}
+
+/* ===== 保存・新規・編集 ===== */
+$('saveReport').onclick=async()=>{
+  if(!state.r.koji_name && !state.r.koji_no){alert('工事名または工事番号を入れてください');return;}
+  if(state.editId)state.r.id=state.editId;
+  const err=await Store.save(state.r);
+  if(err){alert('保存エラー：\n'+(err.message||JSON.stringify(err)));return;}
+  await Store.load();
+  buildLists();renderList();
+  $('editFlag').textContent='保存しました';setTimeout(()=>$('editFlag').textContent='',2500);
+  state.editId=state.r.id;
+};
+$('clearReport').onclick=()=>{state.editId=null;state.r=newReport();renderAll();$('editFlag').textContent='';};
+function editReport(id){const src=state.reports.find(x=>x.id===id);if(!src)return;
+  state.r=JSON.parse(JSON.stringify(src));state.editId=id;renderAll();
+  $('editFlag').textContent='編集中';document.querySelector('nav button[data-tab="editor"]').click();window.scrollTo(0,0);}
+
+/* ===== 一覧 ===== */
+function monthKey(r){ return r.report_date ? r.report_date.slice(0,7) : ''; }
+function monthLabel(k){ if(!k) return ''; const[y,m]=k.split('-'); return `令和${(+y)-2018}年${+m}月`; }
+function populateFilters(){
+  const cur={g:$('fGenba').value,w:$('fWriter').value,m:$('fMonth').value};
+  const uniq=a=>[...new Set(a.filter(Boolean))];
+  const genbas=uniq(state.reports.map(r=>r.koji_name)).sort();
+  const writers=uniq(state.reports.map(r=>r.writer)).sort();
+  const months=uniq(state.reports.map(r=>monthKey(r))).sort().reverse();
+  $('fGenba').innerHTML='<option value="">すべての現場</option>'+genbas.map(g=>`<option ${g===cur.g?'selected':''}>${esc(g)}</option>`).join('');
+  $('fWriter').innerHTML='<option value="">全員</option>'+writers.map(w=>`<option ${w===cur.w?'selected':''}>${esc(w)}</option>`).join('');
+  $('fMonth').innerHTML='<option value="">すべての月</option>'+months.map(m=>`<option value="${m}" ${m===cur.m?'selected':''}>${monthLabel(m)}</option>`).join('');
+}
+function renderList(){
+  const el=$('reportList');
+  populateFilters();
+  const fg=$('fGenba').value, fw=$('fWriter').value, fm=$('fMonth').value;
+  const rows=state.reports.filter(r=>
+    (!fg||r.koji_name===fg)&&(!fw||(r.writer||'')===fw)&&(!fm||monthKey(r)===fm));
+  const errBox=state.lastError?`<div class="note" style="background:#fdecea;border-color:#e7b4ac;color:#b53;margin-bottom:10px">${esc(state.lastError)}</div>`:'';
+  if(!state.reports.length){el.innerHTML=errBox+'<div class="empty">まだ日報がありません</div>';return;}
+  if(!rows.length){el.innerHTML=errBox+'<div class="empty">条件に合う日報がありません</div>';return;}
+  el.innerHTML=errBox+`<div class="muted" style="margin-bottom:8px">${rows.length}件</div><table><thead><tr><th>日付</th><th>工番</th><th>工事名</th><th>記入者</th><th>作業者</th><th></th></tr></thead><tbody>`+
+    rows.map(r=>{
+      const d=r.report_date?new Date(r.report_date+'T00:00:00'):null;
+      const ds=d&&!isNaN(d)?`${d.getMonth()+1}/${d.getDate()}（${WD[d.getDay()]}）`:'';
+      const wk=(r.workers||[]).filter(w=>w.name&&!w.off).length;
+      return `<tr><td>${ds}</td><td>${esc(r.koji_no)}</td><td>${esc(r.koji_name)}</td>
+        <td>${esc(r.writer||'')}</td><td>${wk}名</td><td>
+        <button class="ghost" data-ed="${r.id}">開く</button>
+        <button class="ghost" data-pr="${r.id}">印刷</button>
+        <button class="del" data-dl="${r.id}">×</button></td></tr>`;
+    }).join('')+'</tbody></table>';
+  el.querySelectorAll('[data-ed]').forEach(b=>b.onclick=()=>editReport(b.dataset.ed));
+  el.querySelectorAll('[data-pr]').forEach(b=>b.onclick=()=>{const r=state.reports.find(x=>x.id===b.dataset.pr);doPrint(r);});
+  el.querySelectorAll('[data-dl]').forEach(b=>b.onclick=async()=>{if(confirm('削除しますか？')){await Store.del(b.dataset.dl);await Store.load();renderList();}});
+}
+$('fGenba').onchange=renderList; $('fWriter').onchange=renderList; $('fMonth').onchange=renderList;
+$('clearFilters').onclick=()=>{$('fGenba').value='';$('fWriter').value='';$('fMonth').value='';renderList();};
+
+/* ===== 印刷（A4・紙の様式に合わせる） ===== */
+function doPrint(r){
+  r=r||state.r;
+  const d=r.report_date?new Date(r.report_date+'T00:00:00'):null;
+  const dstr=d&&!isNaN(d)?`令和 ${d.getFullYear()-2018} 年 ${d.getMonth()+1} 月 ${d.getDate()} 日 （ ${WD[d.getDay()]} ）`:'';
+  const cell=v=>esc(v||'');
+  const pad=(arr,n)=>{const a=[...arr];while(a.length<n)a.push({});return a;};
+  const works=(r.works||[]).filter(w=>w.kind||w.content);
+  const machines=(r.machines||[]).filter(m=>m.machine||m.memo);
+  const buy=(r.purchases||[]).filter(p=>p.item||p.supplier||p.qty);
+  const workers=(r.workers||[]).filter(w=>w.name);
+  const html=`<div class="sheet">
+    <table class="fixed">
+      <tr>
+        <td colspan="4" class="ttl">工 事 日 報</td>
+        <td class="stamp"><div>作成者印</div>${r.writer?`<div class="hanko-sm">${cell(r.writer)}</div>`:''}</td><td class="stamp">社長印</td><td class="stamp">管理責任者印</td>
+      </tr>
+      <tr><td class="lbl">工事番号</td><td>${cell(r.koji_no)}</td>
+          <td class="lbl">天気</td><td>${cell(r.weather)}</td>
+          <td class="lbl">気温</td><td colspan="2">${cell(r.temp)} ℃</td></tr>
+      <tr><td class="lbl">年月日</td><td colspan="3">${dstr}</td>
+          <td class="lbl">工事場所</td><td colspan="2">${cell(r.place)}</td></tr>
+      <tr><td class="lbl">工事名</td><td colspan="6">${cell(r.koji_name)}</td></tr>
+    </table>
+    <div class="grow" style="flex:4;margin-top:4px">
+      <table>
+        <tr><th style="width:35%">工　種</th><th>作　業　内　容</th></tr>
+        ${pad(works,5).map(w=>`<tr><td>${cell(w.kind)}</td><td>${cell(w.content)}</td></tr>`).join('')}
+      </table>
+    </div>
+    <div class="grow" style="flex:2;margin-top:4px">
+      <table>
+        <tr><th style="width:50%">使用機械</th><th>台数・備考</th></tr>
+        ${pad(machines,3).map(m=>`<tr><td>${cell(m.machine)}</td><td>${cell(m.memo)}</td></tr>`).join('')}
+      </table>
+    </div>
+    <div class="grow" style="flex:1;margin-top:4px">
+      <table><tr><td class="lbl" style="width:12%">監督備考</td><td>${cell(r.meeting)}</td></tr></table>
+    </div>
+    <div class="grow" style="flex:2;margin-top:4px">
+      <table>
+        <tr><th>購買品</th><th>購入先</th><th style="width:22%">数量</th></tr>
+        ${pad(buy,3).map(p=>`<tr><td>${cell(p.item)}</td><td>${cell(p.supplier)}</td><td>${cell(p.qty)}</td></tr>`).join('')}
+      </table>
+    </div>
+    <div class="grow" style="flex:2;margin-top:4px">
+      <table>
+        <tr><th class="lbl" style="width:60px">作業者</th>${workers.map(w=>`<th>${cell(w.name)}</th>`).join('')||'<th></th>'}</tr>
+        <tr><td class="lbl">時間</td>${workers.map(w=>`<td>${w.off?'休み':cell(w.start)+'～'+cell(w.end)}</td>`).join('')||'<td></td>'}</tr>
+      </table>
+    </div>
+    <table class="fixed" style="margin-top:4px;border:none"><tr style="border:none">
+      <td style="border:none">保管期間は５年</td>
+      <td style="border:none;text-align:center;font-weight:700">株式会社　豊　岡　組</td>
+      <td style="border:none;text-align:right">書式番号　Ｆ - 日 - 4</td></tr></table>
+  </div>`;
+  $('printArea').innerHTML=html;
+  window.print();
+}
+$('printReport').onclick=()=>doPrint(state.r);
+
+/* ===== Excel出力 ===== */
+$('excelReport').onclick=()=>{
+  const r=state.r;const rows=[];
+  const d=r.report_date?new Date(r.report_date+'T00:00:00'):null;
+  rows.push(['工事日報','記入者',r.writer]);
+  rows.push(['工事番号',r.koji_no,'年月日',d&&!isNaN(d)?`令和${d.getFullYear()-2018}年${d.getMonth()+1}月${d.getDate()}日(${WD[d.getDay()]})`:'']);
+  rows.push(['工事名',r.koji_name,'工事場所',r.place]);
+  rows.push(['天気',r.weather,'気温',r.temp+'℃']);
+  rows.push([]);rows.push(['作業内容']);rows.push(['工種','作業内容']);
+  (r.works||[]).forEach(w=>rows.push([w.kind,w.content]));
+  rows.push([]);rows.push(['使用機械']);rows.push(['機械','台数・備考']);
+  (r.machines||[]).forEach(m=>rows.push([m.machine,m.memo]));
+  rows.push([]);rows.push(['監督備考',r.meeting]);
+  rows.push([]);rows.push(['購買品']);rows.push(['購買品','購入先','数量']);
+  (r.purchases||[]).forEach(p=>rows.push([p.item,p.supplier,p.qty]));
+  rows.push([]);rows.push(['作業者','時間']);
+  (r.workers||[]).forEach(w=>rows.push([w.name,w.off?'休み':`${w.start}～${w.end}`]));
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),'工事日報');
+  const fn=`工事日報_${(r.koji_no||'').replace(/[\\/:*?"<>|]/g,'')}_${r.report_date||''}.xlsx`;
+  XLSX.writeFile(wb,fn);
+};
+
+/* ===== 設定 ===== */
+function cleanUrl(u){return (u||'').trim().replace(/\/rest\/v1\/?$/i,'').replace(/\/+$/,'');}
+$('set_mode').onchange=()=>$('cloudFields').style.display=$('set_mode').value==='cloud'?'block':'none';
+$('saveSettings').onclick=async()=>{
+  localStorage.setItem(LS.mode,$('set_mode').value);
+  const u=cleanUrl($('set_url').value);
+  localStorage.setItem(LS.url,u); $('set_url').value=u;
+  localStorage.setItem(LS.key,$('set_key').value.trim());
+  $('connStatus').textContent='接続中…';await initStore();await Store.load();buildLists();
+  $('connStatus').textContent=Store.isCloud()?'クラウド接続OK':'ローカル保存に切替';
+};
+$('saveWorkers').onclick=async()=>{const a=$('set_workers').value.split(/[\n,、，]/).map(s=>s.trim()).filter(Boolean);
+  await saveExtras(a);buildLists();alert('保存しました');};
+$('backupBtn').onclick=()=>{const blob=new Blob([JSON.stringify(state.reports,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='kantoku_nippou_backup.json';a.click();};
+$('restoreInput').onchange=async e=>{const f=e.target.files[0];if(!f)return;const d=JSON.parse(await f.text());
+  if(!confirm('読み込んだ日報を追加します。よろしいですか？'))return;
+  for(const r of d){delete r.id;await Store.save(r);}await Store.load();buildLists();renderList();alert('読み込みました');};
+
+/* ===== データリスト ===== */
+function buildLists(){
+  $('workerList').innerHTML=getWorkers().map(w=>`<option value="${esc(w)}">`).join('');
+  const opt=arr=>[...new Set(arr.filter(Boolean))].map(v=>`<option value="${esc(v)}">`).join('');
+  $('kojiList').innerHTML=opt(state.reports.map(r=>r.koji_name));
+  $('kojinoList').innerHTML=opt(state.reports.map(r=>r.koji_no));
+  $('placeList').innerHTML=opt(state.reports.map(r=>r.place));
+  const wdef=['晴','曇','雨','雪','晴時々曇','曇時々晴','雨時々曇'];
+  $('weatherList').innerHTML=opt([...wdef,...state.reports.map(r=>r.weather)]);
+  $('machineList').innerHTML=opt([...DEFAULT_MACHINES,...state.reports.flatMap(r=>(r.machines||[]).map(m=>m.machine))]);
+  renderWriterOptions();
+  refreshWorkerSettings();
+}
+function refreshWorkerSettings(){
+  $('set_workers').value=extrasOnly().join('\n');
+  const cloud=(state.mode==='cloud'&&state.sb);
+  $('workerNote').textContent=cloud
+    ? '※ クラウド共有中。ここで追加した名前は全員の端末に反映されます（基本名簿はアプリ内に保持）。'
+    : '※ ローカル保存中。ここの追加はこの端末だけです。クラウド共有に切り替えると全端末で共有されます。基本名簿はアプリ内を編集して再アップロードしてください。';
+}
+
+/* ===== 初期化 ===== */
+async function initStore(){
+  state.mode=localStorage.getItem(LS.mode)||'local';
+  const url=cleanUrl(localStorage.getItem(LS.url)||''),key=(localStorage.getItem(LS.key)||'').trim();
+  state.sb=null;
+  if(state.mode==='cloud'&&url&&key&&window.supabase){try{state.sb=window.supabase.createClient(url,key);}catch(e){}}
+  $('set_mode').value=state.mode;$('set_url').value=url;$('set_key').value=key;
+  $('cloudFields').style.display=state.mode==='cloud'?'block':'none';
+  $('modeBadge').textContent=Store.isCloud()?'☁ クラウド共有':'▣ ローカル保存';
+}
+/* ===== Enterで次の入力欄へ移動 ===== */
+document.addEventListener('keydown',e=>{
+  if(e.key!=='Enter'||e.isComposing) return;        // 日本語変換中は無視
+  const t=e.target, tag=t&&t.tagName;
+  if(tag!=='INPUT'&&tag!=='SELECT') return;          // textarea/ボタンはそのまま
+  if(t.type==='button'||t.type==='submit') return;
+  const fields=[...document.querySelectorAll('input, select, textarea')]
+    .filter(el=>!el.disabled && el.type!=='hidden' && el.type!=='file' && el.offsetParent!==null);
+  const i=fields.indexOf(t);
+  if(i<0) return;
+  e.preventDefault();
+  const next=fields[i+1];
+  if(next){ next.focus(); if(next.select) try{next.select();}catch(_){ } }
+});
+(async function(){
+  bindBasic();
+  await initStore();
+  await Store.load();
+  buildLists();
+  renderAll();
+})();
+</script>
+</body>
+</html>
