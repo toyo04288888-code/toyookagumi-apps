@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>コンディションログ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --pitch-dark: #0E2019;
+    --pitch: #14271F;
+    --panel: #1A3128;
+    --panel-raised: #20392F;
+    --line: rgba(241,239,230,0.10);
+    --chalk: #F1EFE6;
+    --chalk-dim: rgba(241,239,230,0.55);
+    --floodlight: #E8A33D;
+    --floodlight-dim: rgba(232,163,61,0.35);
+    --turf: #4C8C6B;
+    --turf-dim: rgba(76,140,107,0.35);
+    --rust: #B8613F;
+    --rust-dim: rgba(184,97,63,0.35);
+    --ice: #6FA9C9;
+    --ice-dim: rgba(111,169,201,0.35);
+    --radius: 14px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(ellipse 900px 500px at 50% -10%, rgba(232,163,61,0.08), transparent 60%),
+      var(--pitch-dark);
+    color:var(--chalk);
+    font-family:'Inter',sans-serif;
+    min-height:100vh;
+    padding:20px 14px 60px;
+  }
+  .wrap{max-width:640px;margin:0 auto;}
+
+  /* ---- Scoreboard header ---- */
+  .scoreboard{
+    background:linear-gradient(180deg, var(--panel-raised), var(--panel));
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:22px 20px 18px;
+    margin-bottom:16px;
+    position:relative;
+    overflow:hidden;
+  }
+  .scoreboard::before{
+    content:"";
+    position:absolute; inset:0;
+    background:repeating-linear-gradient(180deg, rgba(255,255,255,0.02) 0px, rgba(255,255,255,0.02) 1px, transparent 1px, transparent 3px);
+    pointer-events:none;
+  }
+  .sb-top{display:flex;justify-content:space-between;align-items:baseline;position:relative;}
+  .sb-label{
+    font-family:'Oswald',sans-serif;
+    font-size:12px;letter-spacing:0.18em;
+    color:var(--chalk-dim);text-transform:uppercase;
+  }
+  .sb-date{
+    font-family:'JetBrains Mono',monospace;
+    font-size:12px;color:var(--chalk-dim);
+  }
+  .sb-main{display:flex;align-items:flex-end;gap:26px;margin-top:10px;position:relative;flex-wrap:wrap;}
+  .streak-num{
+    font-family:'Oswald',sans-serif;
+    font-weight:700;
+    font-size:64px;
+    line-height:0.9;
+    color:var(--floodlight);
+    text-shadow:0 0 22px var(--floodlight-dim);
+    letter-spacing:0.01em;
+  }
+  .streak-unit{font-family:'Oswald',sans-serif;font-size:14px;color:var(--chalk-dim);letter-spacing:0.1em;text-transform:uppercase;margin-left:6px;}
+  .streak-badge{font-size:20px;margin-left:8px;filter:drop-shadow(0 0 6px rgba(232,163,61,0.5));}
+  .sb-stats{display:flex;gap:18px;margin-left:auto;flex-wrap:wrap;}
+  .sb-stat{text-align:right;}
+  .sb-stat .v{font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700;color:var(--chalk);}
+  .sb-stat .k{font-size:10px;color:var(--chalk-dim);letter-spacing:0.08em;text-transform:uppercase;margin-top:2px;}
+
+  /* ---- Cards ---- */
+  .card{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:18px 18px 20px;
+    margin-bottom:14px;
+  }
+  .card h2{
+    font-family:'Oswald',sans-serif;
+    font-size:13px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--chalk-dim);
+    margin:0 0 14px;
+    display:flex;align-items:center;gap:8px;
+  }
+  .card h2::before{content:"";width:4px;height:4px;border-radius:50%;background:var(--floodlight);display:inline-block;}
+
+  /* mood picker */
+  .mood-row{display:flex;gap:8px;}
+  .mood-btn{
+    flex:1;background:var(--panel-raised);border:1.5px solid var(--line);
+    border-radius:10px;padding:12px 4px 8px;text-align:center;cursor:pointer;
+    transition:all .15s ease; color:var(--chalk-dim);
+  }
+  .mood-btn .e{font-size:24px;display:block;margin-bottom:4px;filter:grayscale(1);opacity:0.5;transition:all .15s ease;}
+  .mood-btn .t{font-size:10px;letter-spacing:0.04em;}
+  .mood-btn.active{border-color:var(--floodlight);background:rgba(232,163,61,0.08);color:var(--chalk);}
+  .mood-btn.active .e{filter:none;opacity:1;transform:scale(1.1);}
+
+  /* habit chips */
+  .habit-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+  .habit-chip{
+    background:var(--panel-raised);border:1.5px solid var(--line);border-radius:10px;
+    padding:12px 8px;text-align:center;cursor:pointer;transition:all .15s ease;
+  }
+  .habit-chip .e{font-size:20px;display:block;margin-bottom:4px;opacity:0.4;transition:all .15s ease;}
+  .habit-chip .t{font-size:11px;color:var(--chalk-dim);line-height:1.3;}
+  .habit-chip.active{border-color:var(--turf);background:rgba(76,140,107,0.10);}
+  .habit-chip.active .e{opacity:1;}
+  .habit-chip.active .t{color:var(--chalk);}
+
+  /* sport picker (flashy) */
+  .sport-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;}
+  .sport-card{
+    background:var(--panel-raised);border:1.5px solid var(--line);border-radius:12px;
+    padding:14px 4px 10px;text-align:center;cursor:pointer;
+    transition:transform .15s ease, border-color .15s ease, background .15s ease, box-shadow .15s ease;
+  }
+  .sport-card .e{font-size:24px;display:block;margin-bottom:6px;opacity:0.4;filter:grayscale(1);transition:all .15s ease;}
+  .sport-card .t{font-size:10.5px;color:var(--chalk-dim);line-height:1.25;}
+  .sport-card.active{
+    border-color:var(--accent);
+    background:color-mix(in srgb, var(--accent) 16%, var(--panel-raised));
+    box-shadow:0 0 18px color-mix(in srgb, var(--accent) 40%, transparent);
+    transform:translateY(-2px);
+  }
+  .sport-card.active .e{opacity:1;filter:none;transform:scale(1.18) rotate(-6deg);}
+  .sport-card.active .t{color:var(--chalk);}
+
+  .qa-row{display:flex;gap:8px;margin-top:12px;}
+  .qa-btn{
+    flex:1;background:var(--panel-raised);border:1.5px solid var(--line);border-radius:8px;
+    color:var(--chalk-dim);font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;
+    padding:9px 4px;cursor:pointer;transition:all .15s ease;
+  }
+  .qa-btn:hover{border-color:var(--floodlight);color:var(--chalk);}
+  .qa-btn:active{transform:scale(0.95);}
+  .exercise-note{font-size:11.5px;color:var(--floodlight);margin-top:10px;min-height:16px;}
+
+  /* form rows */
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;}
+  .field label{display:block;font-size:11px;color:var(--chalk-dim);letter-spacing:0.04em;margin-bottom:6px;}
+  .field input, .field select, .field textarea{
+    width:100%;background:var(--panel-raised);border:1.5px solid var(--line);
+    border-radius:8px;color:var(--chalk);font-family:'Inter',sans-serif;font-size:14px;
+    padding:9px 10px;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus{outline:none;border-color:var(--floodlight);}
+  .field textarea{resize:vertical;min-height:56px;}
+
+  .save-btn{
+    width:100%;margin-top:16px;
+    background:var(--floodlight);color:#1A1204;border:none;border-radius:10px;
+    font-family:'Oswald',sans-serif;font-size:15px;font-weight:600;letter-spacing:0.06em;
+    padding:14px;cursor:pointer;transition:transform .1s ease, box-shadow .15s ease;
+    text-transform:uppercase;
+  }
+  .save-btn:active{transform:scale(0.98);}
+  .save-btn.saved{background:var(--turf);color:var(--chalk);}
+
+  /* chart */
+  .chart-wrap{width:100%;overflow-x:auto;}
+  svg{display:block;}
+  .axis-label{font-family:'JetBrains Mono',monospace;font-size:9px;fill:var(--chalk-dim);}
+
+  /* heatmap */
+  .heatmap{display:grid;grid-template-columns:repeat(10,1fr);gap:4px;}
+  .hm-cell{aspect-ratio:1;border-radius:4px;background:var(--panel-raised);border:1px solid var(--line);}
+  .hm-legend{display:flex;align-items:center;gap:6px;margin-top:10px;font-size:10px;color:var(--chalk-dim);}
+  .hm-legend .sw{width:10px;height:10px;border-radius:3px;}
+
+  /* insight */
+  .insight-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);}
+  .insight-row:last-child{border-bottom:none;}
+  .insight-row .k{font-size:12.5px;color:var(--chalk-dim);}
+  .insight-row .v{font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:700;color:var(--chalk);}
+
+  .footer-note{text-align:center;font-size:11px;color:var(--chalk-dim);margin-top:20px;line-height:1.7;}
+  .reset-link{color:var(--rust);text-decoration:underline;cursor:pointer;background:none;border:none;font-size:11px;font-family:inherit;padding:0;}
+
+  @media (prefers-reduced-motion: reduce){ *{transition:none !important;} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="scoreboard">
+    <div class="sb-top">
+      <span class="sb-label">Condition Log</span>
+      <span class="sb-date" id="todayLabel"></span>
+    </div>
+    <div class="sb-main">
+      <div>
+        <span class="streak-num" id="streakNum">0</span><span class="streak-unit">day streak</span><span class="streak-badge" id="streakBadge"></span>
+      </div>
+      <div class="sb-stats">
+        <div class="sb-stat"><div class="v" id="avgMood">–</div><div class="k">平均体調</div></div>
+        <div class="sb-stat"><div class="v" id="habitRate">–</div><div class="k">習慣達成率</div></div>
+        <div class="sb-stat"><div class="v" id="weekExercise">–</div><div class="k">今週の運動</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>今日の体調</h2>
+    <div class="mood-row" id="moodRow">
+      <div class="mood-btn" data-v="1"><span class="e">😩</span><span class="t">きつい</span></div>
+      <div class="mood-btn" data-v="2"><span class="e">😕</span><span class="t">いまいち</span></div>
+      <div class="mood-btn" data-v="3"><span class="e">😐</span><span class="t">普通</span></div>
+      <div class="mood-btn" data-v="4"><span class="e">🙂</span><span class="t">良い</span></div>
+      <div class="mood-btn" data-v="5"><span class="e">💪</span><span class="t">絶好調</span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>習慣チェック</h2>
+    <div class="habit-grid" id="habitGrid">
+      <div class="habit-chip" data-k="clove"><span class="e">☕</span><span class="t">クローブ<br>コーヒー</span></div>
+      <div class="habit-chip" data-k="zinc"><span class="e">🟡</span><span class="t">亜鉛</span></div>
+      <div class="habit-chip" data-k="omega3"><span class="e">💧</span><span class="t">オメガ3</span></div>
+    </div>
+    <div class="field" style="margin-top:12px;">
+      <label>睡眠時間 (h)</label>
+      <input type="number" id="sleepInput" step="0.5" min="0" max="14" placeholder="7.0">
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>運動</h2>
+    <div class="sport-grid" id="sportGrid">
+      <div class="sport-card" data-sport="soccer" style="--accent:#4C8C6B"><span class="e">⚽</span><span class="t">サッカー</span></div>
+      <div class="sport-card" data-sport="golf" style="--accent:#6FA9C9"><span class="e">⛳</span><span class="t">ゴルフ</span></div>
+      <div class="sport-card" data-sport="running" style="--accent:#E8A33D"><span class="e">🏃</span><span class="t">ランニング</span></div>
+      <div class="sport-card" data-sport="strength" style="--accent:#B8613F"><span class="e">🏋️</span><span class="t">筋トレ</span></div>
+      <div class="sport-card" data-sport="other" style="--accent:#C9C6BA"><span class="e">✨</span><span class="t">その他</span></div>
+    </div>
+    <div class="qa-row">
+      <button class="qa-btn" type="button" data-m="15">+15分</button>
+      <button class="qa-btn" type="button" data-m="30">+30分</button>
+      <button class="qa-btn" type="button" data-m="45">+45分</button>
+      <button class="qa-btn" type="button" data-m="60">+60分</button>
+    </div>
+    <div class="row2" style="margin-top:12px;">
+      <div class="field">
+        <label>時間 (分・手入力もOK)</label>
+        <input type="number" id="sportMinutes" min="0" step="5" placeholder="0">
+      </div>
+      <div class="field">
+        <label>体重 (kg・任意)</label>
+        <input type="number" id="weightInput" step="0.1" placeholder="任意">
+      </div>
+    </div>
+    <div class="exercise-note" id="exerciseNote"></div>
+    <div class="field" style="margin-top:10px;">
+      <label>メモ（体調・気づいたこと）</label>
+      <textarea id="memoInput" placeholder="例：筋肉痛が残ってる、二日酔い、寝つきが良かった等"></textarea>
+    </div>
+    <button class="save-btn" id="saveBtn">今日を記録する</button>
+  </div>
+
+  <div class="card">
+    <h2>体重の推移（直近30日）</h2>
+    <div class="chart-wrap"><svg id="weightChart" width="100%" height="140" viewBox="0 0 580 140"></svg></div>
+    <div class="insight-row" style="margin-top:4px;">
+      <span class="k">直近の記録からの変化</span>
+      <span class="v" id="weightDelta">–</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>体調の推移（直近14日）</h2>
+    <div class="chart-wrap"><svg id="moodChart" width="100%" height="140" viewBox="0 0 580 140"></svg></div>
+  </div>
+
+  <div class="card">
+    <h2>習慣ログ（直近30日）</h2>
+    <div class="heatmap" id="heatmap"></div>
+    <div class="hm-legend">
+      <span>未達成</span>
+      <span class="sw" style="background:var(--panel-raised);border:1px solid var(--line);"></span>
+      <span class="sw" style="background:rgba(76,140,107,0.35);"></span>
+      <span class="sw" style="background:rgba(76,140,107,0.7);"></span>
+      <span class="sw" style="background:var(--turf);"></span>
+      <span>全達成</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>この30日の傾向</h2>
+    <div id="insights"></div>
+  </div>
+
+  <div class="footer-note">
+    データはこの端末（ブラウザ）に保存されます。<br>
+    <button class="reset-link" id="resetBtn">全データを削除する</button>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  const STORAGE_KEY = 'condition-log-entries-v1';
+  const MOODS = {1:'😩',2:'😕',3:'😐',4:'🙂',5:'💪'};
+  const HABIT_KEYS = ['clove','zinc','omega3'];
+
+  function todayStr(d){
+    d = d || new Date();
+    return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  }
+  function loadEntries(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? JSON.parse(raw) : {};
+    }catch(e){ return {}; }
+  }
+  function saveEntries(entries){
+    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(entries)); }
+    catch(e){ console.error('保存に失敗しました', e); }
+  }
+
+  let entries = loadEntries();
+  let selectedMood = null;
+  let activeHabits = new Set();
+  let selectedSport = null;
+
+  const SPORT_LABELS = {soccer:'サッカー', golf:'ゴルフ', running:'ランニング', strength:'筋トレ', other:'その他'};
+
+  const todayKey = todayStr();
+  document.getElementById('todayLabel').textContent = new Date().toLocaleDateString('ja-JP', {month:'2-digit', day:'2-digit', weekday:'short'});
+
+  // Prefill today if already logged
+  if(entries[todayKey]){
+    const e = entries[todayKey];
+    selectedMood = e.mood || null;
+    activeHabits = new Set(e.habits || []);
+    document.getElementById('sleepInput').value = e.sleep ?? '';
+    document.getElementById('weightInput').value = e.weight ?? '';
+    selectedSport = (e.sportType && e.sportType !== 'none') ? e.sportType : null;
+    document.getElementById('sportMinutes').value = e.sportMinutes ?? '';
+    document.getElementById('memoInput').value = e.memo || '';
+  }
+
+  function renderMoodButtons(){
+    document.querySelectorAll('.mood-btn').forEach(btn=>{
+      btn.classList.toggle('active', Number(btn.dataset.v) === selectedMood);
+    });
+  }
+  document.querySelectorAll('.mood-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      selectedMood = Number(btn.dataset.v);
+      renderMoodButtons();
+    });
+  });
+  renderMoodButtons();
+
+  function renderHabitChips(){
+    document.querySelectorAll('.habit-chip').forEach(chip=>{
+      chip.classList.toggle('active', activeHabits.has(chip.dataset.k));
+    });
+  }
+  document.querySelectorAll('.habit-chip').forEach(chip=>{
+    chip.addEventListener('click', ()=>{
+      const k = chip.dataset.k;
+      if(activeHabits.has(k)) activeHabits.delete(k); else activeHabits.add(k);
+      renderHabitChips();
+    });
+  });
+  renderHabitChips();
+
+  function renderSportCards(){
+    document.querySelectorAll('.sport-card').forEach(card=>{
+      card.classList.toggle('active', card.dataset.sport === selectedSport);
+    });
+    const note = document.getElementById('exerciseNote');
+    note.textContent = selectedSport ? `${SPORT_LABELS[selectedSport]}を記録中` : '種目を選ぶと記録できます';
+  }
+  document.querySelectorAll('.sport-card').forEach(card=>{
+    card.addEventListener('click', ()=>{
+      const s = card.dataset.sport;
+      selectedSport = (selectedSport === s) ? null : s;
+      renderSportCards();
+    });
+  });
+  renderSportCards();
+
+  document.querySelectorAll('.qa-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const minutesInput = document.getElementById('sportMinutes');
+      const current = parseInt(minutesInput.value) || 0;
+      minutesInput.value = current + parseInt(btn.dataset.m);
+      if(!selectedSport){ selectedSport = 'other'; renderSportCards(); }
+    });
+  });
+
+  document.getElementById('saveBtn').addEventListener('click', ()=>{
+    const entry = {
+      mood: selectedMood,
+      habits: Array.from(activeHabits),
+      sleep: parseFloat(document.getElementById('sleepInput').value) || null,
+      weight: parseFloat(document.getElementById('weightInput').value) || null,
+      sportType: selectedSport,
+      sportMinutes: parseInt(document.getElementById('sportMinutes').value) || 0,
+      memo: document.getElementById('memoInput').value.trim()
+    };
+    entries[todayKey] = entry;
+    saveEntries(entries);
+    const btn = document.getElementById('saveBtn');
+    btn.textContent = '記録しました ✓';
+    btn.classList.add('saved');
+    setTimeout(()=>{ btn.textContent='今日を記録する'; btn.classList.remove('saved'); }, 1800);
+    renderAll();
+  });
+
+  document.getElementById('resetBtn').addEventListener('click', ()=>{
+    if(confirm('保存されている記録を全て削除します。よろしいですか？')){
+      localStorage.removeItem(STORAGE_KEY);
+      entries = {};
+      renderAll();
+      location.reload();
+    }
+  });
+
+  function dateRange(n){
+    const arr = [];
+    for(let i=n-1;i>=0;i--){
+      const d = new Date();
+      d.setDate(d.getDate()-i);
+      arr.push(todayStr(d));
+    }
+    return arr;
+  }
+
+  function computeStreak(){
+    let streak = 0;
+    let d = new Date();
+    while(true){
+      const key = todayStr(d);
+      const e = entries[key];
+      const loggedHabit = e && e.habits && e.habits.length > 0;
+      if(loggedHabit){
+        streak++;
+        d.setDate(d.getDate()-1);
+      } else {
+        break;
+      }
+    }
+    return streak;
+  }
+
+  function getStreakBadge(streak){
+    if(streak >= 100) return '🏆';
+    if(streak >= 30) return '🥇';
+    if(streak >= 14) return '🥈';
+    if(streak >= 7) return '🥉';
+    return '';
+  }
+
+  function renderScoreboard(){
+    const streak = computeStreak();
+    document.getElementById('streakNum').textContent = streak;
+    document.getElementById('streakBadge').textContent = getStreakBadge(streak);
+
+    const last30 = dateRange(30).map(k=>entries[k]).filter(Boolean);
+    const moods = last30.map(e=>e.mood).filter(v=>typeof v === 'number');
+    const avgMood = moods.length ? (moods.reduce((a,b)=>a+b,0)/moods.length).toFixed(1) : '–';
+    document.getElementById('avgMood').textContent = avgMood;
+
+    let totalPossible = last30.length * HABIT_KEYS.length;
+    let totalDone = last30.reduce((sum,e)=> sum + (e.habits ? e.habits.length : 0), 0);
+    const rate = totalPossible ? Math.round(100*totalDone/totalPossible) : 0;
+    document.getElementById('habitRate').textContent = last30.length ? rate+'%' : '–';
+
+    const last7 = dateRange(7).map(k=>entries[k]).filter(Boolean);
+    const weekMinutes = last7.reduce((sum,e)=> sum + (e.sportMinutes || 0), 0);
+    document.getElementById('weekExercise').textContent = weekMinutes+'分';
+  }
+
+  function renderChart(){
+    const keys = dateRange(14);
+    const svg = document.getElementById('moodChart');
+    svg.innerHTML = '';
+    const W = 580, H = 140, padL = 24, padR = 10, padT = 14, padB = 22;
+    const plotW = W - padL - padR, plotH = H - padT - padB;
+
+    // grid lines
+    for(let v=1; v<=5; v++){
+      const y = padT + plotH - ((v-1)/4)*plotH;
+      const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+      line.setAttribute('x1', padL); line.setAttribute('x2', W-padR);
+      line.setAttribute('y1', y); line.setAttribute('y2', y);
+      line.setAttribute('stroke', 'rgba(241,239,230,0.08)');
+      line.setAttribute('stroke-width', '1');
+      svg.appendChild(line);
+    }
+
+    const pts = keys.map((k,i)=>{
+      const e = entries[k];
+      const x = padL + (i/(keys.length-1))*plotW;
+      const y = e && typeof e.mood === 'number' ? padT + plotH - ((e.mood-1)/4)*plotH : null;
+      return {x, y, has: !!(e && typeof e.mood === 'number'), k};
+    });
+
+    const validPts = pts.filter(p=>p.has);
+    if(validPts.length > 1){
+      let d = '';
+      pts.forEach((p,i)=>{
+        if(!p.has) return;
+        d += (d === '' ? 'M' : 'L') + p.x.toFixed(1) + ',' + p.y.toFixed(1) + ' ';
+      });
+      const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+      path.setAttribute('d', d.trim());
+      path.setAttribute('fill','none');
+      path.setAttribute('stroke','#E8A33D');
+      path.setAttribute('stroke-width','2');
+      path.setAttribute('stroke-linecap','round');
+      path.setAttribute('stroke-linejoin','round');
+      svg.appendChild(path);
+    }
+
+    pts.forEach(p=>{
+      const c = document.createElementNS('http://www.w3.org/2000/svg','circle');
+      c.setAttribute('cx', p.x.toFixed(1));
+      c.setAttribute('cy', p.has ? p.y.toFixed(1) : (H-padB));
+      c.setAttribute('r', p.has ? 3.5 : 1.5);
+      c.setAttribute('fill', p.has ? '#E8A33D' : 'rgba(241,239,230,0.2)');
+      svg.appendChild(c);
+    });
+
+    // x labels every ~3 days
+    pts.forEach((p,i)=>{
+      if(i % 3 !== 0) return;
+      const t = document.createElementNS('http://www.w3.org/2000/svg','text');
+      t.setAttribute('x', p.x.toFixed(1));
+      t.setAttribute('y', H-4);
+      t.setAttribute('text-anchor','middle');
+      t.setAttribute('class','axis-label');
+      const dd = p.k.slice(5).replace('-','/');
+      t.textContent = dd;
+      svg.appendChild(t);
+    });
+  }
+
+  function renderWeightChart(){
+    const keys = dateRange(30);
+    const svg = document.getElementById('weightChart');
+    svg.innerHTML = '';
+    const W = 580, H = 140, padL = 30, padR = 10, padT = 14, padB = 22;
+    const plotW = W - padL - padR, plotH = H - padT - padB;
+
+    const withWeight = keys.map((k,i)=>({k, i, w: entries[k] ? entries[k].weight : null})).filter(p=>typeof p.w === 'number');
+
+    const emptyMsg = document.getElementById('weightDelta');
+    if(withWeight.length === 0){
+      const t = document.createElementNS('http://www.w3.org/2000/svg','text');
+      t.setAttribute('x', W/2); t.setAttribute('y', H/2);
+      t.setAttribute('text-anchor','middle');
+      t.setAttribute('class','axis-label');
+      t.textContent = '体重の記録がまだありません';
+      svg.appendChild(t);
+      emptyMsg.textContent = '–';
+      return;
+    }
+
+    const values = withWeight.map(p=>p.w);
+    let min = Math.min(...values), max = Math.max(...values);
+    if(min === max){ min -= 1; max += 1; }
+    const pad = (max-min)*0.15;
+    min -= pad; max += pad;
+
+    for(let g=0; g<=2; g++){
+      const y = padT + (g/2)*plotH;
+      const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+      line.setAttribute('x1', padL); line.setAttribute('x2', W-padR);
+      line.setAttribute('y1', y); line.setAttribute('y2', y);
+      line.setAttribute('stroke', 'rgba(241,239,230,0.08)');
+      svg.appendChild(line);
+      const lbl = document.createElementNS('http://www.w3.org/2000/svg','text');
+      lbl.setAttribute('x', 2); lbl.setAttribute('y', y+3);
+      lbl.setAttribute('class','axis-label');
+      lbl.textContent = (max - (g/2)*(max-min)).toFixed(1);
+      svg.appendChild(lbl);
+    }
+
+    let d = '';
+    withWeight.forEach((p,idx)=>{
+      const x = padL + (p.i/(keys.length-1))*plotW;
+      const y = padT + plotH - ((p.w-min)/(max-min))*plotH;
+      d += (idx===0 ? 'M' : 'L') + x.toFixed(1) + ',' + y.toFixed(1) + ' ';
+    });
+    const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+    path.setAttribute('d', d.trim());
+    path.setAttribute('fill','none');
+    path.setAttribute('stroke','#6FA9C9');
+    path.setAttribute('stroke-width','2');
+    path.setAttribute('stroke-linecap','round');
+    path.setAttribute('stroke-linejoin','round');
+    svg.appendChild(path);
+
+    withWeight.forEach(p=>{
+      const x = padL + (p.i/(keys.length-1))*plotW;
+      const y = padT + plotH - ((p.w-min)/(max-min))*plotH;
+      const c = document.createElementNS('http://www.w3.org/2000/svg','circle');
+      c.setAttribute('cx', x.toFixed(1)); c.setAttribute('cy', y.toFixed(1));
+      c.setAttribute('r', 3.5); c.setAttribute('fill', '#6FA9C9');
+      svg.appendChild(c);
+    });
+
+    const first = withWeight[0].w, last = withWeight[withWeight.length-1].w;
+    const delta = (last - first);
+    const arrow = delta > 0 ? '▲' : (delta < 0 ? '▼' : '–');
+    emptyMsg.textContent = withWeight.length > 1 ? `${arrow} ${Math.abs(delta).toFixed(1)}kg（${last.toFixed(1)}kg）` : `${last.toFixed(1)}kg`;
+  }
+
+  function renderHeatmap(){
+    const keys = dateRange(30);
+    const wrap = document.getElementById('heatmap');
+    wrap.innerHTML = '';
+    keys.forEach(k=>{
+      const e = entries[k];
+      const count = e && e.habits ? e.habits.length : 0;
+      const cell = document.createElement('div');
+      cell.className = 'hm-cell';
+      cell.title = k + '：' + count + '/3';
+      const alphas = [0, 0.35, 0.7, 1];
+      if(count > 0){
+        cell.style.background = count === 3 ? 'var(--turf)' : `rgba(76,140,107,${alphas[count]})`;
+        cell.style.border = 'none';
+      }
+      wrap.appendChild(cell);
+    });
+  }
+
+  function renderInsights(){
+    const keys = dateRange(30);
+    const list = keys.map(k=>entries[k]).filter(Boolean);
+    const el = document.getElementById('insights');
+    if(list.length === 0){
+      el.innerHTML = '<div class="insight-row"><span class="k">まだ記録がありません。まずは今日から記録してみましょう。</span></div>';
+      return;
+    }
+
+    const sleeps = list.map(e=>e.sleep).filter(v=>typeof v === 'number');
+    const avgSleep = sleeps.length ? (sleeps.reduce((a,b)=>a+b,0)/sleeps.length).toFixed(1)+'h' : '–';
+
+    const exerciseDays = list.filter(e=>e.sportType && e.sportType !== 'none' && e.sportMinutes > 0);
+    const restDays = list.filter(e=>!e.sportType || e.sportType === 'none' || e.sportMinutes === 0);
+    const avgOf = arr => {
+      const m = arr.map(e=>e.mood).filter(v=>typeof v==='number');
+      return m.length ? (m.reduce((a,b)=>a+b,0)/m.length).toFixed(1) : null;
+    };
+    const exMood = avgOf(exerciseDays);
+    const restMood = avgOf(restDays);
+
+    const cloveCount = list.filter(e=>e.habits && e.habits.includes('clove')).length;
+    const zincCount = list.filter(e=>e.habits && e.habits.includes('zinc')).length;
+    const omegaCount = list.filter(e=>e.habits && e.habits.includes('omega3')).length;
+
+    let rows = [];
+    rows.push(['平均睡眠時間', avgSleep]);
+    rows.push(['運動した日の平均体調', exMood ? exMood + ' / 5' : 'データ不足']);
+    rows.push(['運動しなかった日の平均体調', restMood ? restMood + ' / 5' : 'データ不足']);
+
+    Object.keys(SPORT_LABELS).forEach(s=>{
+      const days = list.filter(e=>e.sportType === s).length;
+      if(days > 0) rows.push([SPORT_LABELS[s] + 'をした日数', days + '日']);
+    });
+
+    rows.push(['クローブコーヒー摂取日数', cloveCount + ' / ' + list.length + '日']);
+    rows.push(['亜鉛摂取日数', zincCount + ' / ' + list.length + '日']);
+    rows.push(['オメガ3摂取日数', omegaCount + ' / ' + list.length + '日']);
+
+    el.innerHTML = rows.map(r=>`<div class="insight-row"><span class="k">${r[0]}</span><span class="v">${r[1]}</span></div>`).join('');
+  }
+
+  function renderAll(){
+    renderScoreboard();
+    renderChart();
+    renderWeightChart();
+    renderHeatmap();
+    renderInsights();
+  }
+
+  renderAll();
+})();
+</script>
+</body>
+</html>
