@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>付箋メモ</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="付箋メモ">
+<meta name="theme-color" content="#f4d35e">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='36' fill='%23f4d35e'/%3E%3Crect x='38' y='52' width='104' height='14' rx='7' fill='%235a4a1c'/%3E%3Crect x='38' y='84' width='104' height='14' rx='7' fill='%235a4a1c'/%3E%3Crect x='38' y='116' width='68' height='14' rx='7' fill='%235a4a1c'/%3E%3C/svg%3E">
+<link rel="manifest" href="data:application/manifest+json,%7B%22id%22%3A%22%2Ffusen.html%22%2C%22name%22%3A%22%E4%BB%98%E7%AE%8B%E3%83%A1%E3%83%A2%22%2C%22short_name%22%3A%22%E4%BB%98%E7%AE%8B%22%2C%22start_url%22%3A%22%2Ffusen.html%22%2C%22scope%22%3A%22%2Ffusen.html%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23f4d35e%22%2C%22theme_color%22%3A%22%23f4d35e%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fsvg%2Bxml%2C%253Csvg%2520xmlns%253D%2527http%253A%252F%252Fwww.w3.org%252F2000%252Fsvg%2527%2520viewBox%253D%25270%25200%2520180%2520180%2527%253E%253Crect%2520width%253D%2527180%2527%2520height%253D%2527180%2527%2520rx%253D%252736%2527%2520fill%253D%2527%2523f4d35e%2527%252F%253E%253Crect%2520x%253D%252738%2527%2520y%253D%252752%2527%2520width%253D%2527104%2527%2520height%253D%252714%2527%2520rx%253D%25277%2527%2520fill%253D%2527%25235a4a1c%2527%252F%253E%253Crect%2520x%253D%252738%2527%2520y%253D%252784%2527%2520width%253D%2527104%2527%2520height%253D%252714%2527%2520rx%253D%25277%2527%2520fill%253D%2527%25235a4a1c%2527%252F%253E%253Crect%2520x%253D%252738%2527%2520y%253D%2527116%2527%2520width%253D%252768%2527%2520height%253D%252714%2527%2520rx%253D%25277%2527%2520fill%253D%2527%25235a4a1c%2527%252F%253E%253C%252Fsvg%253E%22%2C%22sizes%22%3A%22180x180%22%2C%22type%22%3A%22image%2Fsvg%2Bxml%22%2C%22purpose%22%3A%22any%22%7D%5D%7D">
+<style>
+  :root{
+    --paper:#fdf0a8;
+    --paper2:#fbe57e;
+    --ink:#4a3f14;
+    --line:#e6cf6a;
+    --done:#a99c5f;
+    --accent:#e0a500;
+  }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body{ margin:0; height:100%; }
+  body{
+    font-family:"Hiragino Maru Gothic ProN","Yu Gothic UI","Meiryo",sans-serif;
+    background:#c9b071;
+    background-image:radial-gradient(#b89e5f 1px,transparent 1px);
+    background-size:22px 22px;
+    display:flex; justify-content:center; align-items:flex-start;
+    padding:18px 12px 40px;
+    min-height:100%;
+  }
+  .note{
+    width:100%; max-width:440px;
+    background:linear-gradient(180deg,var(--paper),var(--paper2));
+    border-radius:6px;
+    box-shadow:0 10px 26px rgba(0,0,0,.28), 0 2px 4px rgba(0,0,0,.15);
+    position:relative;
+    padding:16px 16px 12px;
+  }
+  /* 付箋の“テープ”演出 */
+  .note:before{
+    content:""; position:absolute; top:-10px; left:50%; transform:translateX(-50%) rotate(-2deg);
+    width:120px; height:24px; background:rgba(255,255,255,.45);
+    box-shadow:0 1px 3px rgba(0,0,0,.15);
+  }
+  h1{
+    font-size:20px; margin:6px 0 12px; color:var(--ink);
+    text-align:center; letter-spacing:2px;
+  }
+  h1 .sync{ font-size:11px; font-weight:normal; color:var(--done); display:block; margin-top:2px; letter-spacing:0; }
+  .inrow{ display:flex; gap:6px; margin-bottom:10px; }
+  #inp{
+    flex:1; border:none; border-bottom:2px solid var(--line);
+    background:transparent; font-size:16px; color:var(--ink);
+    padding:8px 4px; outline:none;
+    font-family:inherit;
+  }
+  #inp::placeholder{ color:#b6a45c; }
+  #add{
+    border:none; background:var(--accent); color:#fff; font-weight:bold;
+    border-radius:6px; padding:0 14px; font-size:15px; cursor:pointer;
+    font-family:inherit;
+  }
+  #add:active{ transform:translateY(1px); }
+  ul{ list-style:none; margin:0; padding:0; }
+  li{
+    display:flex; align-items:center; gap:10px;
+    padding:10px 2px; border-bottom:1px dashed var(--line);
+    font-size:16px; color:var(--ink);
+  }
+  li .box{
+    width:22px; height:22px; flex:none; border:2px solid var(--accent);
+    border-radius:5px; cursor:pointer; position:relative; background:rgba(255,255,255,.4);
+  }
+  li.done .box:after{
+    content:"✓"; position:absolute; top:-3px; left:2px; color:var(--accent); font-size:18px; font-weight:bold;
+  }
+  li .t{ flex:1; cursor:pointer; word-break:break-word; line-height:1.35; }
+  li.done .t{ text-decoration:line-through; color:var(--done); }
+  li .del{
+    flex:none; color:#c0793a; font-size:20px; cursor:pointer; padding:0 4px; opacity:.6;
+  }
+  li .del:active{ opacity:1; }
+  .empty{ text-align:center; color:var(--done); padding:24px 0; font-size:14px; }
+  .foot{
+    display:flex; justify-content:space-between; align-items:center;
+    margin-top:12px; font-size:12px; color:var(--done);
+  }
+  .foot a{ color:var(--accent); cursor:pointer; text-decoration:underline; }
+  .warn{
+    display:none; background:#c0392b; color:#fff; text-align:center;
+    font-size:12px; padding:6px; border-radius:6px; margin-bottom:10px;
+  }
+  /* 設定（テーブル作成SQL）折りたたみ */
+  details{ margin-top:14px; font-size:12px; color:var(--ink); }
+  summary{ cursor:pointer; color:var(--done); }
+  pre{
+    background:#fffbe6; border:1px solid var(--line); border-radius:6px;
+    padding:8px; overflow:auto; font-size:11px; white-space:pre-wrap; margin-top:6px;
+  }
+</style>
+</head>
+<body>
+  <div class="note">
+    <h1>付箋メモ<span class="sync" id="sync">クラウド同期中（スマホ・全PC共通）</span></h1>
+    <div class="warn" id="warn">⚠ クラウドに接続できません。通信を確認してください</div>
+    <div class="inrow">
+      <input id="inp" type="text" maxlength="200" placeholder="やること・メモを書いてEnter">
+      <button id="add">＋</button>
+    </div>
+    <ul id="list"></ul>
+    <div class="empty" id="empty" style="display:none">まだ何もありません</div>
+    <div class="foot">
+      <span id="count"></span>
+      <a id="clear">完了を消す</a>
+    </div>
+
+    <details>
+      <summary>はじめて使うとき（管理者向け・1回だけ）</summary>
+      <div>Supabaseの SQL Editor で下記を1回実行して <code>todos</code> テーブルを作ってください。作成済みなら不要です。</div>
+      <pre id="sql">create table if not exists todos (
+  id text primary key,
+  body text,
+  done boolean default false,
+  sort bigint,
+  updated bigint
+);
+alter table todos enable row level security;
+create policy "todos_public" on todos
+  for all using (true) with check (true);</pre>
+    </details>
+  </div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ============================================================
+     ▼▼▼ Supabaseの設定（genba-kanriと同じプロジェクトを利用） ▼▼▼
+     ============================================================ */
+  var SUPABASE_URL = "https://cfvppxqwdtwwucnaurtb.supabase.co";
+  var SUPABASE_KEY = "sb_publishable_Ib5hD2wXpa7iuQkSvpyExQ_owiHvngd";
+  /* ============================================================ */
+
+  var listEl  = document.getElementById("list");
+  var emptyEl = document.getElementById("empty");
+  var countEl = document.getElementById("count");
+  var warnEl  = document.getElementById("warn");
+  var inp     = document.getElementById("inp");
+
+  var todos = [];
+  var busy  = false;
+
+  function headers(extra){
+    var h = {
+      "apikey": SUPABASE_KEY,
+      "Authorization": "Bearer " + SUPABASE_KEY,
+      "Content-Type": "application/json"
+    };
+    if(extra){ for(var k in extra){ h[k]=extra[k]; } }
+    return h;
+  }
+  function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+  function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+  function showWarn(on){ warnEl.style.display = on ? "block" : "none"; }
+
+  async function load(){
+    try{
+      var res = await fetch(SUPABASE_URL + "/rest/v1/todos?select=*&order=sort.asc", { headers: headers() });
+      if(!res.ok) throw new Error("HTTP "+res.status);
+      todos = await res.json();
+      showWarn(false);
+    }catch(e){
+      console.error("読み込み失敗:", e);
+      showWarn(true);
+    }
+    render();
+  }
+
+  async function upsert(item){
+    try{
+      var res = await fetch(SUPABASE_URL + "/rest/v1/todos", {
+        method:"POST",
+        headers: headers({ "Prefer":"resolution=merge-duplicates" }),
+        body: JSON.stringify(item)
+      });
+      if(!res.ok) throw new Error("HTTP "+res.status);
+      showWarn(false);
+    }catch(e){
+      console.error("保存失敗:", e); showWarn(true);
+    }
+  }
+
+  async function remove(id){
+    try{
+      await fetch(SUPABASE_URL + "/rest/v1/todos?id=eq."+encodeURIComponent(id), {
+        method:"DELETE", headers: headers()
+      });
+      showWarn(false);
+    }catch(e){ console.error("削除失敗:", e); showWarn(true); }
+  }
+
+  function render(){
+    if(!todos.length){
+      listEl.innerHTML = "";
+      emptyEl.style.display = "block";
+    }else{
+      emptyEl.style.display = "none";
+      var html = "";
+      for(var i=0;i<todos.length;i++){
+        var t = todos[i];
+        html += '<li class="'+(t.done?"done":"")+'" data-id="'+esc(t.id)+'">';
+        html += '<span class="box" data-act="toggle"></span>';
+        html += '<span class="t" data-act="toggle">'+esc(t.body)+'</span>';
+        html += '<span class="del" data-act="del" title="削除">×</span>';
+        html += '</li>';
+      }
+      listEl.innerHTML = html;
+    }
+    var remain = 0;
+    for(var j=0;j<todos.length;j++){ if(!todos[j].done) remain++; }
+    countEl.textContent = todos.length ? ("残り "+remain+" / 全 "+todos.length) : "";
+  }
+
+  // クリック（トグル・削除）— イベント委譲
+  listEl.addEventListener("click", async function(ev){
+    var el = ev.target;
+    var act = el.getAttribute("data-act");
+    if(!act) return;
+    var li = el.closest ? el.closest("li") : (function(n){ while(n&&n.tagName!=="LI") n=n.parentNode; return n; })(el);
+    if(!li) return;
+    var id = li.getAttribute("data-id");
+    var idx = -1;
+    for(var i=0;i<todos.length;i++){ if(todos[i].id===id){ idx=i; break; } }
+    if(idx<0) return;
+
+    if(act==="toggle"){
+      todos[idx].done = !todos[idx].done;
+      todos[idx].updated = Date.now();
+      render();
+      await upsert(todos[idx]);
+    }else if(act==="del"){
+      var t = todos[idx];
+      todos.splice(idx,1);
+      render();
+      await remove(t.id);
+    }
+  });
+
+  async function addTask(){
+    if(busy) return;
+    var v = inp.value.replace(/^\s+|\s+$/g,"");
+    if(!v){ inp.focus(); return; }
+    busy = true;
+    var item = { id:uid(), body:v, done:false, sort:Date.now(), updated:Date.now() };
+    todos.push(item);
+    inp.value = "";
+    render();
+    inp.focus();
+    await upsert(item);
+    busy = false;
+  }
+
+  document.getElementById("add").addEventListener("click", addTask);
+  inp.addEventListener("keydown", function(e){ if(e.key==="Enter") addTask(); });
+
+  document.getElementById("clear").addEventListener("click", async function(){
+    var done = todos.filter(function(t){ return t.done; });
+    if(!done.length) return;
+    todos = todos.filter(function(t){ return !t.done; });
+    render();
+    for(var i=0;i<done.length;i++){ await remove(done[i].id); }
+  });
+
+  // 他の端末の変更を取り込むため、定期＆復帰時に再読込
+  setInterval(function(){ if(!busy && document.visibilityState==="visible") load(); }, 15000);
+  document.addEventListener("visibilitychange", function(){
+    if(document.visibilityState==="visible") load();
+  });
+  window.addEventListener("focus", load);
+
+  load();
+})();
+</script>
+</body>
+</html>

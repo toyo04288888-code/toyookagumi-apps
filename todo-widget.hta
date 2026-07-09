@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta http-equiv="x-ua-compatible" content="ie=edge">
+<title>やることリスト</title>
+<hta:application
+  id="todoApp"
+  applicationname="ToyookaTodo"
+  border="thin"
+  borderstyle="normal"
+  caption="yes"
+  showintaskbar="yes"
+  singleinstance="yes"
+  scroll="no"
+  contextmenu="no"
+  innerborder="no"
+  maximizebutton="no"
+  sysmenu="yes"
+/>
+<style>
+  html, body {
+    margin: 0; padding: 0; height: 100%;
+    font-family: "Meiryo", "メイリオ", sans-serif;
+    background: #f4f6f8;
+    overflow: hidden;
+    -ms-user-select: none;
+  }
+  #header {
+    background: #2f6f4f;
+    color: #fff;
+    padding: 8px 12px;
+    font-size: 15px;
+    font-weight: bold;
+    letter-spacing: 1px;
+  }
+  #inputRow {
+    padding: 10px;
+    background: #fff;
+    border-bottom: 1px solid #e0e0e0;
+  }
+  #taskInput {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 8px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+  #addBtn {
+    margin-top: 8px;
+    width: 100%;
+    padding: 8px;
+    font-size: 14px;
+    font-weight: bold;
+    color: #fff;
+    background: #2f6f4f;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  #addBtn:hover { background: #3a8760; }
+  #list {
+    padding: 6px 10px 10px 10px;
+    height: 100%;
+    overflow-y: auto;
+  }
+  .task {
+    display: block;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    padding: 8px 10px;
+    margin-bottom: 6px;
+    font-size: 14px;
+    position: relative;
+    word-break: break-all;
+  }
+  .task .chk {
+    margin-right: 8px;
+    vertical-align: middle;
+    width: 16px; height: 16px;
+    cursor: pointer;
+  }
+  .task .txt { vertical-align: middle; cursor: pointer; }
+  .task.done { background: #eef2ef; color: #9aa5a0; }
+  .task.done .txt { text-decoration: line-through; }
+  .task .del {
+    position: absolute;
+    right: 8px; top: 7px;
+    color: #c0392b;
+    font-size: 15px;
+    cursor: pointer;
+    font-weight: bold;
+  }
+  .task .del:hover { color: #e74c3c; }
+  #empty {
+    text-align: center;
+    color: #aaa;
+    padding: 20px;
+    font-size: 13px;
+  }
+  #footer {
+    padding: 6px 10px;
+    font-size: 11px;
+    color: #888;
+    background: #fff;
+    border-top: 1px solid #e0e0e0;
+  }
+  #footer a { color: #2f6f4f; cursor: pointer; text-decoration: underline; }
+</style>
+</head>
+<body>
+  <div id="header">やることリスト</div>
+  <div id="inputRow">
+    <input type="text" id="taskInput" maxlength="200" placeholder="やることを入力してEnter">
+    <button id="addBtn" onclick="addTask()">＋ 追加</button>
+  </div>
+  <div id="list"></div>
+  <div id="footer">
+    <span id="count"></span>　<a onclick="clearDone()">完了を消す</a>
+  </div>
+
+<script language="javascript">
+  var tasks = [];
+  var dataFile = "";
+
+  // 保存先ファイル（このHTAと同じフォルダの todo-data.json）
+  function getDataFilePath() {
+    var fso = new ActiveXObject("Scripting.FileSystemObject");
+    var self = unescape(location.href).replace(/^file:\/*/, "").replace(/\//g, "\\");
+    var folder = fso.GetParentFolderName(self);
+    return folder + "\\todo-data.json";
+  }
+
+  function loadTasks() {
+    try {
+      var fso = new ActiveXObject("Scripting.FileSystemObject");
+      if (fso.FileExists(dataFile)) {
+        var f = fso.OpenTextFile(dataFile, 1, false, -1); // -1 = Unicode
+        var content = "";
+        if (!f.AtEndOfStream) { content = f.ReadAll(); }
+        f.Close();
+        if (content && content.length > 0) {
+          tasks = eval("(" + content + ")");
+        }
+      }
+    } catch (e) { tasks = []; }
+    if (!tasks || !tasks.length) { tasks = []; }
+  }
+
+  function saveTasks() {
+    try {
+      var fso = new ActiveXObject("Scripting.FileSystemObject");
+      var f = fso.CreateTextFile(dataFile, true, true); // true = Unicode
+      f.Write(toJson(tasks));
+      f.Close();
+    } catch (e) {}
+  }
+
+  // 依存なしの簡易JSON化
+  function toJson(arr) {
+    var parts = [];
+    for (var i = 0; i < arr.length; i++) {
+      var t = arr[i];
+      parts.push('{"text":"' + esc(t.text) + '","done":' + (t.done ? "true" : "false") + '}');
+    }
+    return "[" + parts.join(",") + "]";
+  }
+  function esc(s) {
+    s = "" + s;
+    s = s.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+    s = s.replace(/\r/g, "").replace(/\n/g, " ");
+    return s;
+  }
+  function h(s) {
+    s = "" + s;
+    return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  function render() {
+    var list = document.getElementById("list");
+    if (!tasks.length) {
+      list.innerHTML = '<div id="empty">まだやることがありません</div>';
+    } else {
+      var html = "";
+      var doneCount = 0;
+      for (var i = 0; i < tasks.length; i++) {
+        var t = tasks[i];
+        if (t.done) { doneCount++; }
+        html += '<div class="task' + (t.done ? " done" : "") + '">';
+        html += '<input type="checkbox" class="chk"' + (t.done ? " checked" : "") + ' onclick="toggle(' + i + ')">';
+        html += '<span class="txt" onclick="toggle(' + i + ')">' + h(t.text) + '</span>';
+        html += '<span class="del" onclick="removeTask(' + i + ')" title="削除">×</span>';
+        html += '</div>';
+      }
+      list.innerHTML = html;
+    }
+    var remain = 0;
+    for (var j = 0; j < tasks.length; j++) { if (!tasks[j].done) { remain++; } }
+    document.getElementById("count").innerHTML = "残り " + remain + " 件 / 全 " + tasks.length + " 件";
+  }
+
+  function addTask() {
+    var input = document.getElementById("taskInput");
+    var v = input.value;
+    if (v) { v = v.replace(/^\s+|\s+$/g, ""); }
+    if (!v) { input.focus(); return; }
+    tasks.push({ text: v, done: false });
+    input.value = "";
+    input.focus();
+    saveTasks();
+    render();
+  }
+
+  function toggle(i) {
+    tasks[i].done = !tasks[i].done;
+    saveTasks();
+    render();
+  }
+
+  function removeTask(i) {
+    tasks.splice(i, 1);
+    saveTasks();
+    render();
+  }
+
+  function clearDone() {
+    var kept = [];
+    for (var i = 0; i < tasks.length; i++) {
+      if (!tasks[i].done) { kept.push(tasks[i]); }
+    }
+    tasks = kept;
+    saveTasks();
+    render();
+  }
+
+  // Enterキーで追加
+  document.onkeydown = function () {
+    var e = window.event;
+    if (e && e.keyCode === 13) {
+      if (e.srcElement && e.srcElement.id === "taskInput") {
+        addTask();
+        return false;
+      }
+    }
+  };
+
+  // 起動時
+  window.onload = function () {
+    // 画面右下に小さめウィンドウで表示
+    var w = 300, ht = 460;
+    try {
+      window.resizeTo(w, ht);
+      var sw = screen.availWidth, sh = screen.availHeight;
+      window.moveTo(sw - w - 20, sh - ht - 20);
+    } catch (e) {}
+    dataFile = getDataFilePath();
+    loadTasks();
+    render();
+    document.getElementById("taskInput").focus();
+  };
+</script>
+</body>
+</html>
