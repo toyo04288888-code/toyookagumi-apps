@@ -13,6 +13,7 @@
 <title>豊岡組 点検簿ジェネレーター（事務）</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
   :root{--navy:#1f3a5f;--navy2:#2c4f80;--orange:#e8732b;--bg:#f4f6f9;--card:#fff;
     --line:#dde3ea;--txt:#1c2733;--muted:#6b7888;--ok:#1f9d57;--warn:#c8412b;--soft:#eef2f7}
@@ -78,6 +79,31 @@
       <div class="muted" style="margin-top:8px">機械ごとの点検簿（月シートが入ったExcel）を選んでください。複数の機械を一度に選ぶこともできます（Ctrl／Shiftキーで複数選択）。リース機でも、その機械の様式ならOKです。</div>
     </div>
     <div id="loadInfo"></div>
+  </div>
+
+  <div class="card">
+    <h2><span class="step">＋</span>月シートを自動で作る</h2>
+    <div class="muted">見本の月シートが1枚入ったExcelを選ぶと、指定した月のシートを自動で作ります（日付・曜日・年月を記入。罫線・様式・機種・点検項目はそのまま。日付欄の✔や点検者名は空にします）。31日ある月にも対応。</div>
+    <div class="filebox" style="margin-top:10px">
+      <input type="file" id="genFileIn" accept=".xlsx">
+      <div class="muted" style="margin-top:8px">この機械の点検簿Excel（見本1台分）を選んでください。</div>
+    </div>
+    <div id="genLoadInfo"></div>
+    <div id="genOptions" style="display:none;margin-top:12px">
+      <div class="row">
+        <div class="fld" style="flex:0 1 130px"><label>年（西暦）</label><input id="genYear" type="number" placeholder="2026"></div>
+      </div>
+      <div class="fld" style="margin-top:10px"><label>作る月（クリックで選択・複数可）</label>
+        <div id="genMonths" class="daygrid" style="grid-template-columns:repeat(6,1fr)"></div>
+      </div>
+      <div class="flexsp" style="margin-top:10px">
+        <button class="ghost" id="genMonAll">全部</button>
+        <button class="ghost" id="genMonNone">クリア</button>
+        <button class="btn org right" id="genRun">月シートを作ってダウンロード</button>
+      </div>
+      <div class="info" id="genStatus2" style="display:none"></div>
+    </div>
+    <div class="note">出力後もExcelで一度ご確認ください。既にあるシートと同じ月は作りません（重複防止）。</div>
   </div>
 
   <div class="card off" id="cardBatch">
@@ -459,6 +485,125 @@ $('genBtn').onclick=async()=>{
     a.download=`${fileName}_記入済_${$('sheetSel').value}.xlsx`;a.click();
     $('genStatus').textContent=`出力しました（${days.length}日分）。`;
   }catch(err){$('genStatus').textContent='出力に失敗：'+err.message;}
+};
+
+/* ===== 月シート自動生成 ===== */
+let genBuf=null, genCfg=null, genFileName='', genSel=new Set();
+
+async function genAnalyze(buf){
+  const w=new ExcelJS.Workbook(); await w.xlsx.load(buf);
+  const src=w.worksheets[0];
+  let startCol=null;
+  for(let c=1;c<=60;c++){ if(cellNum(src.getRow(4).getCell(c).value)===1){ startCol=c; break; } }
+  let kRow=null;
+  for(let r=6;r<=60;r++){ if(cellText(src.getRow(r).getCell(COLB).value).indexOf('点検者')>=0){ kRow=r; break; } }
+  let year=cellNum(src.getCell('AL25').value);
+  if(year==null){ const q=cellNum(src.getCell('Q3').value); year=q!=null?q+2018:null; }
+  const existing=new Set();
+  w.worksheets.forEach(ws=>{ let m=cellNum(ws.getCell('V3').value); if(m==null){ const mm=(String(ws.name).match(/(\d+)/)||[])[1]; m=mm?+mm:null; } if(m>=1&&m<=12) existing.add(m); });
+  return { templateName: src.name, startCol, kRow, year, existing };
+}
+
+function genFill(ws, year, month, cfg){
+  const start=cfg.startCol||13, kRow=cfg.kRow||22;
+  for(let r=6;r<=kRow+1;r++) for(let i=0;i<31;i++){ const cell=ws.getRow(r).getCell(start+i); if(cell.value!=null) cell.value=null; }
+  const dim=new Date(year,month,0).getDate();
+  for(let i=0;i<31;i++){ const c=start+i, day=i+1;
+    if(day<=dim){ ws.getRow(4).getCell(c).value=day; ws.getRow(5).getCell(c).value=WD[new Date(year,month-1,day).getDay()]; }
+    else { ws.getRow(4).getCell(c).value=null; ws.getRow(5).getCell(c).value=null; }
+  }
+  ws.getCell('AL25').value=year; ws.getCell('Q3').value=year-2018; ws.getCell('V3').value=month;
+}
+
+// XMLレベルで先頭シートを丸ごと複製（結合・罫線を完全保持）
+async function genDuplicate(buf, monthNames){
+  const zip=await JSZip.loadAsync(buf);
+  let ct=await zip.file("[Content_Types].xml").async("string");
+  let wbx=await zip.file("xl/workbook.xml").async("string");
+  const relsPath="xl/_rels/workbook.xml.rels";
+  let rels=await zip.file(relsPath).async("string");
+  const firstSheet=(wbx.match(/<sheet\b[^>]*\/>/)||[])[0];
+  if(!firstSheet) throw new Error("シートが見つかりません");
+  const tRid=(firstSheet.match(/r:id="([^"]*)"/)||[])[1];
+  const tRel=(rels.match(new RegExp('<Relationship\\b[^>]*Id="'+tRid+'"[^>]*/>'))||[])[0];
+  const tTarget=(tRel.match(/Target="([^"]*)"/)||[])[1];
+  const tPath="xl/"+tTarget.replace(/^\/?xl\//,'');
+  const tXml=await zip.file(tPath).async("string");
+  const tRelsPath=tPath.replace(/worksheets\/(.+)\.xml$/,'worksheets/_rels/$1.xml.rels');
+  const hasSheetRels=!!zip.file(tRelsPath);
+  const tRelsXml=hasSheetRels?await zip.file(tRelsPath).async("string"):null;
+
+  let maxNum=Math.max(0,...Object.keys(zip.files).map(f=>{const m=f.match(/^xl\/worksheets\/sheet(\d+)\.xml$/);return m?+m[1]:0;}));
+  let maxRid=Math.max(0,...[...rels.matchAll(/Id="rId(\d+)"/g)].map(m=>+m[1]));
+  let maxSid=Math.max(0,...[...wbx.matchAll(/sheetId="(\d+)"/g)].map(m=>+m[1]));
+  const enc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  let addRels='', addCt='', addSheets='';
+  for(const nm of monthNames){
+    maxNum++; maxRid++; maxSid++;
+    const np=`xl/worksheets/sheet${maxNum}.xml`;
+    zip.file(np, tXml);
+    if(hasSheetRels) zip.file(np.replace(/worksheets\/(.+)\.xml$/,'worksheets/_rels/$1.xml.rels'), tRelsXml);
+    addRels+=`<Relationship Id="rId${maxRid}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${maxNum}.xml"/>`;
+    addCt+=`<Override PartName="/xl/worksheets/sheet${maxNum}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`;
+    addSheets+=`<sheet name="${enc(nm)}" sheetId="${maxSid}" r:id="rId${maxRid}"/>`;
+  }
+  zip.file(relsPath, rels.replace('</Relationships>', addRels+'</Relationships>'));
+  zip.file("[Content_Types].xml", ct.replace('</Types>', addCt+'</Types>'));
+  zip.file("xl/workbook.xml", wbx.replace('</sheets>', addSheets+'</sheets>'));
+  return await zip.generateAsync({type:"arraybuffer"});
+}
+
+function genRenderMonths(){
+  const box=$('genMonths'); box.innerHTML='';
+  for(let m=1;m<=12;m++){
+    const taken=genCfg.existing.has(m);
+    const d=document.createElement('div');
+    d.className='day'+(genSel.has(m)?' on':'')+(taken?'':'');
+    d.style.cssText='padding:10px 0'+(taken?';opacity:.4;cursor:not-allowed':'');
+    d.innerHTML=`${m}月`+(taken?'<span class="wd">済</span>':'');
+    if(!taken) d.onclick=()=>{ if(genSel.has(m))genSel.delete(m); else genSel.add(m); genRenderMonths(); };
+    box.appendChild(d);
+  }
+}
+
+$('genFileIn').onchange=async e=>{
+  const f=e.target.files[0]; if(!f) return;
+  genFileName=f.name.replace(/\.xlsx$/i,'');
+  $('genLoadInfo').innerHTML='<div class="info">解析中…</div>';
+  try{
+    if(!window.JSZip) throw new Error('JSZip未読込（ネット接続を確認してください）');
+    genBuf=await f.arrayBuffer();
+    genCfg=await genAnalyze(genBuf);
+    if(genCfg.startCol==null) throw new Error('日付欄（1〜）が見つかりませんでした。様式が想定と異なります。');
+    $('genYear').value=genCfg.year||new Date().getFullYear();
+    genSel=new Set(); for(let m=1;m<=12;m++) if(!genCfg.existing.has(m)) genSel.add(m);
+    genRenderMonths();
+    $('genOptions').style.display='block';
+    $('genLoadInfo').innerHTML=`<div class="info">見本シート：<b>${genCfg.templateName}</b>／機種の様式を読み取りました。既にあるのは「済」と表示、それ以外を作成します。</div>`;
+  }catch(err){ $('genOptions').style.display='none'; $('genLoadInfo').innerHTML=`<div class="info" style="color:var(--warn)">読み込みに失敗：${err.message}</div>`; }
+};
+$('genMonAll').onclick=()=>{ genSel=new Set(); for(let m=1;m<=12;m++) if(!genCfg.existing.has(m)) genSel.add(m); genRenderMonths(); };
+$('genMonNone').onclick=()=>{ genSel=new Set(); genRenderMonths(); };
+$('genRun').onclick=async ()=>{
+  const st=$('genStatus2'); st.style.display='block';
+  const year=parseInt($('genYear').value,10);
+  if(!year||year<2000||year>2100){ st.style.color='var(--warn)'; st.textContent='年（西暦）を正しく入れてください。'; return; }
+  const months=[...genSel].filter(m=>!genCfg.existing.has(m)).sort((a,b)=>a-b);
+  if(!months.length){ st.style.color='var(--warn)'; st.textContent='作る月を選んでください（「済」以外）。'; return; }
+  st.style.color=''; st.textContent='生成中…';
+  $('genRun').disabled=true;
+  try{
+    const names=months.map(m=>m+'月');
+    const dup=await genDuplicate(genBuf, names);
+    const w=new ExcelJS.Workbook(); await w.xlsx.load(dup);
+    months.forEach(m=>{ const ws=findWs(w, m+'月'); if(ws) genFill(ws, year, m, genCfg); });
+    const out=await w.xlsx.writeBuffer();
+    const blob=new Blob([out],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+    a.download=`${genFileName}_月シート_${year}.xlsx`; a.click();
+    st.textContent=`${names.join('・')} を作成しました（${year}年）。ダウンロードを確認してください。`;
+  }catch(err){ st.style.color='var(--warn)'; st.textContent='生成に失敗：'+err.message; }
+  $('genRun').disabled=false;
 };
 
 /* ===== 起動時：クラウド設定を復元 ===== */
