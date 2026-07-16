@@ -218,6 +218,13 @@ async function fetchMonthMachineDays(year,month){
 
 function cellText(v){ if(v==null) return ''; if(typeof v==='object') return (v.result!=null?v.result:(v.text!=null?v.text:'')).toString(); return v.toString(); }
 function cellNum(v){ if(v==null) return null; if(typeof v==='object') v=(v.result!=null?v.result:null); const n=Number(v); return isNaN(n)?null:n; }
+/* シート名を前後の空白を無視して探す（<option>が末尾スペースを削るため、名前直取得では見つからないことがある） */
+function findWs(wbk,name){
+  if(!wbk) return null;
+  let ws=wbk.getWorksheet(name); if(ws) return ws;
+  const t=(name==null?'':String(name)).trim();
+  return wbk.worksheets.find(w=>String(w.name||'').trim()===t) || null;
+}
 
 /* ===== 1. 読み込み ===== */
 $('fileIn').onchange=async e=>{
@@ -242,7 +249,8 @@ $('fileIn').onchange=async e=>{
 $('sheetSel').onchange=selectSheet;
 function selectSheet(){
   if(!wb) return;
-  curSheet=wb.getWorksheet($('sheetSel').value);
+  curSheet=findWs(wb,$('sheetSel').value);
+  if(!curSheet){$('sheetInfo').innerHTML='<span style="color:var(--warn)">シートを開けませんでした。ファイルを選び直してください。</span>';return;}
   const p=parseSheet(curSheet);
   dayCol=p.dayCol;wdays=p.wdays;itemRows=p.itemRows;kenteiRow=p.kenteiRow;
   const days=Object.keys(dayCol).map(Number).sort((a,b)=>a-b);
@@ -285,7 +293,7 @@ $('batchRun').onclick=async()=>{
   for(const bf of batchFiles){
     const line=document.createElement('div');
     if(!bf.wb){ line.textContent=`✗ ${bf.fileName}：読み込み失敗（${bf.error}）`; log.appendChild(line); skip++; continue; }
-    const ws=bf.wb.getWorksheet(sheetName);
+    const ws=findWs(bf.wb,sheetName);
     if(!ws){ line.textContent=`✗ ${bf.fileName}：シート「${sheetName}」が見つかりません（スキップ）`; log.appendChild(line); skip++; continue; }
     const p=parseSheet(ws);
     const {year,month}=getYearMonthOf(ws,sheetName);
