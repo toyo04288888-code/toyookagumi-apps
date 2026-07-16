@@ -32,7 +32,8 @@
   .row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
   .fld{display:flex;flex-direction:column;gap:4px}
   .fld label{font-size:12px;color:var(--muted);font-weight:600}
-  input,select{font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--txt);width:100%}
+  input,select,textarea{font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--txt);width:100%}
+  textarea{resize:vertical;line-height:1.6}
   button.btn{background:var(--navy);color:#fff;border:none;padding:10px 18px;border-radius:8px;font-weight:700;cursor:pointer;font-size:14px}
   button.btn.org{background:var(--orange)}
   button.btn:disabled{background:#aab3be;cursor:default}
@@ -104,6 +105,28 @@
       <div class="info" id="genStatus2" style="display:none"></div>
     </div>
     <div class="note">出力後もExcelで一度ご確認ください。既にあるシートと同じ月は作りません（重複防止）。</div>
+  </div>
+
+  <div class="card">
+    <h2><span class="step">✎</span>新しい点検簿を作る（白紙テンプレート）</h2>
+    <div class="muted">元になるExcelが無いときは、ここで作れます。機種・形式・年月・点検項目を入れて作成すると、このツールがそのまま読める点検簿Excelをダウンロードします。1台ぶん作れば、上の「月シートを自動で作る」で他の月に増やせます。</div>
+    <div class="row" style="margin-top:12px">
+      <div class="fld" style="flex:1 1 200px"><label>機械の種類（選ぶと項目が入ります）</label><select id="tplPreset"></select></div>
+      <div class="fld" style="flex:1 1 170px"><label>機種</label><input id="tplKishu" placeholder="0.25m3バックホウ"></div>
+      <div class="fld" style="flex:1 1 140px"><label>形式／型式</label><input id="tplKeishiki" placeholder="PC78UU-10"></div>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <div class="fld" style="flex:0 1 120px"><label>年（西暦）</label><input id="tplYear" type="number" placeholder="2026"></div>
+      <div class="fld" style="flex:0 1 90px"><label>月</label><input id="tplMonth" type="number" min="1" max="12" placeholder="7"></div>
+      <div class="fld" style="flex:2 1 240px"><label>見出し（任意）</label><input id="tplTitle" placeholder="月　例　点　検　簿"></div>
+    </div>
+    <div class="fld" style="margin-top:10px"><label>点検項目（1行に1つ・自由に編集できます）</label>
+      <textarea id="tplItems" rows="10" placeholder="エンジンオイルの量・汚れ&#10;冷却水の量・漏れ&#10;..."></textarea></div>
+    <div class="flexsp" style="margin-top:10px">
+      <button class="btn org" id="tplRun">テンプレートを作ってダウンロード</button>
+      <span class="muted" id="tplStatus"></span>
+    </div>
+    <div class="note">💡 形式（型式）に「PC78UU-10」のように型番を入れておくと、日報の機械名に同じ型番や数字（例：PC78UU／0.25）が入っていれば、日報から自動で✔が付きます。</div>
   </div>
 
   <div class="card off" id="cardBatch">
@@ -604,6 +627,145 @@ $('genRun').onclick=async ()=>{
     st.textContent=`${names.join('・')} を作成しました（${year}年）。ダウンロードを確認してください。`;
   }catch(err){ st.style.color='var(--warn)'; st.textContent='生成に失敗：'+err.message; }
   $('genRun').disabled=false;
+};
+
+/* ===== 新しい点検簿テンプレートを作る ===== */
+const TPL_PRESETS={
+  "バックホウ（油圧ショベル）":{kishu:"0.25m3バックホウ",items:[
+    "エンジンオイルの量・汚れ","冷却水の量・漏れ","燃料の量・漏れ","ファンベルトの張り・損傷",
+    "作動油の量・漏れ","各部の給油脂","履帯(クローラ)の張り・損傷","走行装置・下部ローラの損傷",
+    "ブレーキの効き具合","ブーム・アーム・バケットの亀裂・損傷","ピン・ブッシュのガタ","バケット爪の摩耗・欠損",
+    "警報装置・方向指示器","前照灯・尾灯・作業灯","バックミラー・カメラ","消火器・非常停止装置","異音・異常の有無"]},
+  "ホイールローダー":{kishu:"ホイールローダー",items:[
+    "エンジンオイルの量・汚れ","冷却水の量・漏れ","燃料の量・漏れ","ファンベルトの張り・損傷",
+    "作動油の量・漏れ","各部の給油脂","タイヤの空気圧・損傷・摩耗","ホイールボルトの緩み",
+    "ブレーキの効き具合","バケット・アームの亀裂・損傷","ピン・ブッシュのガタ","ステアリングの状態",
+    "警報装置・後退ブザー","前照灯・尾灯・作業灯","バックミラー・カメラ","消火器","異音・異常の有無"]},
+  "ブルドーザー":{kishu:"ブルドーザー",items:[
+    "エンジンオイルの量・汚れ","冷却水の量・漏れ","燃料の量・漏れ","ファンベルトの張り・損傷",
+    "作動油の量・漏れ","各部の給油脂","履帯(クローラ)の張り・損傷","下部ローラ・遊動輪の損傷",
+    "ブレーキ・クラッチの効き","ブレード・リッパの亀裂・損傷","ピン・ブッシュのガタ",
+    "警報装置・後退ブザー","前照灯・尾灯・作業灯","消火器","異音・異常の有無"]},
+  "移動式クレーン（ラフター等）":{kishu:"ラフテレーンクレーン",items:[
+    "エンジンオイルの量・汚れ","冷却水の量・漏れ","燃料の量・漏れ","作動油の量・漏れ",
+    "ワイヤロープの損傷・キンク","フック・外れ止めの状態","巻過防止装置の作動","過負荷防止装置の作動",
+    "ブレーキ・クラッチの効き","アウトリガの状態","タイヤの空気圧・損傷","旋回・起伏の異常",
+    "各部の給油脂","警報装置・方向指示器","前照灯・尾灯・作業灯","消火器","異音・異常の有無"]},
+  "ダンプ・トラック":{kishu:"ダンプトラック",items:[
+    "エンジンオイルの量・汚れ","冷却水の量・漏れ","燃料の量・漏れ","ファンベルトの張り",
+    "ブレーキ液・効き具合","タイヤの空気圧・損傷・摩耗","ホイールナットの緩み","ハンドルの遊び・がた",
+    "荷台・あおりの状態","荷台上昇下降の作動","各部の給油脂","方向指示器・制動灯",
+    "前照灯・尾灯・番号灯","バックミラー・後退ブザー","ワイパー・ウォッシャー液","異音・異常の有無"]},
+  "ローラー（転圧機械）":{kishu:"振動ローラー",items:[
+    "エンジンオイルの量・汚れ","冷却水の量・漏れ","燃料の量・漏れ","作動油の量・漏れ",
+    "散水装置・散水量","ロール・スクレーパの状態","振動装置の作動","ブレーキ・クラッチの効き",
+    "各部の給油脂","タイヤ／ロールの損傷","警報装置・後退ブザー","前照灯・尾灯・作業灯","消火器","異音・異常の有無"]},
+  "高所作業車":{kishu:"高所作業車",items:[
+    "エンジンオイルの量・汚れ","冷却水の量・漏れ","燃料の量・漏れ","作動油の量・漏れ",
+    "昇降・伸縮・旋回の作動","非常停止・非常降下装置","過積載・傾斜警報の作動","作業床・手すりの状態",
+    "アウトリガの状態","タイヤ／履帯の損傷","各部の給油脂","警報装置・方向指示器",
+    "前照灯・尾灯・作業灯","消火器","異音・異常の有無"]},
+  "発電機・溶接機":{kishu:"エンジン発電機",items:[
+    "エンジンオイルの量・汚れ","冷却水の量・漏れ","燃料の量・漏れ","ファンベルトの張り",
+    "各端子・配線の緩み・損傷","アース(接地)の状態","出力電圧・周波数の確認","漏電遮断器の作動",
+    "計器類の作動","消音器・排気の状態","燃料コックの状態","消火器","異音・異常の有無"]},
+  "空気圧縮機（コンプレッサー）":{kishu:"エアコンプレッサー",items:[
+    "エンジンオイルの量・汚れ","冷却水の量・漏れ","燃料の量・漏れ","ファンベルトの張り",
+    "圧縮機油の量・漏れ","エアフィルタの汚れ","安全弁・圧力計の作動","ホース・継手の損傷・漏れ",
+    "各部の給油脂","走行装置・タイヤの状態","消火器","異音・異常の有無"]},
+  "共通（汎用・最小）":{kishu:"",items:[
+    "エンジンオイルの量・汚れ","冷却水の量・漏れ","燃料の量・漏れ","作動油の量・漏れ",
+    "各部の給油脂","ブレーキ・操作装置の効き","走行・作業装置の損傷","警報装置・灯火類",
+    "消火器・非常停止装置","異音・異常の有無"]}
+};
+(function initTplPreset(){
+  const sel=$('tplPreset'); if(!sel) return;
+  sel.innerHTML=Object.keys(TPL_PRESETS).map(k=>`<option>${k}</option>`).join('');
+  const apply=()=>{ const p=TPL_PRESETS[sel.value]; if(!p) return;
+    $('tplItems').value=p.items.join('\n');
+    if(!$('tplKishu').value.trim()) $('tplKishu').value=p.kishu; };
+  sel.onchange=apply;
+  const now=new Date();
+  $('tplYear').value=now.getFullYear();
+  $('tplMonth').value=now.getMonth()+1;
+  apply(); // 初期プリセットの項目を入れておく
+})();
+
+async function buildTemplateBuffer(o){
+  const FN="Yu Gothic";
+  const wb=new ExcelJS.Workbook();
+  const ws=wb.addWorksheet(o.month+"月",{views:[{state:'frozen',xSplit:2,ySplit:5}]});
+  const thin={style:'thin',color:{argb:'FF999999'}};
+  const box={top:thin,left:thin,bottom:thin,right:thin};
+  const C=(r,c)=>ws.getRow(r).getCell(c);
+  const START=3, dim=new Date(o.year,o.month,0).getDate();
+  ws.mergeCells('A1:H1');
+  const t=ws.getCell('A1'); t.value=o.title||"月　例　点　検　簿"; t.font={name:FN,size:16,bold:true}; t.alignment={vertical:'middle'};
+  ws.getRow(1).height=24;
+  ws.getCell('I2').value="機種"; ws.getCell('I2').font={name:FN,bold:true};
+  ws.getCell('J2').value=o.kishu; ws.getCell('J2').font={name:FN};
+  ws.getCell('I3').value="形式"; ws.getCell('I3').font={name:FN,bold:true};
+  ws.getCell('J3').value=o.keishiki; ws.getCell('J3').font={name:FN};
+  ws.getCell('P3').value="令和"; ws.getCell('P3').font={name:FN};
+  ws.getCell('Q3').value=o.year-2018; ws.getCell('Q3').font={name:FN,bold:true};
+  ws.getCell('R3').value="年"; ws.getCell('R3').font={name:FN};
+  ws.getCell('V3').value=o.month; ws.getCell('V3').font={name:FN,bold:true};
+  ws.getCell('W3').value="月"; ws.getCell('W3').font={name:FN};
+  ws.getCell('AL25').value=o.year;
+  const h4=C(4,2); h4.value="点検項目＼日"; h4.font={name:FN,size:9,bold:true}; h4.alignment={horizontal:'center',vertical:'middle'}; h4.border=box;
+  const h5=C(5,2); h5.value="曜日"; h5.font={name:FN,size:9}; h5.alignment={horizontal:'center',vertical:'middle'}; h5.border=box;
+  for(let i=0;i<dim;i++){
+    const col=START+i, d=i+1, dow=new Date(o.year,o.month-1,d).getDay();
+    const color=dow===0?'FFFF0000':(dow===6?'FF0070C0':'FF000000');
+    const c4=C(4,col); c4.value=d; c4.font={name:FN,size:9,color:{argb:color}}; c4.alignment={horizontal:'center'}; c4.border=box;
+    const c5=C(5,col); c5.value=WD[dow]; c5.font={name:FN,size:9,color:{argb:color}}; c5.alignment={horizontal:'center'}; c5.border=box;
+    ws.getColumn(col).width=3.4;
+  }
+  let r=6;
+  for(const it of o.items){
+    const b=C(r,2); b.value=it; b.font={name:FN,size:9}; b.alignment={vertical:'middle'}; b.border=box;
+    for(let i=0;i<dim;i++){ const cc=C(r,START+i); cc.border=box; cc.alignment={horizontal:'center',vertical:'middle'}; cc.font={name:FN,size:10}; }
+    ws.getRow(r).height=18; r++;
+  }
+  const sep=C(r,2); sep.value="処理・処置"; sep.font={name:FN,size:9,bold:true}; sep.border=box;
+  sep.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFF2F2F2'}};
+  for(let i=0;i<dim;i++){ const cc=C(r,START+i); cc.border=box; cc.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFF2F2F2'}}; }
+  r++;
+  const k=C(r,2); k.value="点検者　："; k.font={name:FN,size:9,bold:true}; k.border=box;
+  for(let i=0;i<dim;i++){ const cc=C(r,START+i); cc.border=box; cc.alignment={horizontal:'center'}; cc.font={name:FN,size:8}; }
+  ws.getColumn(1).width=2; ws.getColumn(2).width=26;
+  return await wb.xlsx.writeBuffer();
+}
+$('tplRun').onclick=async ()=>{
+  const st=$('tplStatus');
+  const kishu=$('tplKishu').value.trim(), keishiki=$('tplKeishiki').value.trim();
+  const year=parseInt($('tplYear').value,10), month=parseInt($('tplMonth').value,10);
+  const title=$('tplTitle').value.trim();
+  const items=$('tplItems').value.split('\n').map(s=>s.trim()).filter(s=>s);
+  st.style.color='';
+  if(!kishu){ st.style.color='var(--warn)'; st.textContent='機種を入れてください。'; return; }
+  if(!year||year<2000||year>2100){ st.style.color='var(--warn)'; st.textContent='年（西暦）を正しく入れてください。'; return; }
+  if(!month||month<1||month>12){ st.style.color='var(--warn)'; st.textContent='月を1〜12で入れてください。'; return; }
+  if(!items.length){ st.style.color='var(--warn)'; st.textContent='点検項目を1つ以上入れてください。'; return; }
+  st.textContent='作成中…'; $('tplRun').disabled=true;
+  try{
+    const o={kishu,keishiki,year,month,title,items};
+    const buf=await buildTemplateBuffer(o);
+    // 自己チェック（このツールで正しく読めるか）
+    const vwb=new ExcelJS.Workbook(); await vwb.xlsx.load(buf);
+    const p=parseSheet(vwb.worksheets[0]); const ym=getYearMonthOf(vwb.worksheets[0], vwb.worksheets[0].name);
+    const ok=(p.kishu===kishu && p.keishiki===keishiki && ym.year===year && ym.month===month
+              && p.itemRows.length===items.length && p.kenteiRow);
+    const blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    const safe=(kishu+'_'+(keishiki||'')).replace(/[\\/:*?"<>|]/g,'').replace(/\s+/g,'')||'点検簿';
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+    a.download=`点検簿_${safe}_${year}年${month}月.xlsx`; a.click();
+    st.style.color=ok?'':'var(--warn)';
+    st.textContent=ok
+      ? `✓ 作成しました（項目${items.length}・${year}年${month}月）。このツールで読み取りOKを確認済みです。`
+      : `△ 作成しましたが自己チェックで不一致がありました。Excelをご確認ください。`;
+  }catch(err){ st.style.color='var(--warn)'; st.textContent='作成に失敗：'+err.message; }
+  $('tplRun').disabled=false;
 };
 
 /* ===== 起動時：クラウド設定を復元 ===== */
