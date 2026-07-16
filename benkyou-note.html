@@ -894,8 +894,9 @@ function scheduleCloudPush(){
   cloudPushTimer=setTimeout(cloudPush,1200);
 }
 async function cloudPush(){
-  if(!cloudOn()||cloudBusy) return;
+  if(!cloudOn()||cloudBusy) return {ok:true,imgFail:0,imgOk:0};
   cloudBusy=true;
+  let err='', imgFail=0, imgOk=0;
   try{
     // --- ジャンル ---
     const gRows=[];
@@ -905,26 +906,32 @@ async function cloudPush(){
     }
     for(const [id] of syncedGenres) if(!state.genres.find(g=>g.id===id))
       gRows.push({id,name:'',color:'',deleted:true,updated:Date.now()});
-    // --- ノート＋新規画像 ---
-    const nRows=[], imgRows=[];
+    // --- ノート本文 ---
+    const nRows=[];
     for(const n of state.notes){
-      if(syncedNotes.get(n.id)!==(n.updated||0)){
+      if(syncedNotes.get(n.id)!==(n.updated||0))
         nRows.push({id:n.id,text:n.text||'',genre:n.genre||'',images:n.images||[],pinned:!!n.pinned,archived:!!n.archived,deleted:false,created:n.created||0,updated:n.updated||0});
-        for(const iid of (n.images||[])){
-          if(!pushedImages.has(iid)){ const d=await getImage(iid); if(d) imgRows.push({id:iid,data:d}); }
-        }
-      }
     }
     for(const [id] of syncedNotes) if(!state.notes.find(n=>n.id===id))
       nRows.push({id,text:'',genre:'',images:[],pinned:false,archived:false,deleted:true,created:0,updated:Date.now()});
-    // 画像→ジャンル→ノートの順に送る
-    if(imgRows.length){ await sbUpsert('benkyou_images',imgRows); imgRows.forEach(r=>pushedImages.add(r.id)); }
+    // ① まずジャンルとノート本文を確実に送る（写真より先）
     if(gRows.length) await sbUpsert('benkyou_genres',gRows);
     if(nRows.length) await sbUpsert('benkyou_notes',nRows);
     syncedGenres=new Map(state.genres.map(g=>[g.id,g.updated||0]));
     syncedNotes=new Map(state.notes.map(n=>[n.id,n.updated||0]));
-  }catch(e){ /* 次回リトライ */ }
+    // ② 写真は1枚ずつ送る（1枚失敗しても他は止めない）
+    const needImg=[];
+    for(const n of state.notes) for(const iid of (n.images||[]))
+      if(!pushedImages.has(iid) && !needImg.includes(iid)) needImg.push(iid);
+    for(const iid of needImg){
+      try{
+        const d=await getImage(iid);
+        if(d){ await sbUpsert('benkyou_images',[{id:iid,data:d}]); pushedImages.add(iid); imgOk++; }
+      }catch(e){ imgFail++; }
+    }
+  }catch(e){ err=(e&&e.message)||String(e); }
   cloudBusy=false;
+  return {ok:!err, err, imgFail, imgOk};
 }
 async function cloudPull(){
   if(!cloudOn()) return false;
@@ -958,10 +965,15 @@ async function cloudPull(){
   return changed;
 }
 async function cloudSyncNow(silent){
-  if(!cloudOn()) return;
-  await cloudPull();     // まずクラウドの最新を取り込む
-  await cloudPush();     // ローカルの未送信分を送る
-  if(!silent) clStatusMsg('同期しました ✓');
+  if(!cloudOn()) return {ok:false,imgFail:0};
+  await cloudPull();       // まずクラウドの最新を取り込む
+  const r=await cloudPush(); // ローカルの未送信分を送る
+  if(!silent){
+    if(!r.ok) clStatusMsg('同期エラー: '+r.err);
+    else if(r.imgFail) clStatusMsg('メモは同期しました ✓ ただし写真'+r.imgFail+'枚が送れませんでした');
+    else clStatusMsg('同期しました ✓');
+  }
+  return r;
 }
 
 /* ── クラウド設定ダイアログ ── */
@@ -997,12 +1009,14 @@ $('clSave').addEventListener('click',async ()=>{
   cloud.url=url; cloud.key=key;
   localStorage.setItem(CL_URL_KEY,url); localStorage.setItem(CL_KEY_KEY,key);
   clStatusMsg('同期中…');
-  await cloudSyncNow(true);
-  clStatusMsg('保存して同期しました ✓ 他の端末でも同じ設定を入れてください');
+  const r=await cloudSyncNow(true);
+  if(!r.ok) clStatusMsg('保存しましたが同期エラー: '+r.err);
+  else if(r.imgFail) clStatusMsg('保存＆同期しました ✓ ただし写真'+r.imgFail+'枚は未送信');
+  else clStatusMsg('保存して同期しました ✓ 他の端末でも同じ設定を入れてください');
 });
 $('clSync').addEventListener('click',async ()=>{
   if(!cloudOn()){ clStatusMsg('先に保存してください'); return; }
-  clStatusMsg('同期中…'); await cloudSyncNow(true); clStatusMsg('同期しました ✓');
+  clStatusMsg('同期中…'); await cloudSyncNow(false);
 });
 
 /* ── 定期・復帰時に自動同期 ── */
