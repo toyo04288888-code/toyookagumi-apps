@@ -24,6 +24,13 @@
   header .logo{font-weight:700;font-size:17px}
   header .tag{margin-left:auto;font-size:12px;background:rgba(255,255,255,.15);padding:3px 9px;border-radius:20px}
   main{max-width:820px;margin:0 auto;padding:14px}
+  .tabs{display:flex;gap:6px;margin-bottom:14px}
+  .tabs button{flex:1;background:var(--soft);border:1px solid var(--line);color:var(--muted);
+    padding:11px 8px;border-radius:10px;font:inherit;font-weight:700;font-size:14px;cursor:pointer}
+  .tabs button.on{background:var(--navy);border-color:var(--navy);color:#fff}
+  .tabs button .sub{display:block;font-size:11px;font-weight:400;opacity:.85;margin-top:2px}
+  .panel{display:none}
+  .panel.on{display:block}
   .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:14px}
   .card.off{opacity:.45;pointer-events:none}
   .step{display:inline-flex;width:24px;height:24px;border-radius:50%;background:var(--navy);color:#fff;
@@ -60,19 +67,12 @@
   <span class="tag">事務用</span>
 </header>
 <main>
-  <div class="card">
-    <h2><span class="step">☁</span>クラウド連携（日報の取得元）</h2>
-    <div class="row">
-      <div class="fld" style="flex:1 1 100%"><label>Supabase Project URL</label><input id="sbUrl" placeholder="https://xxxx.supabase.co"></div>
-      <div class="fld" style="flex:1 1 100%"><label>publishable key</label><input id="sbKey" placeholder="sb_publishable_..."></div>
-    </div>
-    <div class="flexsp" style="margin-top:10px">
-      <button class="btn" id="sbConnect">接続して保存</button>
-      <span class="muted" id="sbStatus"></span>
-    </div>
-    <div class="muted" style="margin-top:6px">日報アプリと同じURL・キーを入れてください。一度入れれば、この端末では次回から自動でつながります。</div>
+  <div class="tabs">
+    <button id="tabBtnWork" class="on">毎月の作業<span class="sub">日報から✔を付けて出力</span></button>
+    <button id="tabBtnSetup">準備・設定<span class="sub">新規作成・月シート・クラウド</span></button>
   </div>
 
+  <div class="panel on" id="tabWork">
   <div class="card">
     <h2><span class="step">1</span>点検簿の様式を読み込む</h2>
     <div class="filebox">
@@ -80,53 +80,6 @@
       <div class="muted" style="margin-top:8px">機械ごとの点検簿（月シートが入ったExcel）を選んでください。複数の機械を一度に選ぶこともできます（Ctrl／Shiftキーで複数選択）。リース機でも、その機械の様式ならOKです。</div>
     </div>
     <div id="loadInfo"></div>
-  </div>
-
-  <div class="card">
-    <h2><span class="step">＋</span>月シートを自動で作る</h2>
-    <div class="muted">見本の月シートが1枚入ったExcelを選ぶと、指定した月のシートを自動で作ります（日付・曜日・年月を記入。罫線・様式・機種・点検項目はそのまま。日付欄の✔や点検者名は空にします）。31日ある月にも対応。</div>
-    <div class="filebox" style="margin-top:10px">
-      <input type="file" id="genFileIn" accept=".xlsx">
-      <div class="muted" style="margin-top:8px">この機械の点検簿Excel（見本1台分）を選んでください。</div>
-    </div>
-    <div id="genLoadInfo"></div>
-    <div id="genOptions" style="display:none;margin-top:12px">
-      <div class="row">
-        <div class="fld" style="flex:0 1 130px"><label>年（西暦）</label><input id="genYear" type="number" placeholder="2026"></div>
-      </div>
-      <div class="fld" style="margin-top:10px"><label>作る月（クリックで選択・複数可）</label>
-        <div id="genMonths" class="daygrid" style="grid-template-columns:repeat(6,1fr)"></div>
-      </div>
-      <div class="flexsp" style="margin-top:10px">
-        <button class="ghost" id="genMonAll">全部</button>
-        <button class="ghost" id="genMonNone">クリア</button>
-        <button class="btn org right" id="genRun">月シートを作ってダウンロード</button>
-      </div>
-      <div class="info" id="genStatus2" style="display:none"></div>
-    </div>
-    <div class="note">出力後もExcelで一度ご確認ください。既にあるシートと同じ月は作りません（重複防止）。</div>
-  </div>
-
-  <div class="card">
-    <h2><span class="step">✎</span>新しい点検簿を作る（白紙テンプレート）</h2>
-    <div class="muted">元になるExcelが無いときは、ここで作れます。機種・形式・年月・点検項目を入れて作成すると、このツールがそのまま読める点検簿Excelをダウンロードします。1台ぶん作れば、上の「月シートを自動で作る」で他の月に増やせます。</div>
-    <div class="row" style="margin-top:12px">
-      <div class="fld" style="flex:1 1 200px"><label>機械の種類（選ぶと項目が入ります）</label><select id="tplPreset"></select></div>
-      <div class="fld" style="flex:1 1 170px"><label>機種</label><input id="tplKishu" placeholder="0.25m3バックホウ"></div>
-      <div class="fld" style="flex:1 1 140px"><label>形式／型式</label><input id="tplKeishiki" placeholder="PC78UU-10"></div>
-    </div>
-    <div class="row" style="margin-top:10px">
-      <div class="fld" style="flex:0 1 120px"><label>年（西暦）</label><input id="tplYear" type="number" placeholder="2026"></div>
-      <div class="fld" style="flex:0 1 90px"><label>月</label><input id="tplMonth" type="number" min="1" max="12" placeholder="7"></div>
-      <div class="fld" style="flex:2 1 240px"><label>見出し（任意）</label><input id="tplTitle" placeholder="月　例　点　検　簿"></div>
-    </div>
-    <div class="fld" style="margin-top:10px"><label>点検項目（1行に1つ・自由に編集できます）</label>
-      <textarea id="tplItems" rows="10" placeholder="エンジンオイルの量・汚れ&#10;冷却水の量・漏れ&#10;..."></textarea></div>
-    <div class="flexsp" style="margin-top:10px">
-      <button class="btn org" id="tplRun">テンプレートを作ってダウンロード</button>
-      <span class="muted" id="tplStatus"></span>
-    </div>
-    <div class="note">💡 形式（型式）に「PC78UU-10」のように型番を入れておくと、日報の機械名に同じ型番や数字（例：PC78UU／0.25）が入っていれば、日報から自動で✔が付きます。</div>
   </div>
 
   <div class="card off" id="cardBatch">
@@ -202,6 +155,70 @@
     </div>
     <div class="note">出力後、罫線や曜日の表示が崩れていないか一度ご確認ください。もし崩れる箇所があれば、PCで完全に再現する別方式（生成スクリプト）に切り替えます。</div>
   </div>
+  </div><!-- /毎月の作業 -->
+
+  <div class="panel" id="tabSetup">
+  <div class="card">
+    <h2><span class="step">☁</span>クラウド連携（日報の取得元）</h2>
+    <div class="muted">この端末で最初に1回だけ設定します。設定後は「毎月の作業」で自動的に日報を取りにいきます。</div>
+    <div class="row" style="margin-top:12px">
+      <div class="fld" style="flex:1 1 100%"><label>Supabase Project URL</label><input id="sbUrl" placeholder="https://xxxx.supabase.co"></div>
+      <div class="fld" style="flex:1 1 100%"><label>publishable key</label><input id="sbKey" placeholder="sb_publishable_..."></div>
+    </div>
+    <div class="flexsp" style="margin-top:10px">
+      <button class="btn" id="sbConnect">接続して保存</button>
+      <span class="muted" id="sbStatus"></span>
+    </div>
+    <div class="muted" style="margin-top:6px">日報アプリと同じURL・キーを入れてください。一度入れれば、この端末では次回から自動でつながります。</div>
+  </div>
+
+  <div class="card">
+    <h2><span class="step">✎</span>新しい点検簿を作る（白紙テンプレート）</h2>
+    <div class="muted">元になるExcelが無いときは、ここで作れます。機種・形式・年月・点検項目を入れて作成すると、このツールがそのまま読める点検簿Excelをダウンロードします。1台ぶん作れば、下の「月シートを自動で作る」で他の月に増やせます。</div>
+    <div class="row" style="margin-top:12px">
+      <div class="fld" style="flex:1 1 200px"><label>機械の種類（選ぶと項目が入ります）</label><select id="tplPreset"></select></div>
+      <div class="fld" style="flex:1 1 170px"><label>機種</label><input id="tplKishu" placeholder="0.25m3バックホウ"></div>
+      <div class="fld" style="flex:1 1 140px"><label>形式／型式</label><input id="tplKeishiki" placeholder="PC78UU-10"></div>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <div class="fld" style="flex:0 1 120px"><label>年（西暦）</label><input id="tplYear" type="number" placeholder="2026"></div>
+      <div class="fld" style="flex:0 1 90px"><label>月</label><input id="tplMonth" type="number" min="1" max="12" placeholder="7"></div>
+      <div class="fld" style="flex:2 1 240px"><label>見出し（任意）</label><input id="tplTitle" placeholder="月　例　点　検　簿"></div>
+    </div>
+    <div class="fld" style="margin-top:10px"><label>点検項目（1行に1つ・自由に編集できます）</label>
+      <textarea id="tplItems" rows="10" placeholder="エンジンオイルの量・汚れ&#10;冷却水の量・漏れ&#10;..."></textarea></div>
+    <div class="flexsp" style="margin-top:10px">
+      <button class="btn org" id="tplRun">テンプレートを作ってダウンロード</button>
+      <span class="muted" id="tplStatus"></span>
+    </div>
+    <div class="note">💡 形式（型式）に「PC78UU-10」のように型番を入れておくと、日報の機械名に同じ型番や数字（例：PC78UU／0.25）が入っていれば、日報から自動で✔が付きます。</div>
+  </div>
+
+  <div class="card">
+    <h2><span class="step">＋</span>月シートを自動で作る</h2>
+    <div class="muted">見本の月シートが1枚入ったExcelを選ぶと、指定した月のシートを自動で作ります（日付・曜日・年月を記入。罫線・様式・機種・点検項目はそのまま。日付欄の✔や点検者名は空にします）。31日ある月にも対応。</div>
+    <div class="filebox" style="margin-top:10px">
+      <input type="file" id="genFileIn" accept=".xlsx">
+      <div class="muted" style="margin-top:8px">この機械の点検簿Excel（見本1台分）を選んでください。</div>
+    </div>
+    <div id="genLoadInfo"></div>
+    <div id="genOptions" style="display:none;margin-top:12px">
+      <div class="row">
+        <div class="fld" style="flex:0 1 130px"><label>年（西暦）</label><input id="genYear" type="number" placeholder="2026"></div>
+      </div>
+      <div class="fld" style="margin-top:10px"><label>作る月（クリックで選択・複数可）</label>
+        <div id="genMonths" class="daygrid" style="grid-template-columns:repeat(6,1fr)"></div>
+      </div>
+      <div class="flexsp" style="margin-top:10px">
+        <button class="ghost" id="genMonAll">全部</button>
+        <button class="ghost" id="genMonNone">クリア</button>
+        <button class="btn org right" id="genRun">月シートを作ってダウンロード</button>
+      </div>
+      <div class="info" id="genStatus2" style="display:none"></div>
+    </div>
+    <div class="note">出力後もExcelで一度ご確認ください。既にあるシートと同じ月は作りません（重複防止）。</div>
+  </div>
+  </div><!-- /準備・設定 -->
 </main>
 
 <datalist id="nameList">
@@ -768,11 +785,25 @@ $('tplRun').onclick=async ()=>{
   $('tplRun').disabled=false;
 };
 
+/* ===== タブ切り替え ===== */
+function showTab(name){
+  const work=name==='work';
+  $('tabWork').classList.toggle('on',work);
+  $('tabSetup').classList.toggle('on',!work);
+  $('tabBtnWork').classList.toggle('on',work);
+  $('tabBtnSetup').classList.toggle('on',!work);
+  window.scrollTo(0,0);
+}
+$('tabBtnWork').onclick=()=>showTab('work');
+$('tabBtnSetup').onclick=()=>showTab('setup');
+
 /* ===== 起動時：クラウド設定を復元 ===== */
 (function(){
   $('sbUrl').value=localStorage.getItem(LSU)||'';
   $('sbKey').value=localStorage.getItem(LSK)||'';
   if($('sbUrl').value && $('sbKey').value){ ensureSb(); $('sbStatus').textContent=sb?'保存済み（接続準備OK）':''; }
+  // 未設定の端末は、先に設定してもらうため「準備・設定」から開く
+  else showTab('setup');
 })();
 </script>
 </body>
