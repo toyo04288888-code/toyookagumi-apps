@@ -101,6 +101,7 @@
 <nav>
   <button data-tab="editor" class="active">日報を書く</button>
   <button data-tab="master">工事一覧</button>
+  <button data-tab="today">今日の日報</button>
   <button data-tab="list">過去の日報</button>
   <button data-tab="settei">設定</button>
 </nav>
@@ -228,6 +229,22 @@
   </div>
 </section>
 
+<!-- ============ 今日の日報（日次確認） ============ -->
+<section id="todayTab" style="display:none">
+  <div class="card">
+    <h2 style="margin:0 0 10px"><span class="bar"></span>今日の日報</h2>
+    <div class="row" style="align-items:center;gap:8px;margin-bottom:8px">
+      <button class="ghost" id="todayPrev">◀ 前日</button>
+      <input type="date" id="todayDate" style="width:auto">
+      <button class="ghost" id="todayNext">翌日 ▶</button>
+      <button class="ghost" id="todayNow">今日へ</button>
+    </div>
+    <div class="reiwa" id="todayReiwa" style="margin-bottom:4px">―</div>
+    <div class="muted" id="todaySummary"></div>
+  </div>
+  <div id="todayList"></div>
+</section>
+
 <!-- ============ 一覧 ============ -->
 <section id="listTab" style="display:none">
   <div class="card">
@@ -237,7 +254,9 @@
       <div class="fld" style="flex:1 1 140px"><label>記入者で絞る</label><select id="fWriter"></select></div>
       <div class="fld" style="flex:1 1 140px"><label>月で絞る</label><select id="fMonth"></select></div>
       <button class="ghost" id="clearFilters">絞り込み解除</button>
+      <button class="btn org" id="exportAgg">集計Excel出力</button>
     </div>
+    <div class="muted" style="margin-bottom:10px">※「集計Excel出力」は、上の絞り込み条件（現場・記入者・月）に合う日報から、人工・購買品・作業内容をまとめて出力します（原価入力・検査書類の転記用）。</div>
     <div id="reportList"></div>
   </div>
 </section>
@@ -312,10 +331,12 @@ create policy "all km" on koji_master for all using(true) with check(true);</pre
 const LS={mode:'tk_kn_mode',url:'tk_kn_url',key:'tk_kn_key',list:'tk_kn_list',workers:'tk_kn_workers',masters:'tk_kn_masters'};
 const WD=['日','月','火','水','木','金','土'];
 const $=id=>document.getElementById(id);
+const ymdLocal=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 const esc=s=>(s||'').toString().replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
 const uid=()=>(crypto.randomUUID?crypto.randomUUID():'id'+Date.now()+Math.random());
 let state={mode:'local',sb:null,reports:[],editId:null,cloudWorkers:[],lastError:null,r:newReport(),
-  masters:[],masterEditId:null,masterError:null,m:newMaster()};
+  masters:[],masterEditId:null,masterError:null,m:newMaster(),
+  todayDate:ymdLocal(new Date())};
 
 function newReport(){return{koji_no:'',report_date:new Date().toISOString().slice(0,10),weather:'',temp:'',
   writer:'',koji_name:'',place:'',works:[{kind:'',content:''}],machines:[{machine:'',memo:''}],meeting:'',
@@ -403,13 +424,14 @@ const MasterStore={
 };
 
 /* ===== タブ ===== */
-const TABS={editor:'editorTabs',master:'masterTab',list:'listTab',settei:'setteiTab'};
+const TABS={editor:'editorTabs',master:'masterTab',today:'todayTab',list:'listTab',settei:'setteiTab'};
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{
   document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');
   Object.values(TABS).forEach(id=>$(id).style.display='none');
   $(TABS[b.dataset.tab]).style.display='block';
   if(b.dataset.tab==='list')renderList();
   if(b.dataset.tab==='master')renderMaster();
+  if(b.dataset.tab==='today')renderToday();
 });
 
 /* ===== 基本情報 ===== */
@@ -644,12 +666,15 @@ function populateFilters(){
   $('fWriter').innerHTML='<option value="">全員</option>'+writers.map(w=>`<option ${w===cur.w?'selected':''}>${esc(w)}</option>`).join('');
   $('fMonth').innerHTML='<option value="">すべての月</option>'+months.map(m=>`<option value="${m}" ${m===cur.m?'selected':''}>${monthLabel(m)}</option>`).join('');
 }
+function filteredReports(){
+  const fg=$('fGenba').value, fw=$('fWriter').value, fm=$('fMonth').value;
+  return state.reports.filter(r=>
+    (!fg||r.koji_name===fg)&&(!fw||(r.writer||'')===fw)&&(!fm||monthKey(r)===fm));
+}
 function renderList(){
   const el=$('reportList');
   populateFilters();
-  const fg=$('fGenba').value, fw=$('fWriter').value, fm=$('fMonth').value;
-  const rows=state.reports.filter(r=>
-    (!fg||r.koji_name===fg)&&(!fw||(r.writer||'')===fw)&&(!fm||monthKey(r)===fm));
+  const rows=filteredReports();
   const errBox=state.lastError?`<div class="note" style="background:#fdecea;border-color:#e7b4ac;color:#b53;margin-bottom:10px">${esc(state.lastError)}</div>`:'';
   if(!state.reports.length){el.innerHTML=errBox+'<div class="empty">まだ日報がありません</div>';return;}
   if(!rows.length){el.innerHTML=errBox+'<div class="empty">条件に合う日報がありません</div>';return;}
@@ -670,6 +695,100 @@ function renderList(){
 }
 $('fGenba').onchange=renderList; $('fWriter').onchange=renderList; $('fMonth').onchange=renderList;
 $('clearFilters').onclick=()=>{$('fGenba').value='';$('fWriter').value='';$('fMonth').value='';renderList();};
+
+/* ===== 今日の日報（日次確認・社長用） ===== */
+function reiwaFull(ds){const d=ds?new Date(ds+'T00:00:00'):null;
+  return (d&&!isNaN(d))?`令和${d.getFullYear()-2018}年${d.getMonth()+1}月${d.getDate()}日（${WD[d.getDay()]}）`:'―';}
+function shiftToday(n){const d=new Date(state.todayDate+'T00:00:00');d.setDate(d.getDate()+n);
+  state.todayDate=ymdLocal(d);renderToday();}
+$('todayPrev').onclick=()=>shiftToday(-1);
+$('todayNext').onclick=()=>shiftToday(1);
+$('todayNow').onclick=()=>{state.todayDate=ymdLocal(new Date());renderToday();};
+$('todayDate').onchange=e=>{state.todayDate=e.target.value;renderToday();};
+function renderToday(){
+  $('todayDate').value=state.todayDate;
+  $('todayReiwa').textContent=reiwaFull(state.todayDate);
+  const list=state.reports.filter(r=>r.report_date===state.todayDate);
+  const el=$('todayList');
+  const errBox=state.lastError?`<div class="note" style="background:#fdecea;border-color:#e7b4ac;color:#b53;margin-bottom:10px">${esc(state.lastError)}</div>`:'';
+  const nWorkers=list.reduce((s,r)=>s+(r.workers||[]).filter(w=>w.name&&!w.off).length,0);
+  const nBuy=list.reduce((s,r)=>s+(r.purchases||[]).filter(p=>p.item||p.supplier||p.qty).length,0);
+  $('todaySummary').textContent=list.length?`${list.length}現場 ／ 作業者のべ${nWorkers}名 ／ 購買品${nBuy}件`:'';
+  if(!list.length){el.innerHTML=errBox+'<div class="empty">この日の日報はありません</div>';return;}
+  el.innerHTML=errBox+list.map(r=>{
+    const works=(r.works||[]).filter(w=>w.kind||w.content);
+    const machines=(r.machines||[]).filter(m=>m.machine||m.memo);
+    const buy=(r.purchases||[]).filter(p=>p.item||p.supplier||p.qty);
+    const workers=(r.workers||[]).filter(w=>w.name);
+    const sec=(title,body)=>body?`<div style="margin-top:8px"><div class="muted" style="font-weight:700;margin-bottom:2px">${title}</div>${body}</div>`:'';
+    const worksHtml=works.length?`<table style="font-size:13px"><tbody>${works.map(w=>`<tr><td style="width:34%">${esc(w.kind)}</td><td>${esc(w.content)}</td></tr>`).join('')}</tbody></table>`:'';
+    const machHtml=machines.length?machines.map(m=>`${esc(m.machine)}${m.memo?'（'+esc(m.memo)+'）':''}`).join('　／　'):'';
+    const buyHtml=buy.length?`<table style="font-size:13px"><tbody>${buy.map(p=>`<tr><td>${esc(p.item)}</td><td>${esc(p.supplier)}</td><td style="width:70px">${esc(p.qty)}</td></tr>`).join('')}</tbody></table>`:'';
+    const workerHtml=workers.length?workers.map(w=>`${esc(w.name)}<span class="muted">（${w.off?'休み':esc(w.start)+'〜'+esc(w.end)}）</span>`).join('　'):'';
+    return `<div class="card">
+      <div class="flexsp" style="gap:8px;align-items:flex-start">
+        <div><div style="font-weight:700;font-size:15px">${esc(r.koji_no||'')} ${esc(r.koji_name||'')}</div>
+          <div class="muted">${esc(r.place||'')}${r.weather?'　天気：'+esc(r.weather):''}${r.temp!==''&&r.temp!=null?'　'+esc(r.temp)+'℃':''}</div></div>
+        <div>${r.writer?`<span style="display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border:2px solid #c8412b;border-radius:50%;color:#c8412b;font-weight:700;font-size:11px;line-height:1.05;text-align:center;transform:rotate(-4deg)">${esc(r.writer)}</span>`:''}</div>
+      </div>
+      ${sec('作業内容',worksHtml)}
+      ${sec('使用機械',machHtml)}
+      ${buy.length?`<div style="margin-top:8px"><div style="font-weight:700;margin-bottom:2px;color:var(--orange)">購買品</div>${buyHtml}</div>`:''}
+      ${sec('作業者（人員）',workerHtml)}
+      ${sec('監督備考',r.meeting?esc(r.meeting):'')}
+      <div class="row" style="margin-top:10px">
+        <button class="ghost" data-ted="${r.id}">開く</button>
+        <button class="ghost" data-tpr="${r.id}">印刷</button>
+      </div>
+    </div>`;
+  }).join('');
+  el.querySelectorAll('[data-ted]').forEach(b=>b.onclick=()=>editReport(b.dataset.ted));
+  el.querySelectorAll('[data-tpr]').forEach(b=>b.onclick=()=>{const r=state.reports.find(x=>x.id===b.dataset.tpr);doPrint(r);});
+}
+
+/* ===== 集計Excel出力（事務員・原価/検査書類用） ===== */
+function workHours(w){
+  if(w.off) return '';
+  const p=t=>{const m=/^(\d{1,2}):(\d{2})/.exec((t||'').trim());return m?(+m[1]+(+m[2])/60):null;};
+  const s=p(w.start),e=p(w.end);
+  if(s==null||e==null) return '';
+  let h=e-s; if(h<0) h+=24; return Math.round(h*100)/100;
+}
+$('exportAgg').onclick=()=>{
+  const rows=filteredReports().slice().sort((a,b)=>(a.report_date||'').localeCompare(b.report_date||''));
+  if(!rows.length){alert('対象の日報がありません（絞り込み条件を確認してください）');return;}
+  const wd=ds=>{const d=ds?new Date(ds+'T00:00:00'):null;return (d&&!isNaN(d))?WD[d.getDay()]:'';};
+  // 人工明細
+  const labor=[['日付','曜日','工事番号','工事名','作業者','開始','終了','稼働時間','休み']];
+  // 人工集計（作業者ごと）
+  const sum={};
+  // 購買品
+  const buy=[['日付','工事番号','工事名','購買品','購入先','数量']];
+  // 作業内容
+  const work=[['日付','工事番号','工事名','工種','作業内容']];
+  rows.forEach(r=>{
+    (r.workers||[]).filter(w=>w.name).forEach(w=>{
+      const h=workHours(w);
+      labor.push([r.report_date,wd(r.report_date),r.koji_no,r.koji_name,w.name,w.off?'':w.start,w.off?'':w.end,h,w.off?'○':'']);
+      if(!sum[w.name])sum[w.name]={days:0,hours:0};
+      if(!w.off){sum[w.name].days+=1;if(typeof h==='number')sum[w.name].hours+=h;}
+    });
+    (r.purchases||[]).filter(p=>p.item||p.supplier||p.qty).forEach(p=>{
+      buy.push([r.report_date,r.koji_no,r.koji_name,p.item,p.supplier,p.qty]);});
+    (r.works||[]).filter(x=>x.kind||x.content).forEach(x=>{
+      work.push([r.report_date,r.koji_no,r.koji_name,x.kind,x.content]);});
+  });
+  const laborSum=[['作業者','出勤日数','合計時間']];
+  Object.keys(sum).sort().forEach(n=>laborSum.push([n,sum[n].days,Math.round(sum[n].hours*100)/100]));
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(laborSum),'人工集計');
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(labor),'人工明細');
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(buy),'購買品');
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(work),'作業内容');
+  const g=($('fGenba').value||'全現場').replace(/[\\/:*?"<>|]/g,'');
+  const m=$('fMonth').value||'全期間';
+  XLSX.writeFile(wb,`集計_${g}_${m}.xlsx`);
+};
 
 /* ===== 印刷（A4・紙の様式に合わせる） ===== */
 function doPrint(r){
