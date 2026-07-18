@@ -62,6 +62,22 @@
     border:2.5px solid #c8412b;border-radius:50%;color:#c8412b;font-weight:700;font-size:13px;
     line-height:1.05;text-align:center;padding:3px;box-sizing:border-box;transform:rotate(-4deg)}
 
+  /* ボタンの押し込み反応 */
+  button.btn:active{transform:translateY(2px);filter:brightness(.9)}
+  button.btn:disabled{opacity:.75;cursor:default}
+  button.btn.saving{background:#7a8aa0}
+
+  /* 保存できた時の大きな確認表示 */
+  #toast{position:fixed;top:45%;left:50%;transform:translate(-50%,-50%) scale(.7);opacity:0;pointer-events:none;
+    background:var(--ok);color:#fff;padding:24px 40px;border-radius:18px;font-weight:800;font-size:22px;z-index:100;
+    box-shadow:0 12px 44px rgba(0,0,0,.32);display:flex;flex-direction:column;align-items:center;gap:12px;
+    transition:opacity .18s ease, transform .25s cubic-bezier(.2,1.4,.4,1)}
+  #toast.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
+  #toast.err{background:var(--warn)}
+  #toast .ic{width:58px;height:58px;border-radius:50%;background:#fff;color:var(--ok);
+    display:flex;align-items:center;justify-content:center;font-size:40px;line-height:1}
+  #toast.err .ic{color:var(--warn)}
+
   /* ===== 印刷（A4） ===== */
   #printArea{display:none}
   @media print{
@@ -315,6 +331,7 @@ create policy "all km" on koji_master for all using(true) with check(true);</pre
 </main>
 
 <div id="printArea"></div>
+<div id="toast"></div>
 
 <datalist id="workerList"></datalist>
 <datalist id="kojiList"></datalist>
@@ -537,15 +554,30 @@ $('addWorker').onclick=()=>{state.r.workers.push({name:'',start:'8:00',end:'17:0
 function renderAll(){loadBasicToForm();renderWorks();renderMachine();renderBuy();renderWorker();}
 
 /* ===== 保存・新規・編集 ===== */
+let toastTimer=null;
+function showToast(msg,isErr){
+  const t=$('toast');
+  t.className=isErr?'err':'';
+  t.innerHTML=`<div class="ic">${isErr?'!':'✓'}</div><div>${esc(msg)}</div>`;
+  // 再表示のためリフローを挟んでから show
+  void t.offsetWidth;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove('show'),isErr?2600:1600);
+}
 $('saveReport').onclick=async()=>{
   if(!state.r.koji_name && !state.r.koji_no){alert('工事名または工事番号を入れてください');return;}
   if(state.editId)state.r.id=state.editId;
+  const btn=$('saveReport'), label='この日報を保存';
+  btn.disabled=true;btn.classList.add('saving');btn.textContent='保存中…';
   const err=await Store.save(state.r);
-  if(err){alert('保存エラー：\n'+(err.message||JSON.stringify(err)));return;}
+  btn.disabled=false;btn.classList.remove('saving');btn.textContent=label;
+  if(err){showToast('保存できませんでした',true);alert('保存エラー：\n'+(err.message||JSON.stringify(err)));return;}
   await Store.load();
   buildLists();renderList();
-  $('editFlag').textContent='保存しました';setTimeout(()=>$('editFlag').textContent='',2500);
   state.editId=state.r.id;
+  showToast('保存しました');
+  $('editFlag').textContent='✓ 保存しました';setTimeout(()=>$('editFlag').textContent='',2500);
 };
 $('clearReport').onclick=()=>{state.editId=null;state.r=newReport();renderAll();$('editFlag').textContent='';};
 function editReport(id){const src=state.reports.find(x=>x.id===id);if(!src)return;
@@ -609,12 +641,16 @@ function editMaster(id){const src=state.masters.find(x=>x.id===id);if(!src)retur
   state.m=JSON.parse(JSON.stringify(src));state.masterEditId=id;loadMasterToForm();window.scrollTo(0,0);}
 $('saveMaster').onclick=async()=>{
   if(!state.m.koji_no && !state.m.koji_name){alert('工事番号または工事名を入れてください');return;}
+  const wasEdit=!!state.masterEditId;
   if(state.masterEditId)state.m.id=state.masterEditId;
+  const btn=$('saveMaster'), label=btn.textContent;
+  btn.disabled=true;btn.classList.add('saving');btn.textContent='保存中…';
   const err=await MasterStore.save(state.m);
-  if(err){alert('保存エラー：\n'+(err.message||JSON.stringify(err)));return;}
+  btn.disabled=false;btn.classList.remove('saving');btn.textContent=label;
+  if(err){showToast('保存できませんでした',true);alert('保存エラー：\n'+(err.message||JSON.stringify(err)));return;}
   await MasterStore.load();buildLists();
   state.m=newMaster();state.masterEditId=null;renderMaster();
-  $('masterEditFlag').textContent='登録しました';setTimeout(()=>$('masterEditFlag').textContent='',2500);
+  showToast(wasEdit?'更新しました':'登録しました');
 };
 $('clearMaster').onclick=()=>{state.m=newMaster();state.masterEditId=null;loadMasterToForm();};
 $('excelMaster').onclick=()=>{
