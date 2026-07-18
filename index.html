@@ -100,6 +100,7 @@
 </header>
 <nav>
   <button data-tab="editor" class="active">日報を書く</button>
+  <button data-tab="master">工事一覧</button>
   <button data-tab="list">過去の日報</button>
   <button data-tab="settei">設定</button>
 </nav>
@@ -117,7 +118,7 @@
       <div id="writerStamp"></div>
     </div>
     <div class="row">
-      <div class="fld" style="flex:1 1 150px"><label>工事番号</label><input id="f_kojino" list="kojinoList" placeholder="37-015"></div>
+      <div class="fld" style="flex:1 1 150px"><label>工事番号</label><select id="f_kojino"><option value="">選択…</option></select></div>
       <div class="fld" style="flex:1 1 160px"><label>日付</label><input type="date" id="f_date"></div>
       <div class="fld" style="flex:0 1 auto"><label>和暦</label><div class="reiwa" id="f_reiwa" style="padding:8px 0">―</div></div>
       <div class="fld" style="flex:1 1 120px"><label>天気</label><input id="f_weather" list="weatherList" placeholder="晴 / 雨時々曇 など"></div>
@@ -184,6 +185,49 @@
   </div>
 </section>
 
+<!-- ============ 工事一覧（現場マスター） ============ -->
+<section id="masterTab" style="display:none">
+  <div class="card">
+    <div class="flexsp" style="margin-bottom:10px">
+      <h2 style="margin:0"><span class="bar"></span><span id="masterFormTitle">現場を登録</span></h2>
+      <span class="muted right" id="masterEditFlag"></span>
+    </div>
+    <div class="muted" style="margin-bottom:10px">新しい現場に入ったら、工事決定確認書の内容をここに登録します。日報で工事番号を選ぶと工事名・場所が自動で入ります。</div>
+    <div class="row" style="margin-bottom:12px;align-items:center;gap:14px">
+      <div class="fld" style="flex:0 1 220px"><label>作成者</label>
+        <select id="m_writer"><option value="">選択…</option></select></div>
+      <div id="masterWriterStamp"></div>
+    </div>
+    <div class="row">
+      <div class="fld" style="flex:1 1 150px"><label>工事番号</label><input id="m_kojino"></div>
+      <div class="fld" style="flex:1 1 170px"><label>発注者</label><input id="m_hacchusha" list="hacchushaList"></div>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <div class="fld" style="flex:2 1 320px"><label>工事名</label><input id="m_kojiname"></div>
+      <div class="fld" style="flex:1 1 200px"><label>工事場所（地係）</label><input id="m_place"></div>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <div class="fld" style="flex:1 1 150px"><label>作成日</label><input type="date" id="m_sakusei"></div>
+      <div class="fld" style="flex:1 1 150px"><label>工期（開始）</label><input type="date" id="m_kouki_s"></div>
+      <div class="fld" style="flex:1 1 150px"><label>工期（終了）</label><input type="date" id="m_kouki_e"></div>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <div class="fld" style="flex:1 1 100%"><label>工事概要</label><textarea id="m_gaiyo" rows="2"></textarea></div>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <button class="btn org" id="saveMaster">この現場を登録</button>
+      <button class="ghost" id="clearMaster">新規（クリア）</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="flexsp" style="margin-bottom:8px">
+      <h2 style="margin:0"><span class="bar"></span>登録済みの現場</h2>
+      <button class="ghost right" id="excelMaster">一覧をExcel出力</button>
+    </div>
+    <div id="masterList"></div>
+  </div>
+</section>
+
 <!-- ============ 一覧 ============ -->
 <section id="listTab" style="display:none">
   <div class="card">
@@ -226,7 +270,14 @@ create policy "all kn" on kantoku_nippou for all using(true) with check(true);
 create table if not exists app_config(
   id text primary key, value jsonb);
 alter table app_config enable row level security;
-create policy "all cfg" on app_config for all using(true) with check(true);</pre></details>
+create policy "all cfg" on app_config for all using(true) with check(true);
+
+create table if not exists koji_master(
+  id uuid primary key default gen_random_uuid(),
+  koji_no text, koji_name text,
+  data jsonb, created_at timestamptz default now());
+alter table koji_master enable row level security;
+create policy "all km" on koji_master for all using(true) with check(true);</pre></details>
   </div>
   <div class="card">
     <h2><span class="bar"></span>作業者の追加</h2>
@@ -248,7 +299,7 @@ create policy "all cfg" on app_config for all using(true) with check(true);</pre
 
 <datalist id="workerList"></datalist>
 <datalist id="kojiList"></datalist>
-<datalist id="kojinoList"></datalist>
+<datalist id="hacchushaList"></datalist>
 <datalist id="weatherList"></datalist>
 <datalist id="placeList"></datalist>
 <datalist id="machineList"></datalist>
@@ -258,17 +309,21 @@ create policy "all cfg" on app_config for all using(true) with check(true);</pre
 </datalist>
 
 <script>
-const LS={mode:'tk_kn_mode',url:'tk_kn_url',key:'tk_kn_key',list:'tk_kn_list',workers:'tk_kn_workers'};
+const LS={mode:'tk_kn_mode',url:'tk_kn_url',key:'tk_kn_key',list:'tk_kn_list',workers:'tk_kn_workers',masters:'tk_kn_masters'};
 const WD=['日','月','火','水','木','金','土'];
 const $=id=>document.getElementById(id);
 const esc=s=>(s||'').toString().replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
 const uid=()=>(crypto.randomUUID?crypto.randomUUID():'id'+Date.now()+Math.random());
-let state={mode:'local',sb:null,reports:[],editId:null,cloudWorkers:[],lastError:null,r:newReport()};
+let state={mode:'local',sb:null,reports:[],editId:null,cloudWorkers:[],lastError:null,r:newReport(),
+  masters:[],masterEditId:null,masterError:null,m:newMaster()};
 
 function newReport(){return{koji_no:'',report_date:new Date().toISOString().slice(0,10),weather:'',temp:'',
   writer:'',koji_name:'',place:'',works:[{kind:'',content:''}],machines:[{machine:'',memo:''}],meeting:'',
   purchases:[{item:'',supplier:'',qty:''}],
   workers:[{name:'',start:'8:00',end:'17:00',off:false}]};}
+
+function newMaster(){return{writer:'',koji_no:'',koji_name:'',hacchusha:'',place:'',
+  sakusei_date:new Date().toISOString().slice(0,10),kouki_start:'',kouki_end:'',gaiyo:''};}
 
 const DEFAULT_WORKERS=['坂本','桜田','白崎','武内','谷口','豊岡敦志','豊岡強志','本郷','道本'];
 function localExtras(){let a=[];const raw=localStorage.getItem(LS.workers);
@@ -315,19 +370,54 @@ const Store={
   }
 };
 
+/* ===== 工事マスター ストア ===== */
+const MasterStore={
+  isCloud(){return state.mode==='cloud'&&state.sb;},
+  rowFor(m){return{koji_no:m.koji_no,koji_name:m.koji_name,data:m};},
+  async load(){
+    if(this.isCloud()){
+      const r=await state.sb.from('koji_master').select('*').order('created_at',{ascending:false});
+      state.masterError=r.error?('工事一覧の読み込みエラー：'+(r.error.message||JSON.stringify(r.error))):null;
+      state.masters=(r.data||[]).map(x=>Object.assign({id:x.id,created_at:x.created_at},x.data||{},
+        {koji_no:x.koji_no,koji_name:x.koji_name}));
+    }else{
+      state.masterError=null;
+      state.masters=JSON.parse(localStorage.getItem(LS.masters)||'[]');
+    }
+  },
+  async save(m){
+    if(this.isCloud()){
+      if(m.id){const {error}=await state.sb.from('koji_master').update(this.rowFor(m)).eq('id',m.id);return error;}
+      else{const {data,error}=await state.sb.from('koji_master').insert(this.rowFor(m)).select();
+        if(!error&&data&&data[0])m.id=data[0].id;return error;}
+    }else{
+      if(m.id){const i=state.masters.findIndex(x=>x.id===m.id);if(i>=0)state.masters[i]=m;}
+      else{m.id=uid();m.created_at=new Date().toISOString();state.masters.unshift(m);}
+      localStorage.setItem(LS.masters,JSON.stringify(state.masters));return null;
+    }
+  },
+  async del(id){
+    if(this.isCloud()){await state.sb.from('koji_master').delete().eq('id',id);}
+    else{state.masters=state.masters.filter(x=>x.id!==id);localStorage.setItem(LS.masters,JSON.stringify(state.masters));}
+  }
+};
+
 /* ===== タブ ===== */
+const TABS={editor:'editorTabs',master:'masterTab',list:'listTab',settei:'setteiTab'};
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{
   document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');
-  ['editor','list','settei'].forEach(t=>$(t==='editor'?'editorTabs':t==='list'?'listTab':'setteiTab').style.display='none');
-  $(b.dataset.tab==='editor'?'editorTabs':b.dataset.tab==='list'?'listTab':'setteiTab').style.display='block';
+  Object.values(TABS).forEach(id=>$(id).style.display='none');
+  $(TABS[b.dataset.tab]).style.display='block';
   if(b.dataset.tab==='list')renderList();
+  if(b.dataset.tab==='master')renderMaster();
 });
 
 /* ===== 基本情報 ===== */
 function bindBasic(){
-  const m={f_kojino:'koji_no',f_weather:'weather',f_temp:'temp',f_kojiname:'koji_name',f_place:'place',
-    f_meeting:'meeting'};
+  const m={f_weather:'weather',f_temp:'temp',f_place:'place',f_meeting:'meeting'};
   Object.entries(m).forEach(([id,k])=>$(id).oninput=e=>state.r[k]=e.target.value);
+  $('f_kojino').onchange=e=>{state.r.koji_no=e.target.value;applyMasterAutofill('koji_no');};
+  $('f_kojiname').oninput=e=>{state.r.koji_name=e.target.value;applyMasterAutofill('koji_name');};
   $('f_date').oninput=e=>{state.r.report_date=e.target.value;updateReiwa();};
   $('f_writer').onchange=e=>{state.r.writer=e.target.value;updateWriterStamp();};
 }
@@ -347,7 +437,7 @@ function updateReiwa(){
   $('f_reiwa').textContent=`令和${ry}年${d.getMonth()+1}月${d.getDate()}日（${WD[d.getDay()]}）`;
 }
 function loadBasicToForm(){
-  $('f_kojino').value=state.r.koji_no||'';$('f_date').value=state.r.report_date||'';
+  renderKojinoOptions();$('f_date').value=state.r.report_date||'';
   $('f_weather').value=state.r.weather||'';$('f_temp').value=state.r.temp||'';
   $('f_kojiname').value=state.r.koji_name||'';$('f_place').value=state.r.place||'';
   $('f_meeting').value=state.r.meeting||'';
@@ -439,6 +529,107 @@ $('clearReport').onclick=()=>{state.editId=null;state.r=newReport();renderAll();
 function editReport(id){const src=state.reports.find(x=>x.id===id);if(!src)return;
   state.r=JSON.parse(JSON.stringify(src));state.editId=id;renderAll();
   $('editFlag').textContent='編集中';document.querySelector('nav button[data-tab="editor"]').click();window.scrollTo(0,0);}
+
+/* ===== 工事マスター（工事一覧） ===== */
+const M_FIELDS={m_kojino:'koji_no',m_hacchusha:'hacchusha',m_kojiname:'koji_name',m_place:'place',
+  m_sakusei:'sakusei_date',m_kouki_s:'kouki_start',m_kouki_e:'kouki_end',m_gaiyo:'gaiyo'};
+function bindMaster(){
+  Object.entries(M_FIELDS).forEach(([id,k])=>{
+    const el=$(id);const ev=(el.tagName==='SELECT')?'onchange':'oninput';
+    el[ev]=e=>state.m[k]=e.target.value;
+  });
+  $('m_writer').onchange=e=>{state.m.writer=e.target.value;updateMasterWriterStamp();};
+}
+function renderMasterWriterOptions(){
+  const cur=state.m.writer||'';
+  $('m_writer').innerHTML='<option value="">選択…</option>'+
+    getWorkers().map(w=>`<option ${w===cur?'selected':''}>${esc(w)}</option>`).join('');
+}
+function updateMasterWriterStamp(){
+  const w=state.m.writer;
+  $('masterWriterStamp').innerHTML=w?`<div class="hanko">${esc(w)}</div>`:'<span class="muted">選ぶと押印されます</span>';
+}
+function loadMasterToForm(){
+  Object.entries(M_FIELDS).forEach(([id,k])=>{$(id).value=state.m[k]||'';});
+  renderMasterWriterOptions();updateMasterWriterStamp();
+  $('masterFormTitle').textContent=state.masterEditId?'現場を編集':'現場を登録';
+  $('saveMaster').textContent=state.masterEditId?'この現場を更新':'この現場を登録';
+  $('masterEditFlag').textContent=state.masterEditId?'編集中':'';
+}
+function koukiLabel(m){
+  const f=s=>{if(!s)return '';const d=new Date(s+'T00:00:00');return isNaN(d)?'':`R${d.getFullYear()-2018}.${d.getMonth()+1}.${d.getDate()}`;};
+  const a=f(m.kouki_start),b=f(m.kouki_end);
+  return (a||b)?`${a}～${b}`:'';
+}
+function renderMaster(){
+  loadMasterToForm();
+  const el=$('masterList');
+  const errBox=state.masterError?`<div class="note" style="background:#fdecea;border-color:#e7b4ac;color:#b53;margin-bottom:10px">${esc(state.masterError)}</div>`:'';
+  if(!state.masters.length){el.innerHTML=errBox+'<div class="empty">まだ現場が登録されていません</div>';return;}
+  const miniHanko=w=>w?`<span style="display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;border:2px solid #c8412b;border-radius:50%;color:#c8412b;font-weight:700;font-size:11px;line-height:1.05;text-align:center;padding:2px;box-sizing:border-box;transform:rotate(-4deg)">${esc(w)}</span>`:'';
+  el.innerHTML=errBox+`<div class="muted" style="margin-bottom:8px">${state.masters.length}件</div>`+
+    `<table><thead><tr><th>作成者</th><th>工事番号</th><th>工事名</th><th>発注者</th><th>工事場所</th><th>工期</th><th></th></tr></thead><tbody>`+
+    state.masters.map(m=>`<tr>
+      <td style="text-align:center">${miniHanko(m.writer)}</td>
+      <td style="white-space:nowrap;font-weight:700">${esc(m.koji_no)}</td>
+      <td>${esc(m.koji_name)}</td>
+      <td>${esc(m.hacchusha)}</td>
+      <td>${esc(m.place)}</td>
+      <td style="white-space:nowrap">${esc(koukiLabel(m))}</td>
+      <td style="white-space:nowrap">
+        <button class="ghost" data-med="${m.id}">編集</button>
+        <button class="del" data-mdl="${m.id}">×</button></td></tr>`).join('')+'</tbody></table>';
+  el.querySelectorAll('[data-med]').forEach(b=>b.onclick=()=>editMaster(b.dataset.med));
+  el.querySelectorAll('[data-mdl]').forEach(b=>b.onclick=async()=>{
+    if(confirm('この現場を一覧から削除しますか？')){await MasterStore.del(b.dataset.mdl);await MasterStore.load();buildLists();renderMaster();}});
+}
+function editMaster(id){const src=state.masters.find(x=>x.id===id);if(!src)return;
+  state.m=JSON.parse(JSON.stringify(src));state.masterEditId=id;loadMasterToForm();window.scrollTo(0,0);}
+$('saveMaster').onclick=async()=>{
+  if(!state.m.koji_no && !state.m.koji_name){alert('工事番号または工事名を入れてください');return;}
+  if(state.masterEditId)state.m.id=state.masterEditId;
+  const err=await MasterStore.save(state.m);
+  if(err){alert('保存エラー：\n'+(err.message||JSON.stringify(err)));return;}
+  await MasterStore.load();buildLists();
+  state.m=newMaster();state.masterEditId=null;renderMaster();
+  $('masterEditFlag').textContent='登録しました';setTimeout(()=>$('masterEditFlag').textContent='',2500);
+};
+$('clearMaster').onclick=()=>{state.m=newMaster();state.masterEditId=null;loadMasterToForm();};
+$('excelMaster').onclick=()=>{
+  if(!state.masters.length){alert('登録された現場がありません');return;}
+  const rows=[['作成者','工事番号','工事名','発注者','工事場所','工期開始','工期終了','工事概要','作成日']];
+  state.masters.forEach(m=>rows.push([m.writer,m.koji_no,m.koji_name,m.hacchusha,m.place,
+    m.kouki_start,m.kouki_end,m.gaiyo,m.sakusei_date]));
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),'工事一覧');
+  XLSX.writeFile(wb,`工事一覧_${new Date().toISOString().slice(0,10)}.xlsx`);
+};
+/* 全角英数字→半角に揃えて照合（半角/全角のズレで一致しない事故を防ぐ） */
+const normKoji=s=>(s||'').trim()
+  .replace(/[Ａ-Ｚａ-ｚ０-９]/g,c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0))
+  .replace(/[－ー―]/g,'-');
+/* 日報の工事番号プルダウンを、工事一覧の登録番号から作る */
+function renderKojinoOptions(){
+  const cur=state.r.koji_no||'';
+  const seen=new Set(),items=[];
+  state.masters.forEach(m=>{const v=(m.koji_no||'').trim();
+    if(v&&!seen.has(v)){seen.add(v);items.push(v);}});
+  if(cur&&!seen.has(cur)){items.unshift(cur);}
+  $('f_kojino').innerHTML='<option value="">選択…</option>'+
+    items.map(v=>`<option value="${esc(v)}" ${v===cur?'selected':''}>${esc(v)}</option>`).join('');
+}
+/* 日報の工事番号／工事名から、登録済み現場を照合して自動入力 */
+function applyMasterAutofill(by){
+  const key=(state.r[by]||'').trim();
+  if(!key)return;
+  const norm=by==='koji_no'?normKoji:(s=>(s||'').trim());
+  const nk=norm(key);
+  const hit=state.masters.find(m=>norm(by==='koji_no'?m.koji_no:m.koji_name)===nk);
+  if(!hit)return;
+  if(hit.koji_no){state.r.koji_no=hit.koji_no;$('f_kojino').value=hit.koji_no;}
+  if(hit.koji_name){state.r.koji_name=hit.koji_name;$('f_kojiname').value=hit.koji_name;}
+  if(hit.place){state.r.place=hit.place;$('f_place').value=hit.place;}
+}
 
 /* ===== 一覧 ===== */
 function monthKey(r){ return r.report_date ? r.report_date.slice(0,7) : ''; }
@@ -580,7 +771,7 @@ $('saveSettings').onclick=async()=>{
   const u=cleanUrl($('set_url').value);
   localStorage.setItem(LS.url,u); $('set_url').value=u;
   localStorage.setItem(LS.key,$('set_key').value.trim());
-  $('connStatus').textContent='接続中…';await initStore();await Store.load();buildLists();
+  $('connStatus').textContent='接続中…';await initStore();await Store.load();await MasterStore.load();buildLists();
   $('connStatus').textContent=Store.isCloud()?'クラウド接続OK':'ローカル保存に切替';
 };
 $('saveWorkers').onclick=async()=>{const a=$('set_workers').value.split(/[\n,、，]/).map(s=>s.trim()).filter(Boolean);
@@ -595,9 +786,10 @@ $('restoreInput').onchange=async e=>{const f=e.target.files[0];if(!f)return;cons
 function buildLists(){
   $('workerList').innerHTML=getWorkers().map(w=>`<option value="${esc(w)}">`).join('');
   const opt=arr=>[...new Set(arr.filter(Boolean))].map(v=>`<option value="${esc(v)}">`).join('');
-  $('kojiList').innerHTML=opt(state.reports.map(r=>r.koji_name));
-  $('kojinoList').innerHTML=opt(state.reports.map(r=>r.koji_no));
-  $('placeList').innerHTML=opt(state.reports.map(r=>r.place));
+  $('kojiList').innerHTML=opt([...state.masters.map(m=>m.koji_name),...state.reports.map(r=>r.koji_name)]);
+  renderKojinoOptions();
+  $('placeList').innerHTML=opt([...state.masters.map(m=>m.place),...state.reports.map(r=>r.place)]);
+  $('hacchushaList').innerHTML=opt(state.masters.map(m=>m.hacchusha));
   const wdef=['晴','曇','雨','雪','晴時々曇','曇時々晴','雨時々曇'];
   $('weatherList').innerHTML=opt([...wdef,...state.reports.map(r=>r.weather)]);
   $('machineList').innerHTML=opt([...DEFAULT_MACHINES,...state.reports.flatMap(r=>(r.machines||[]).map(m=>m.machine))]);
@@ -638,8 +830,10 @@ document.addEventListener('keydown',e=>{
 });
 (async function(){
   bindBasic();
+  bindMaster();
   await initStore();
   await Store.load();
+  await MasterStore.load();
   buildLists();
   renderAll();
 })();
