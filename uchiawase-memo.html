@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="豊岡組 打合せメモ">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1f6b45">
+<link rel="manifest" href='data:application/json,{"id":"/uchiawase-memo.html","name":"豊岡組 打合せメモ","short_name":"打合せメモ","start_url":"/uchiawase-memo.html","scope":"/uchiawase-memo.html","display":"standalone","background_color":"#1f6b45","theme_color":"#1f6b45","icons":[{"src":"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjIyIiBmaWxsPSIjMWY2YjQ1Ii8+PHJlY3QgeD0iMjAiIHk9IjI0IiB3aWR0aD0iNjAiIGhlaWdodD0iNDAiIHJ4PSI4IiBmaWxsPSIjZmZmZmZmIi8+PHBhdGggZD0iTTM0IDYyIEwzNCA3OCBMNTIgNjIgWiIgZmlsbD0iI2ZmZmZmZiIvPjxyZWN0IHg9IjMwIiB5PSIzNiIgd2lkdGg9IjQwIiBoZWlnaHQ9IjUiIHJ4PSIyLjUiIGZpbGw9IiMxZjZiNDUiLz48cmVjdCB4PSIzMCIgeT0iNDgiIHdpZHRoPSIyOCIgaGVpZ2h0PSI1IiByeD0iMi41IiBmaWxsPSIjMWY2YjQ1Ii8+PC9zdmc+","sizes":"any","type":"image/svg+xml"}]}'>
+<link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjIyIiBmaWxsPSIjMWY2YjQ1Ii8+PHJlY3QgeD0iMjAiIHk9IjI0IiB3aWR0aD0iNjAiIGhlaWdodD0iNDAiIHJ4PSI4IiBmaWxsPSIjZmZmZmZmIi8+PHBhdGggZD0iTTM0IDYyIEwzNCA3OCBMNTIgNjIgWiIgZmlsbD0iI2ZmZmZmZiIvPjxyZWN0IHg9IjMwIiB5PSIzNiIgd2lkdGg9IjQwIiBoZWlnaHQ9IjUiIHJ4PSIyLjUiIGZpbGw9IiMxZjZiNDUiLz48cmVjdCB4PSIzMCIgeT0iNDgiIHdpZHRoPSIyOCIgaGVpZ2h0PSI1IiByeD0iMi41IiBmaWxsPSIjMWY2YjQ1Ii8+PC9zdmc+">
+<title>豊岡組 打合せメモ</title>
+<style>
+  :root{--green:#1f6b45;--green2:#2c7a52;--accent:#2e9e5c;--bg:#f1f6f3;--card:#fff;
+    --line:#d7e4dc;--txt:#1c2733;--muted:#61756a;--ok:#1f9d57;--warn:#c8412b;--soft:#e7f1eb}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;
+    background:var(--bg);color:var(--txt);font-size:15px;line-height:1.5}
+  header{background:var(--green);color:#fff;padding:10px 14px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:30}
+  header .logo{font-weight:700;font-size:17px}
+  header .mode{margin-left:auto;font-size:12px;background:rgba(255,255,255,.15);padding:3px 9px;border-radius:20px}
+  nav{display:flex;background:var(--green2);position:sticky;top:44px;z-index:29;overflow:auto}
+  nav button{flex:1;min-width:110px;background:none;border:none;color:#d3ede0;padding:11px 6px;font-size:14px;cursor:pointer;border-bottom:3px solid transparent;font-weight:600}
+  nav button.active{color:#fff;border-bottom-color:#a7e8c4;background:rgba(0,0,0,.12)}
+  main{max-width:820px;margin:0 auto;padding:14px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:14px}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
+  .fld{display:flex;flex-direction:column;gap:4px}
+  .fld label{font-size:12px;color:var(--muted);font-weight:600}
+  input,select,textarea{font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--txt);width:100%}
+  textarea{resize:vertical}
+  input:focus,select:focus,textarea:focus{outline:2px solid var(--green2);outline-offset:-1px}
+  button.btn{background:var(--green);color:#fff;border:none;padding:9px 16px;border-radius:8px;font-weight:700;cursor:pointer;font-size:14px}
+  button.btn.org{background:var(--accent)}
+  button.btn.sm{padding:6px 11px;font-size:13px}
+  button.btn:active{transform:translateY(2px);filter:brightness(.9)}
+  button.ghost{background:#fff;border:1px solid var(--line);color:var(--txt);padding:7px 12px;border-radius:8px;cursor:pointer}
+  h2{font-size:16px;margin:0 0 12px;display:flex;align-items:center;gap:8px}
+  h2 .bar{width:5px;height:18px;background:var(--accent);border-radius:3px;display:inline-block}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th,td{padding:6px 7px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+  th{background:var(--soft);font-size:12px;color:var(--muted)}
+  .sec-tbl input,.sec-tbl textarea{padding:6px 7px}
+  .reiwa{font-weight:700;color:var(--green);white-space:nowrap}
+  .muted{color:var(--muted);font-size:13px}
+  .del{color:var(--warn);cursor:pointer;background:none;border:none;font-size:18px;line-height:1}
+  .right{margin-left:auto}
+  .empty{text-align:center;color:var(--muted);padding:24px}
+  .flexsp{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+
+  /* 写真 */
+  .photo-grid{display:flex;flex-wrap:wrap;gap:8px}
+  .photo-item{position:relative;width:104px;height:104px;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#eef3f0}
+  .photo-item img{width:100%;height:100%;object-fit:cover;display:block;cursor:pointer}
+  .photo-item .rm{position:absolute;top:3px;right:3px;width:24px;height:24px;border:none;border-radius:50%;
+    background:rgba(0,0,0,.6);color:#fff;font-size:16px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center}
+  .photo-empty{color:var(--muted);font-size:13px;padding:6px 0}
+  .add-photo{width:104px;height:104px;border:2px dashed var(--line);border-radius:8px;background:#fff;color:var(--green);
+    font-size:13px;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+  .add-photo .plus{font-size:26px;line-height:1}
+  /* 写真の拡大表示 */
+  #lightbox{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;z-index:200;padding:16px}
+  #lightbox.show{display:flex}
+  #lightbox img{max-width:100%;max-height:100%;border-radius:8px}
+
+  #toast{position:fixed;top:45%;left:50%;transform:translate(-50%,-50%) scale(.7);opacity:0;pointer-events:none;
+    background:var(--ok);color:#fff;padding:24px 40px;border-radius:18px;font-weight:800;font-size:22px;z-index:100;
+    box-shadow:0 12px 44px rgba(0,0,0,.32);display:flex;flex-direction:column;align-items:center;gap:12px;
+    transition:opacity .18s ease, transform .25s cubic-bezier(.2,1.4,.4,1)}
+  #toast.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
+  #toast .ic{width:58px;height:58px;border-radius:50%;background:#fff;color:var(--ok);
+    display:flex;align-items:center;justify-content:center;font-size:40px;line-height:1}
+
+  /* ===== 印刷（A4） ===== */
+  #printArea{display:none}
+  @media print{
+    @page{size:A4 portrait;margin:12mm}
+    body{background:#fff}
+    header,nav,#editorTab,#listTab,#setteiTab,#lightbox,.noprint{display:none !important}
+    main{padding:0;max-width:none}
+    #printArea{display:block}
+  }
+  .sheet{font-size:12px;color:#000;line-height:1.5}
+  .sheet table{border-collapse:collapse;width:100%;border:2px solid #000;margin-bottom:8px}
+  .sheet td,.sheet th{border:1px solid #000;padding:5px 7px;vertical-align:top}
+  .sheet th{text-align:center;background:#f2f2f2}
+  .sheet .ttl{font-size:22px;font-weight:700;letter-spacing:8px;text-align:center;margin-bottom:10px}
+  .sheet .lbl{background:#f0f0f0;font-weight:600;white-space:nowrap;width:1%;text-align:center}
+  .sheet .no{text-align:center;width:28px;background:#fafafa}
+  .sheet .photos{display:flex;flex-wrap:wrap;gap:6px}
+  .sheet .photos img{width:32%;max-height:160px;object-fit:contain;border:1px solid #000}
+</style>
+</head>
+<body>
+<header>
+  <span class="logo">豊岡組 打合せメモ</span>
+  <span class="mode">▣ この端末に保存</span>
+</header>
+<nav>
+  <button data-tab="editor" class="active">メモを書く</button>
+  <button data-tab="list">過去のメモ</button>
+  <button data-tab="settei">設定</button>
+</nav>
+
+<main>
+<!-- ============ 入力 ============ -->
+<section id="editorTab">
+  <div class="card">
+    <div class="flexsp" style="margin-bottom:10px">
+      <h2 style="margin:0"><span class="bar"></span>打合せメモ</h2>
+      <span class="muted right" id="editFlag"></span>
+    </div>
+    <div class="row">
+      <div class="fld" style="flex:1 1 160px"><label>日付</label><input type="date" id="f_date"></div>
+      <div class="fld" style="flex:0 1 auto"><label>和暦</label><div class="reiwa" id="f_reiwa" style="padding:8px 0">―</div></div>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <div class="fld" style="flex:2 1 260px"><label>現場・工事名</label><input id="f_kojiname" list="kojiList"></div>
+      <div class="fld" style="flex:1 1 200px"><label>打合せ相手（誰と）</label>
+        <input id="f_partner" list="partnerList" placeholder="市役所 田中様 / ○○建設 など"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="flexsp" style="margin-bottom:8px">
+      <h2 style="margin:0"><span class="bar"></span>打合せ内容・決めたこと</h2>
+      <button class="btn sm right" id="addItem">＋行</button>
+    </div>
+    <table class="sec-tbl"><tbody id="itemBody"></tbody></table>
+  </div>
+
+  <div class="card">
+    <h2><span class="bar"></span>現場の写真</h2>
+    <input type="file" id="photoInput" accept="image/*" multiple style="display:none">
+    <div id="photoGrid" class="photo-grid"></div>
+    <div class="muted" style="margin-top:8px" id="photoNote">※ iPhoneでは「写真を撮る」「フォトライブラリ」どちらも選べます。写真は自動で軽く縮小して保存します。</div>
+  </div>
+
+  <div class="card">
+    <h2><span class="bar"></span>その他メモ（自由）</h2>
+    <textarea id="f_note" rows="3" placeholder="次回予定、場所、時間、宿題、口頭で言われたこと など…自由に"></textarea>
+  </div>
+
+  <div class="card noprint">
+    <div class="row">
+      <button class="btn org" id="saveMemo">このメモを保存</button>
+      <button class="ghost" id="printMemo">印刷プレビュー</button>
+      <button class="ghost" id="clearMemo">新規（クリア）</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 一覧 ============ -->
+<section id="listTab" style="display:none">
+  <div class="card">
+    <h2><span class="bar"></span>過去のメモ</h2>
+    <div class="row" style="margin-bottom:12px">
+      <div class="fld" style="flex:2 1 220px"><label>現場で絞る</label><select id="fGenba"></select></div>
+      <button class="ghost" id="clearFilters">絞り込み解除</button>
+    </div>
+    <div id="memoList"></div>
+  </div>
+</section>
+
+<!-- ============ 設定 ============ -->
+<section id="setteiTab" style="display:none">
+  <div class="card">
+    <h2><span class="bar"></span>バックアップ</h2>
+    <div class="muted" style="margin-bottom:8px">このメモは今のところ<b>この端末の中だけ</b>に保存されます。写真も端末内に保存されるので、ときどき書き出して控えを取っておくと安心です。</div>
+    <div class="flexsp">
+      <button class="ghost" id="backupBtn">JSON書き出し</button>
+      <label class="ghost" style="cursor:pointer">JSON読み込み<input type="file" id="restoreInput" accept=".json" style="display:none"></label>
+    </div>
+    <div class="muted" style="margin-top:8px" id="usageNote"></div>
+  </div>
+</section>
+</main>
+
+<div id="printArea"></div>
+<div id="toast"></div>
+<div id="lightbox"><img src="" alt=""></div>
+
+<datalist id="kojiList"></datalist>
+<datalist id="partnerList"></datalist>
+
+<script>
+const LS={list:'tk_memo_list'};
+const WD=['日','月','火','水','木','金','土'];
+const $=id=>document.getElementById(id);
+const esc=s=>(s||'').toString().replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+const uid=()=>(crypto.randomUUID?crypto.randomUUID():'id'+Date.now()+Math.random());
+const PHOTO_MAXDIM=1024, PHOTO_Q=0.68;   // 端末容量に収まるよう縮小
+
+let state={memos:[],editId:null,m:newMemo()};
+
+function newMemo(){return{date:new Date().toISOString().slice(0,10),
+  koji_name:'',partner:'',
+  items:[{content:''}],
+  photos:[],
+  note:''};}
+
+/* ===== ストア（この端末に保存） ===== */
+const Store={
+  load(){state.memos=JSON.parse(localStorage.getItem(LS.list)||'[]');},
+  /* 保存成功でtrue。容量オーバー等で失敗したらfalse（state.memosは変更しない） */
+  save(m){
+    const memos=state.memos.slice();
+    if(m.id){const i=memos.findIndex(x=>x.id===m.id);
+      if(i>=0)memos[i]=m;else{m.created_at=new Date().toISOString();memos.unshift(m);}}
+    else{m.id=uid();m.created_at=new Date().toISOString();memos.unshift(m);}
+    try{localStorage.setItem(LS.list,JSON.stringify(memos));state.memos=memos;return true;}
+    catch(e){return false;}
+  },
+  del(id){state.memos=state.memos.filter(x=>x.id!==id);localStorage.setItem(LS.list,JSON.stringify(state.memos));}
+};
+
+/* ===== タブ ===== */
+const TABS={editor:'editorTab',list:'listTab',settei:'setteiTab'};
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');
+  Object.values(TABS).forEach(id=>$(id).style.display='none');
+  $(TABS[b.dataset.tab]).style.display='block';
+  if(b.dataset.tab==='list')renderList();
+  if(b.dataset.tab==='settei')refreshSettei();
+});
+
+/* ===== 基本情報 ===== */
+function bindBasic(){
+  $('f_kojiname').oninput=e=>state.m.koji_name=e.target.value;
+  $('f_partner').oninput=e=>state.m.partner=e.target.value;
+  $('f_note').oninput=e=>state.m.note=e.target.value;
+  $('f_date').oninput=e=>{state.m.date=e.target.value;updateReiwa();};
+}
+function updateReiwa(){
+  const d=state.m.date?new Date(state.m.date+'T00:00:00'):null;
+  if(!d||isNaN(d)){$('f_reiwa').textContent='―';return;}
+  $('f_reiwa').textContent=`令和${d.getFullYear()-2018}年${d.getMonth()+1}月${d.getDate()}日（${WD[d.getDay()]}）`;
+}
+function loadBasicToForm(){
+  $('f_date').value=state.m.date||'';
+  $('f_kojiname').value=state.m.koji_name||'';$('f_partner').value=state.m.partner||'';
+  $('f_note').value=state.m.note||'';
+  updateReiwa();
+}
+
+/* ===== 打合せ内容 ===== */
+function renderItem(){
+  const tb=$('itemBody');tb.innerHTML='';
+  state.m.items.forEach((it,idx)=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td style="width:26px;text-align:center;color:var(--muted)">${idx+1}</td>
+      <td><textarea class="c" rows="2" placeholder="話したこと・決まったこと">${esc(it.content)}</textarea></td>
+      <td style="width:30px"><button class="del">×</button></td>`;
+    tr.querySelector('.c').oninput=e=>it.content=e.target.value;
+    tr.querySelector('.del').onclick=()=>{state.m.items.splice(state.m.items.indexOf(it),1);renderItem();};
+    tb.appendChild(tr);
+  });
+}
+$('addItem').onclick=()=>{state.m.items.push({content:''});renderItem();};
+
+/* ===== 写真 ===== */
+function compressImage(file){
+  return new Promise((resolve,reject)=>{
+    const img=new Image();const url=URL.createObjectURL(file);
+    img.onload=()=>{
+      URL.revokeObjectURL(url);
+      let w=img.naturalWidth,h=img.naturalHeight;
+      if(w>=h){if(w>PHOTO_MAXDIM){h=Math.round(h*PHOTO_MAXDIM/w);w=PHOTO_MAXDIM;}}
+      else{if(h>PHOTO_MAXDIM){w=Math.round(w*PHOTO_MAXDIM/h);h=PHOTO_MAXDIM;}}
+      const cv=document.createElement('canvas');cv.width=w;cv.height=h;
+      cv.getContext('2d').drawImage(img,0,0,w,h);
+      try{resolve(cv.toDataURL('image/jpeg',PHOTO_Q));}catch(err){reject(err);}
+    };
+    img.onerror=()=>{URL.revokeObjectURL(url);reject(new Error('画像を読み込めませんでした'));};
+    img.src=url;
+  });
+}
+function renderPhotos(){
+  const g=$('photoGrid');const ph=state.m.photos||[];
+  g.innerHTML=ph.map((src,i)=>`<div class="photo-item"><img src="${src}" data-i="${i}"><button class="rm" data-i="${i}">×</button></div>`).join('')
+    +`<button class="add-photo" id="addPhoto"><span class="plus">＋</span>写真を追加</button>`;
+  g.querySelectorAll('.rm').forEach(b=>b.onclick=()=>{state.m.photos.splice(+b.dataset.i,1);renderPhotos();});
+  g.querySelectorAll('.photo-item img').forEach(im=>im.onclick=()=>showLightbox(im.src));
+  $('addPhoto').onclick=()=>$('photoInput').click();
+}
+$('photoInput').onchange=async e=>{
+  const files=[...e.target.files];e.target.value='';
+  if(!files.length)return;
+  const note=$('photoNote');note.textContent='写真を処理中…';
+  state.m.photos=state.m.photos||[];
+  for(const f of files){
+    if(!f.type.startsWith('image/'))continue;
+    try{state.m.photos.push(await compressImage(f));}catch(err){console.error(err);}
+  }
+  renderPhotos();
+  note.textContent='※ iPhoneでは「写真を撮る」「フォトライブラリ」どちらも選べます。写真は自動で軽く縮小して保存します。';
+};
+function showLightbox(src){const lb=$('lightbox');lb.querySelector('img').src=src;lb.classList.add('show');}
+$('lightbox').onclick=()=>$('lightbox').classList.remove('show');
+
+function renderAll(){loadBasicToForm();renderItem();renderPhotos();}
+
+/* ===== 保存・新規・編集 ===== */
+let toastTimer=null;
+function showToast(msg){
+  const t=$('toast');
+  t.innerHTML=`<div class="ic">✓</div><div>${esc(msg)}</div>`;
+  void t.offsetWidth;t.classList.add('show');
+  clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),1600);
+}
+$('saveMemo').onclick=()=>{
+  if(!state.m.koji_name && !state.m.partner){alert('現場名または打合せ相手を入れてください');return;}
+  if(state.editId)state.m.id=state.editId;
+  const ok=Store.save(state.m);
+  if(!ok){alert('保存できませんでした。\n写真の容量がこの端末の上限を超えた可能性があります。\n・設定→JSON書き出しで控えを取る\n・写真を減らす／古いメモを消す\nをお試しください。');return;}
+  state.editId=state.m.id;
+  buildLists();
+  showToast('保存しました');
+  $('editFlag').textContent='✓ 保存しました';setTimeout(()=>$('editFlag').textContent='',2500);
+};
+$('clearMemo').onclick=()=>{state.editId=null;state.m=newMemo();renderAll();$('editFlag').textContent='';};
+function editMemo(id){const src=state.memos.find(x=>x.id===id);if(!src)return;
+  state.m=JSON.parse(JSON.stringify(src));
+  if(!state.m.items||!state.m.items.length)state.m.items=[{content:''}];
+  if(!state.m.photos)state.m.photos=[];
+  state.editId=id;renderAll();
+  $('editFlag').textContent='編集中';document.querySelector('nav button[data-tab="editor"]').click();window.scrollTo(0,0);}
+
+/* ===== 一覧 ===== */
+function populateFilters(){
+  const cur=$('fGenba').value;
+  const genbas=[...new Set(state.memos.map(m=>m.koji_name).filter(Boolean))].sort();
+  $('fGenba').innerHTML='<option value="">すべての現場</option>'+genbas.map(g=>`<option ${g===cur?'selected':''}>${esc(g)}</option>`).join('');
+}
+function filteredMemos(){
+  const fg=$('fGenba').value;
+  return state.memos.filter(m=>(!fg||m.koji_name===fg));
+}
+function renderList(){
+  const el=$('memoList');
+  populateFilters();
+  const rows=filteredMemos().slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  if(!state.memos.length){el.innerHTML='<div class="empty">まだ打合せメモがありません</div>';return;}
+  if(!rows.length){el.innerHTML='<div class="empty">条件に合うメモがありません</div>';return;}
+  el.innerHTML=`<div class="muted" style="margin-bottom:8px">${rows.length}件</div>`+
+    `<table><thead><tr><th style="width:88px">日付</th><th>現場</th><th style="width:130px">相手</th>
+      <th style="width:50px">写真</th><th></th></tr></thead><tbody>`+
+    rows.map(m=>{
+      const d=m.date?new Date(m.date+'T00:00:00'):null;
+      const ds=d&&!isNaN(d)?`${d.getMonth()+1}/${d.getDate()}（${WD[d.getDay()]}）`:'';
+      const np=(m.photos||[]).length;
+      return `<tr><td>${ds}</td><td>${esc(m.koji_name||'')}</td><td>${esc(m.partner||'')}</td>
+        <td>${np?`📷${np}`:'—'}</td>
+        <td style="white-space:nowrap">
+        <button class="ghost" data-ed="${m.id}">開く</button>
+        <button class="ghost" data-pr="${m.id}">印刷</button>
+        <button class="del" data-dl="${m.id}">×</button></td></tr>`;
+    }).join('')+'</tbody></table>';
+  el.querySelectorAll('[data-ed]').forEach(b=>b.onclick=()=>editMemo(b.dataset.ed));
+  el.querySelectorAll('[data-pr]').forEach(b=>b.onclick=()=>{const m=state.memos.find(x=>x.id===b.dataset.pr);doPrint(m);});
+  el.querySelectorAll('[data-dl]').forEach(b=>b.onclick=()=>{if(confirm('このメモを削除しますか？（元に戻せません）')){Store.del(b.dataset.dl);buildLists();renderList();}});
+}
+$('fGenba').onchange=renderList;
+$('clearFilters').onclick=()=>{$('fGenba').value='';renderList();};
+
+/* ===== 印刷（A4・打合せ記録） ===== */
+function doPrint(m){
+  m=m||state.m;
+  const d=m.date?new Date(m.date+'T00:00:00'):null;
+  const dstr=d&&!isNaN(d)?`令和 ${d.getFullYear()-2018} 年 ${d.getMonth()+1} 月 ${d.getDate()} 日 （ ${WD[d.getDay()]} ）`:'';
+  const cell=v=>esc(v||'');
+  const br=v=>cell(v).replace(/\n/g,'<br>');
+  const items=(m.items||[]).filter(x=>x.content);
+  const photos=(m.photos||[]);
+  const html=`<div class="sheet">
+    <div class="ttl">打 合 せ 記 録</div>
+    <table>
+      <tr><td class="lbl">年月日</td><td>${dstr}</td></tr>
+      <tr><td class="lbl">現場・工事名</td><td>${cell(m.koji_name)}</td></tr>
+      <tr><td class="lbl">打合せ相手</td><td>${cell(m.partner)}</td></tr>
+    </table>
+    <table>
+      <tr><th colspan="2">打合せ内容・決めたこと</th></tr>
+      ${items.length?items.map((x,i)=>`<tr><td class="no">${i+1}</td><td>${br(x.content)}</td></tr>`).join(''):'<tr><td class="no"></td><td>&nbsp;</td></tr>'}
+    </table>
+    <table>
+      <tr><td class="lbl">その他</td><td>${br(m.note)||'&nbsp;'}</td></tr>
+    </table>
+    ${photos.length?`<table><tr><th>現場写真</th></tr><tr><td><div class="photos">${photos.map(s=>`<img src="${s}">`).join('')}</div></td></tr></table>`:''}
+    <table style="border:none"><tr style="border:none">
+      <td style="border:none;text-align:center;font-weight:700">株式会社　豊　岡　組</td></tr></table>
+  </div>`;
+  $('printArea').innerHTML=html;
+  window.print();
+}
+$('printMemo').onclick=()=>doPrint(state.m);
+
+/* ===== 設定 ===== */
+function refreshSettei(){
+  try{const bytes=(localStorage.getItem(LS.list)||'').length;
+    $('usageNote').textContent=`現在の保存データ：約${(bytes/1024/1024).toFixed(1)}MB（端末の上限はおよそ5MBです）`;
+  }catch(e){$('usageNote').textContent='';}
+}
+$('backupBtn').onclick=()=>{const blob=new Blob([JSON.stringify(state.memos,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`uchiawase_memo_backup_${new Date().toISOString().slice(0,10)}.json`;a.click();};
+$('restoreInput').onchange=async e=>{const f=e.target.files[0];if(!f)return;const d=JSON.parse(await f.text());
+  if(!Array.isArray(d)){alert('読み込めるファイルではありません');return;}
+  if(!confirm('読み込んだメモを追加します。よろしいですか？'))return;
+  const merged=[...d.map(m=>Object.assign({},m,{id:uid()})),...state.memos];
+  try{localStorage.setItem(LS.list,JSON.stringify(merged));state.memos=merged;}
+  catch(err){alert('読み込めませんでした。写真の容量が端末の上限を超えた可能性があります。');return;}
+  buildLists();renderList();alert('読み込みました');};
+
+/* ===== データリスト ===== */
+function buildLists(){
+  const opt=arr=>[...new Set(arr.filter(Boolean))].map(v=>`<option value="${esc(v)}">`).join('');
+  $('kojiList').innerHTML=opt(state.memos.map(m=>m.koji_name));
+  $('partnerList').innerHTML=opt(state.memos.map(m=>m.partner));
+}
+
+/* ===== Enterで次の入力欄へ ===== */
+document.addEventListener('keydown',e=>{
+  if(e.key!=='Enter'||e.isComposing)return;
+  const t=e.target,tag=t&&t.tagName;
+  if(tag!=='INPUT')return;                          // textareaは改行を優先
+  if(t.type==='button'||t.type==='submit'||t.type==='file')return;
+  const fields=[...document.querySelectorAll('input, textarea')]
+    .filter(el=>!el.disabled&&el.type!=='hidden'&&el.type!=='file'&&el.offsetParent!==null);
+  const i=fields.indexOf(t);if(i<0)return;
+  e.preventDefault();const next=fields[i+1];
+  if(next){next.focus();if(next.select)try{next.select();}catch(_){}}
+});
+
+/* ===== 初期化 ===== */
+(function(){
+  bindBasic();
+  Store.load();
+  buildLists();
+  renderAll();
+})();
+</script>
+</body>
+</html>
