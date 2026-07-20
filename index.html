@@ -463,7 +463,7 @@ function bindBasic(){
   $('f_kojino').onchange=e=>{state.r.koji_no=e.target.value;applyMasterAutofill('koji_no');};
   $('f_kojiname').oninput=e=>{state.r.koji_name=e.target.value;applyMasterAutofill('koji_name');};
   $('f_date').oninput=e=>{state.r.report_date=e.target.value;updateReiwa();};
-  $('f_writer').onchange=e=>{state.r.writer=e.target.value;updateWriterStamp();};
+  $('f_writer').onchange=e=>{state.r.writer=e.target.value;updateWriterStamp();updateKindList();};
 }
 function renderWriterOptions(){
   const cur=state.r.writer||'';
@@ -485,23 +485,31 @@ function loadBasicToForm(){
   $('f_weather').value=state.r.weather||'';$('f_temp').value=state.r.temp||'';
   $('f_kojiname').value=state.r.koji_name||'';$('f_place').value=state.r.place||'';
   $('f_meeting').value=state.r.meeting||'';
-  renderWriterOptions();updateWriterStamp();
+  renderWriterOptions();updateWriterStamp();updateKindList();
   updateReiwa();
 }
 
 /* ===== 作業内容 ===== */
 const DEFAULT_KINDS=['構造物撤去工','仮設工','土工','舗装工','排水構造物工','管渠工','暗渠排水工','法面工','付帯工'];
-/* 過去の日報に書いた工種を新しい順に最大10件集める（古いものは自然に消える） */
+/* いま選んでいる記入者が過去の日報に書いた工種を、新しい順に最大10件集める
+   （記入者ごとの蓄積。古いものは自然に消える。記入者未選択なら空＝基本リストを表示） */
 function recentKinds(){
+  const me=(state.r.writer||'').trim();
+  if(!me)return[];
   const seen=new Set(),out=[];
   const rows=[...state.reports].sort((a,b)=>(b.report_date||'').localeCompare(a.report_date||''));
   for(const r of rows){
+    if((r.writer||'').trim()!==me)continue;
     for(const w of (r.works||[])){
       const k=(w.kind||'').trim();
       if(k&&!seen.has(k)){seen.add(k);out.push(k);if(out.length>=10)return out;}
     }
   }
   return out;
+}
+function updateKindList(){
+  const ks=recentKinds();
+  $('kindList').innerHTML=(ks.length?ks:DEFAULT_KINDS).map(v=>`<option value="${esc(v)}">`).join('');
 }
 function renderWorks(){
   const tb=$('worksBody');tb.innerHTML='';
@@ -984,8 +992,7 @@ function buildLists(){
   const wdef=['晴','曇','雨','雪','晴時々曇','曇時々晴','雨時々曇'];
   $('weatherList').innerHTML=opt([...wdef,...state.reports.map(r=>r.weather)]);
   $('machineList').innerHTML=opt(getMachines());
-  const ks=recentKinds();
-  $('kindList').innerHTML=opt(ks.length?ks:DEFAULT_KINDS);
+  updateKindList();
   renderWriterOptions();
   refreshWorkerSettings();
   refreshMachineSettings();
