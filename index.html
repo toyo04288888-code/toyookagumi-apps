@@ -161,13 +161,13 @@
       <h2 style="margin:0"><span class="bar"></span>使用機械</h2>
       <button class="btn sm right" id="addMachine">＋機械</button>
     </div>
-    <table class="sec-tbl"><thead><tr><th style="width:50%">機械</th><th>台数・備考</th><th style="width:30px"></th></tr></thead>
+    <table class="sec-tbl"><thead><tr><th style="width:50%">機械</th><th>備考</th><th style="width:30px"></th></tr></thead>
       <tbody id="machineBody"></tbody></table>
   </div>
 
   <div class="card">
     <h2><span class="bar"></span>監督備考</h2>
-    <textarea id="f_meeting" rows="2"></textarea>
+    <textarea id="f_meeting" rows="2" placeholder="役所立ち合い、下請け作業、リース品期間など...メモとして使用"></textarea>
   </div>
 
   <div class="card">
@@ -321,6 +321,12 @@ create policy "all km" on koji_master for all using(true) with check(true);</pre
     <div class="muted" style="margin-top:8px" id="workerNote"></div>
   </div>
   <div class="card">
+    <h2><span class="bar"></span>使用機械の追加・編集</h2>
+    <div class="fld"><label>機械の一覧（1行に1台。書き換え・削除もここでできます）</label><textarea id="set_machines" rows="6"></textarea></div>
+    <button class="btn" id="saveMachineBtn" style="margin-top:10px">機械一覧を保存</button>
+    <div class="muted" style="margin-top:8px" id="machineNote"></div>
+  </div>
+  <div class="card">
     <h2><span class="bar"></span>バックアップ</h2>
     <div class="flexsp">
       <button class="ghost" id="backupBtn">JSON書き出し</button>
@@ -339,19 +345,16 @@ create policy "all km" on koji_master for all using(true) with check(true);</pre
 <datalist id="weatherList"></datalist>
 <datalist id="placeList"></datalist>
 <datalist id="machineList"></datalist>
-<datalist id="kindList">
-  <option value="構造物撤去工"><option value="仮設工"><option value="土工"><option value="舗装工">
-  <option value="排水構造物工"><option value="管渠工"><option value="暗渠排水工"><option value="法面工"><option value="付帯工">
-</datalist>
+<datalist id="kindList"></datalist>
 
 <script>
-const LS={mode:'tk_kn_mode',url:'tk_kn_url',key:'tk_kn_key',list:'tk_kn_list',workers:'tk_kn_workers',masters:'tk_kn_masters'};
+const LS={mode:'tk_kn_mode',url:'tk_kn_url',key:'tk_kn_key',list:'tk_kn_list',workers:'tk_kn_workers',masters:'tk_kn_masters',machines:'tk_kn_machines'};
 const WD=['日','月','火','水','木','金','土'];
 const $=id=>document.getElementById(id);
 const ymdLocal=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 const esc=s=>(s||'').toString().replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
 const uid=()=>(crypto.randomUUID?crypto.randomUUID():'id'+Date.now()+Math.random());
-let state={mode:'local',sb:null,reports:[],editId:null,cloudWorkers:[],lastError:null,r:newReport(),
+let state={mode:'local',sb:null,reports:[],editId:null,cloudWorkers:[],cloudMachines:null,lastError:null,r:newReport(),
   masters:[],masterEditId:null,masterError:null,m:newMaster(),
   todayDate:ymdLocal(new Date())};
 
@@ -387,7 +390,9 @@ const Store={
       state.reports=(r.data||[]).map(x=>Object.assign({id:x.id,created_at:x.created_at},x.data||{},
         {koji_no:x.koji_no,koji_name:x.koji_name,report_date:x.report_date}));
       try{const c=await state.sb.from('app_config').select('value').eq('id','workers').maybeSingle();
-        state.cloudWorkers=(c.data&&Array.isArray(c.data.value))?c.data.value:[];}catch(e){state.cloudWorkers=[];}}
+        state.cloudWorkers=(c.data&&Array.isArray(c.data.value))?c.data.value:[];}catch(e){state.cloudWorkers=[];}
+      try{const c=await state.sb.from('app_config').select('value').eq('id','machines').maybeSingle();
+        state.cloudMachines=(c.data&&Array.isArray(c.data.value))?c.data.value:null;}catch(e){state.cloudMachines=null;}}
     else{state.lastError=null;state.reports=JSON.parse(localStorage.getItem(LS.list)||'[]');}
   },
   rowFor(r){return{koji_no:r.koji_no,koji_name:r.koji_name,report_date:r.report_date,data:r};},
@@ -485,6 +490,19 @@ function loadBasicToForm(){
 }
 
 /* ===== 作業内容 ===== */
+const DEFAULT_KINDS=['構造物撤去工','仮設工','土工','舗装工','排水構造物工','管渠工','暗渠排水工','法面工','付帯工'];
+/* 過去の日報に書いた工種を新しい順に最大10件集める（古いものは自然に消える） */
+function recentKinds(){
+  const seen=new Set(),out=[];
+  const rows=[...state.reports].sort((a,b)=>(b.report_date||'').localeCompare(a.report_date||''));
+  for(const r of rows){
+    for(const w of (r.works||[])){
+      const k=(w.kind||'').trim();
+      if(k&&!seen.has(k)){seen.add(k);out.push(k);if(out.length>=10)return out;}
+    }
+  }
+  return out;
+}
 function renderWorks(){
   const tb=$('worksBody');tb.innerHTML='';
   state.r.works.forEach(w=>{
@@ -501,12 +519,27 @@ $('addWork').onclick=()=>{state.r.works.push({kind:'',content:''});renderWorks()
 
 /* ===== 使用機械 ===== */
 const DEFAULT_MACHINES=['0.45BH','0.25BH(UU)','0.25BH','0.10BH(新)','0.10BH(旧)','フィニッシャ','コンバインド','タイヤローラ','マカダムローラ'];
+/* 設定で編集した機械一覧（未編集なら null → 基本リストを使う） */
+function customMachines(){
+  if(state.mode==='cloud'&&state.sb)return state.cloudMachines;
+  const raw=localStorage.getItem(LS.machines);
+  if(raw){try{const p=JSON.parse(raw);if(Array.isArray(p))return p;}catch(e){}}
+  return null;
+}
+function getMachines(){const c=customMachines();return(c&&c.length)?c:DEFAULT_MACHINES;}
+async function saveMachines(arr){
+  arr=[...new Set(arr.map(s=>s.trim()).filter(Boolean))];
+  if(state.mode==='cloud'&&state.sb){
+    state.cloudMachines=arr;
+    try{await state.sb.from('app_config').upsert({id:'machines',value:arr});}catch(e){alert('クラウド保存に失敗しました。app_configテーブルが作成済みか確認してください。');}
+  }else{localStorage.setItem(LS.machines,JSON.stringify(arr));}
+}
 function renderMachine(){
   const tb=$('machineBody');tb.innerHTML='';
   state.r.machines.forEach(m=>{
     const tr=document.createElement('tr');
     tr.innerHTML=`<td><input class="m" list="machineList" value="${esc(m.machine)}" placeholder="機械を選択／入力（リース機もOK）"></td>
-      <td><input class="mm" value="${esc(m.memo)}" placeholder="台数・備考など"></td><td><button class="del">×</button></td>`;
+      <td><input class="mm" value="${esc(m.memo)}" placeholder="コマツリースなど"></td><td><button class="del">×</button></td>`;
     tr.querySelector('.m').oninput=e=>m.machine=e.target.value;
     tr.querySelector('.mm').oninput=e=>m.memo=e.target.value;
     tr.querySelector('.del').onclick=()=>{state.r.machines.splice(state.r.machines.indexOf(m),1);renderMachine();};
@@ -864,7 +897,7 @@ function doPrint(r){
     <div class="grow" style="flex:2;margin-top:4px">
       <table>
         <tr><td class="vlbl" rowspan="${mach3.length+1}">使用機械</td>
-            <th style="width:48%">機　械</th><th>台数・備考</th></tr>
+            <th style="width:48%">機　械</th><th>備　考</th></tr>
         ${mach3.map(m=>`<tr><td>${cell(m.machine)}</td><td>${cell(m.memo)}</td></tr>`).join('')}
       </table>
     </div>
@@ -905,7 +938,7 @@ $('excelReport').onclick=()=>{
   rows.push(['天気',r.weather,'気温',r.temp+'℃']);
   rows.push([]);rows.push(['作業内容']);rows.push(['工種','作業内容']);
   (r.works||[]).forEach(w=>rows.push([w.kind,w.content]));
-  rows.push([]);rows.push(['使用機械']);rows.push(['機械','台数・備考']);
+  rows.push([]);rows.push(['使用機械']);rows.push(['機械','備考']);
   (r.machines||[]).forEach(m=>rows.push([m.machine,m.memo]));
   rows.push([]);rows.push(['監督備考',r.meeting]);
   rows.push([]);rows.push(['購買品']);rows.push(['購買品','購入先','数量']);
@@ -931,6 +964,9 @@ $('saveSettings').onclick=async()=>{
 };
 $('saveWorkers').onclick=async()=>{const a=$('set_workers').value.split(/[\n,、，]/).map(s=>s.trim()).filter(Boolean);
   await saveExtras(a);buildLists();alert('保存しました');};
+$('saveMachineBtn').onclick=async()=>{const a=$('set_machines').value.split(/[\n,、，]/).map(s=>s.trim()).filter(Boolean);
+  if(!a.length){alert('機械が1台もありません。1行に1台ずつ入力してください');return;}
+  await saveMachines(a);buildLists();alert('保存しました');};
 $('backupBtn').onclick=()=>{const blob=new Blob([JSON.stringify(state.reports,null,2)],{type:'application/json'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='kantoku_nippou_backup.json';a.click();};
 $('restoreInput').onchange=async e=>{const f=e.target.files[0];if(!f)return;const d=JSON.parse(await f.text());
@@ -947,9 +983,19 @@ function buildLists(){
   $('hacchushaList').innerHTML=opt(state.masters.map(m=>m.hacchusha));
   const wdef=['晴','曇','雨','雪','晴時々曇','曇時々晴','雨時々曇'];
   $('weatherList').innerHTML=opt([...wdef,...state.reports.map(r=>r.weather)]);
-  $('machineList').innerHTML=opt([...DEFAULT_MACHINES,...state.reports.flatMap(r=>(r.machines||[]).map(m=>m.machine))]);
+  $('machineList').innerHTML=opt(getMachines());
+  const ks=recentKinds();
+  $('kindList').innerHTML=opt(ks.length?ks:DEFAULT_KINDS);
   renderWriterOptions();
   refreshWorkerSettings();
+  refreshMachineSettings();
+}
+function refreshMachineSettings(){
+  $('set_machines').value=getMachines().join('\n');
+  const cloud=(state.mode==='cloud'&&state.sb);
+  $('machineNote').textContent=cloud
+    ? '※ クラウド共有中。ここで保存した機械一覧は全員の端末に反映されます。'
+    : '※ ローカル保存中。ここの変更はこの端末だけです。';
 }
 function refreshWorkerSettings(){
   $('set_workers').value=extrasOnly().join('\n');
