@@ -490,9 +490,8 @@ function loadBasicToForm(){
 }
 
 /* ===== 作業内容 ===== */
-const DEFAULT_KINDS=['構造物撤去工','仮設工','土工','舗装工','排水構造物工','管渠工','暗渠排水工','法面工','付帯工'];
 /* いま選んでいる記入者が過去の日報に書いた工種を、新しい順に最大10件集める
-   （記入者ごとの蓄積。古いものは自然に消える。記入者未選択なら空＝基本リストを表示） */
+   （記入者ごとの蓄積。古いものは自然に消える。履歴がなければ空のまま） */
 function recentKinds(){
   const me=(state.r.writer||'').trim();
   if(!me)return[];
@@ -508,8 +507,7 @@ function recentKinds(){
   return out;
 }
 function updateKindList(){
-  const ks=recentKinds();
-  $('kindList').innerHTML=(ks.length?ks:DEFAULT_KINDS).map(v=>`<option value="${esc(v)}">`).join('');
+  $('kindList').innerHTML=recentKinds().map(v=>`<option value="${esc(v)}">`).join('');
 }
 function renderWorks(){
   const tb=$('worksBody');tb.innerHTML='';
