@@ -859,6 +859,8 @@ $('exportAgg').onclick=()=>{
   const buy=[['日付','工事番号','工事名','購買品','購入先','数量']];
   // 作業内容
   const work=[['日付','工事番号','工事名','工種','作業内容']];
+  // 使用機械
+  const mach=[['日付','工事番号','工事名','機械','備考']];
   rows.forEach(r=>{
     (r.workers||[]).filter(w=>w.name).forEach(w=>{
       const h=workHours(w);
@@ -870,14 +872,17 @@ $('exportAgg').onclick=()=>{
       buy.push([r.report_date,r.koji_no,r.koji_name,p.item,p.supplier,p.qty]);});
     (r.works||[]).filter(x=>x.kind||x.content).forEach(x=>{
       work.push([r.report_date,r.koji_no,r.koji_name,x.kind,x.content]);});
+    (r.machines||[]).filter(x=>x.machine||x.memo).forEach(x=>{
+      mach.push([r.report_date,r.koji_no,r.koji_name,x.machine,x.memo]);});
   });
   const laborSum=[['作業者','出勤日数','合計時間']];
   Object.keys(sum).sort().forEach(n=>laborSum.push([n,sum[n].days,Math.round(sum[n].hours*100)/100]));
   const wb=XLSX.utils.book_new();
   addStyledSheet(wb,'人工集計',laborSum);
   addStyledSheet(wb,'人工明細',labor);
-  addStyledSheet(wb,'購買品',buy);
   addStyledSheet(wb,'作業内容',work);
+  addStyledSheet(wb,'使用機械',mach);
+  addStyledSheet(wb,'購買品',buy);
   const g=($('fGenba').value||'全現場').replace(/[\\/:*?"<>|]/g,'');
   const m=$('fMonth').value||'全期間';
   XLSX.writeFile(wb,`集計_${g}_${m}.xlsx`);
