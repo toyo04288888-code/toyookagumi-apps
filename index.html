@@ -11,7 +11,8 @@
 <link rel="manifest" href='data:application/json,{"id":"/index.html","name":"豊岡組 工事日報","short_name":"豊岡組日報","start_url":"/index.html","scope":"/index.html","display":"standalone","background_color":"#1f3a5f","theme_color":"#1f3a5f","icons":[{"src":"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjIyIiBmaWxsPSIjMWYzYTVmIi8+PHJlY3QgeD0iNDAiIHk9IjE4IiB3aWR0aD0iMjAiIGhlaWdodD0iNjQiIHJ4PSI1IiBmaWxsPSIjZTg3MzJiIi8+PHJlY3QgeD0iMTgiIHk9IjQwIiB3aWR0aD0iNjQiIGhlaWdodD0iMjAiIHJ4PSI1IiBmaWxsPSIjZTg3MzJiIi8+PC9zdmc+","sizes":"any","type":"image/svg+xml"}]}'>
 <link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjIyIiBmaWxsPSIjMWYzYTVmIi8+PHJlY3QgeD0iNDAiIHk9IjE4IiB3aWR0aD0iMjAiIGhlaWdodD0iNjQiIHJ4PSI1IiBmaWxsPSIjZTg3MzJiIi8+PHJlY3QgeD0iMTgiIHk9IjQwIiB3aWR0aD0iNjQiIGhlaWdodD0iMjAiIHJ4PSI1IiBmaWxsPSIjZTg3MzJiIi8+PC9zdmc+">
 <title>豊岡組 工事日報（監督）</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<!-- xlsx-js-style: SheetJS(0.18.5)の互換フォーク。色・罫線・太字などセル装飾に対応。読み書きAPIは同じ -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root{--navy:#1f3a5f;--navy2:#2c4f80;--orange:#e8732b;--bg:#f4f6f9;--card:#fff;
@@ -873,14 +874,66 @@ $('exportAgg').onclick=()=>{
   const laborSum=[['作業者','出勤日数','合計時間']];
   Object.keys(sum).sort().forEach(n=>laborSum.push([n,sum[n].days,Math.round(sum[n].hours*100)/100]));
   const wb=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(laborSum),'人工集計');
-  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(labor),'人工明細');
-  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(buy),'購買品');
-  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(work),'作業内容');
+  addStyledSheet(wb,'人工集計',laborSum);
+  addStyledSheet(wb,'人工明細',labor);
+  addStyledSheet(wb,'購買品',buy);
+  addStyledSheet(wb,'作業内容',work);
   const g=($('fGenba').value||'全現場').replace(/[\\/:*?"<>|]/g,'');
   const m=$('fMonth').value||'全期間';
   XLSX.writeFile(wb,`集計_${g}_${m}.xlsx`);
 };
+
+/* ===== 集計Excelの体裁付け（xlsx-js-style使用） =====
+   ・見出し行：濃紺の帯＋白の太字＋中央揃え
+   ・本文：1行おきに薄いグレーの縞・全セルに細い罫線
+   ・数値列は右寄せ／列幅は内容に合わせて自動 */
+const AGG_HEADER='1E3A5F';   // 見出しの帯（濃紺）
+const AGG_BAND='EEF3F8';     // 縞（薄い青グレー）
+const AGG_LINE='D5DBE3';     // 罫線（薄いグレー）
+function strWidth(v){ // 全角=2, 半角=1 でおおよその表示幅
+  return String(v==null?'':v).split('').reduce((a,ch)=>a+(ch.charCodeAt(0)>255?2:1),0);
+}
+function addStyledSheet(wb,name,aoa){
+  const ws=XLSX.utils.aoa_to_sheet(aoa);
+  const range=XLSX.utils.decode_range(ws['!ref']);
+  const line={style:'thin',color:{rgb:AGG_LINE}};
+  const border={top:line,bottom:line,left:line,right:line};
+  for(let R=range.s.r;R<=range.e.r;R++){
+    for(let C=range.s.c;C<=range.e.c;C++){
+      const addr=XLSX.utils.encode_cell({r:R,c:C});
+      let cell=ws[addr];
+      if(!cell){cell={t:'s',v:''};ws[addr]=cell;}
+      if(R===0){
+        cell.s={
+          font:{name:'游ゴシック',sz:11,bold:true,color:{rgb:'FFFFFF'}},
+          fill:{patternType:'solid',fgColor:{rgb:AGG_HEADER}},
+          alignment:{horizontal:'center',vertical:'center',wrapText:true},
+          border:border};
+      }else{
+        const isNum=(cell.t==='n');
+        cell.s={
+          font:{name:'游ゴシック',sz:10,color:{rgb:'22303C'}},
+          fill:{patternType:'solid',fgColor:{rgb:(R%2===0)?AGG_BAND:'FFFFFF'}},
+          alignment:{horizontal:isNum?'right':'left',vertical:'center',wrapText:true},
+          border:border};
+        if(isNum) cell.z='0.##';
+      }
+    }
+  }
+  // 列幅（内容の最大幅に合わせて 6〜44 でクランプ）
+  const ncol=range.e.c+1, cols=[];
+  for(let c=0;c<ncol;c++){
+    let w=6;
+    for(let r=0;r<aoa.length;r++){const cw=strWidth(aoa[r][c]); if(cw>w)w=cw;}
+    cols.push({wch:Math.min(w+2,44)});
+  }
+  ws['!cols']=cols;
+  ws['!rows']=[{hpt:24}]; // 見出し行を少し高く
+  // 見出し行の固定＋オートフィルタ
+  ws['!freeze']={xSplit:0,ySplit:1,topLeftCell:'A2',activePane:'bottomLeft',state:'frozen'};
+  ws['!autofilter']={ref:XLSX.utils.encode_range({s:{r:0,c:0},e:{r:range.e.r,c:range.e.c}})};
+  XLSX.utils.book_append_sheet(wb,ws,name);
+}
 
 /* ===== 印刷（A4・紙の様式に合わせる） ===== */
 function doPrint(r){
