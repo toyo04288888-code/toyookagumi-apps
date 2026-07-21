@@ -346,6 +346,7 @@ create policy "all km" on koji_master for all using(true) with check(true);</pre
 <datalist id="placeList"></datalist>
 <datalist id="machineList"></datalist>
 <datalist id="kindList"></datalist>
+<datalist id="contentList"></datalist>
 
 <script>
 const LS={mode:'tk_kn_mode',url:'tk_kn_url',key:'tk_kn_key',list:'tk_kn_list',workers:'tk_kn_workers',masters:'tk_kn_masters',machines:'tk_kn_machines'};
@@ -490,9 +491,9 @@ function loadBasicToForm(){
 }
 
 /* ===== 作業内容 ===== */
-/* いま選んでいる記入者が過去の日報に書いた工種を、新しい順に最大10件集める
+/* いま選んでいる記入者が過去の日報に書いた工種／作業内容を、新しい順に最大10件集める
    （記入者ごとの蓄積。古いものは自然に消える。履歴がなければ空のまま） */
-function recentKinds(){
+function recentWorkValues(field){
   const me=(state.r.writer||'').trim();
   if(!me)return[];
   const seen=new Set(),out=[];
@@ -500,21 +501,23 @@ function recentKinds(){
   for(const r of rows){
     if((r.writer||'').trim()!==me)continue;
     for(const w of (r.works||[])){
-      const k=(w.kind||'').trim();
+      const k=(w[field]||'').trim();
       if(k&&!seen.has(k)){seen.add(k);out.push(k);if(out.length>=10)return out;}
     }
   }
   return out;
 }
 function updateKindList(){
-  $('kindList').innerHTML=recentKinds().map(v=>`<option value="${esc(v)}">`).join('');
+  const fill=(id,arr)=>$(id).innerHTML=arr.map(v=>`<option value="${esc(v)}">`).join('');
+  fill('kindList',recentWorkValues('kind'));
+  fill('contentList',recentWorkValues('content'));
 }
 function renderWorks(){
   const tb=$('worksBody');tb.innerHTML='';
   state.r.works.forEach(w=>{
     const tr=document.createElement('tr');
     tr.innerHTML=`<td><input class="k" list="kindList" value="${esc(w.kind)}"></td>
-      <td><input class="c" value="${esc(w.content)}"></td><td><button class="del">×</button></td>`;
+      <td><input class="c" list="contentList" value="${esc(w.content)}"></td><td><button class="del">×</button></td>`;
     tr.querySelector('.k').oninput=e=>w.kind=e.target.value;
     tr.querySelector('.c').oninput=e=>w.content=e.target.value;
     tr.querySelector('.del').onclick=()=>{state.r.works.splice(state.r.works.indexOf(w),1);renderWorks();};
@@ -540,13 +543,27 @@ async function saveMachines(arr){
     try{await state.sb.from('app_config').upsert({id:'machines',value:arr});}catch(e){alert('クラウド保存に失敗しました。app_configテーブルが作成済みか確認してください。');}
   }else{localStorage.setItem(LS.machines,JSON.stringify(arr));}
 }
+/* 機械リストのプルダウン（selectタグ）。値を選ぶと必ず一覧が出るので、
+   選び直し（datalistだと選択済みの機械では何も出ない不具合）を回避できる */
+function machineSelectHtml(){
+  return '<option value="">▼</option>'+getMachines().map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('');
+}
 function renderMachine(){
   const tb=$('machineBody');tb.innerHTML='';
   state.r.machines.forEach(m=>{
     const tr=document.createElement('tr');
-    tr.innerHTML=`<td><input class="m" list="machineList" value="${esc(m.machine)}" placeholder="機械を選択／入力（リース機もOK）"></td>
+    tr.innerHTML=`<td><div style="display:flex;gap:4px;align-items:center">
+        <input class="m" list="machineList" value="${esc(m.machine)}" placeholder="機械を選択／入力（リース機もOK）" style="flex:1;min-width:0">
+        <select class="msel" title="一覧から選ぶ" style="flex:0 0 auto;width:40px">${machineSelectHtml()}</select>
+      </div></td>
       <td><input class="mm" value="${esc(m.memo)}" placeholder="コマツリースなど"></td><td><button class="del">×</button></td>`;
-    tr.querySelector('.m').oninput=e=>m.machine=e.target.value;
+    const mi=tr.querySelector('.m');
+    mi.oninput=e=>m.machine=e.target.value;
+    tr.querySelector('.msel').onchange=e=>{
+      const v=e.target.value;
+      if(v){m.machine=v;mi.value=v;}
+      e.target.selectedIndex=0; // 常に「▼」に戻す＝同じ機械でも選び直せる
+    };
     tr.querySelector('.mm').oninput=e=>m.memo=e.target.value;
     tr.querySelector('.del').onclick=()=>{state.r.machines.splice(state.r.machines.indexOf(m),1);renderMachine();};
     tb.appendChild(tr);
