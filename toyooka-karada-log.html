@@ -77,6 +77,21 @@
   .addbar button{padding:11px 6px;border-radius:12px;border:1px solid var(--line);background:var(--surface2);color:var(--text);font-size:13px;font-weight:600}
   .addbar button .ic{display:block;font-size:17px;margin-bottom:2px}
 
+  /* today evaluation */
+  .eval-top{display:flex;align-items:center;gap:14px}
+  .eval-grade{width:64px;height:64px;flex:none;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:34px;font-weight:900;background:var(--surface2);border:1px solid var(--line);line-height:1}
+  .eval-meta{flex:1;min-width:0}
+  .eval-score{display:flex;align-items:baseline;gap:5px}
+  .eval-score b{font-size:27px;line-height:1}.eval-score small{color:var(--muted);font-size:12px}
+  .eval-bar{height:9px;background:var(--surface2);border-radius:6px;overflow:hidden;margin-top:9px}
+  .eval-bar>div{height:100%;border-radius:6px;transition:width .4s}
+  .eval-comment{font-size:14.5px;font-weight:700;line-height:1.55;margin-top:12px}
+  .eval-advice{font-size:12.5px;color:var(--muted);margin-top:8px;display:flex;gap:6px;line-height:1.5}
+  .eval-advice .ic{color:var(--amber);font-weight:800}
+  .eval-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:13px}
+  .eval-chip{font-size:11px;padding:5px 9px;border-radius:20px;background:var(--surface2);border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+  .eval-chip.ok{color:var(--good);border-color:rgba(57,192,122,.4)}
+
   /* condition */
   .cond-top{display:flex;align-items:baseline;justify-content:space-between}
   .cond-name{font-size:18px;font-weight:800}
@@ -174,6 +189,19 @@
         <button id="prevDay">‹</button>
         <div class="d" id="dateLabel">—<small id="dateSub"></small></div>
         <button id="nextDay">›</button>
+      </div>
+      <div class="card eval-card" id="evalCard">
+        <h2>今日の評価</h2>
+        <div class="eval-top">
+          <div class="eval-grade" id="evalGrade">—</div>
+          <div class="eval-meta">
+            <div class="eval-score"><b id="evalScore">0</b><small>/ 100 点</small></div>
+            <div class="eval-bar"><div id="evalBar"></div></div>
+          </div>
+        </div>
+        <div class="eval-comment" id="evalComment"></div>
+        <div class="eval-advice" id="evalAdvice"></div>
+        <div class="eval-chips" id="evalChips"></div>
       </div>
       <div class="card">
         <div class="kcal-hero">
@@ -383,6 +411,70 @@ function fmtDate(s){const [y,m,d]=s.split("-").map(Number);const dt=new Date(y,m
   return{main:`${m}月${d}日 (${w})`,sub:rel};}
 function dayTotals(s){const items=food[s]||[];let kc=0,p=0,f=0,c=0;items.forEach(i=>{kc+=i.kcal;p+=i.p;f+=i.f;c+=i.c;});
   kc+=(alc[s]||0)*ALC_KCAL;return{kc:Math.round(kc),p:Math.round(p),f:Math.round(f),c:Math.round(c)};}
+/* ---------- today evaluation ---------- */
+const GRADES=[
+  {min:90,g:"S",col:"var(--amber)"},{min:78,g:"A",col:"var(--good)"},
+  {min:62,g:"B",col:"var(--blue)"},{min:45,g:"C",col:"#e0a52e"},
+  {min:25,g:"D",col:"var(--over)"},{min:0,g:"E",col:"var(--muted)"}];
+const GRADE_MSG={
+  S:["満点級。今日のあんたは職人の鑑や。","完璧な一日。この調子が続けば体は必ず応える。","非の打ちどころなし。堂々と胸張って寝てええで。","栄養も休養も鍛錬も三拍子そろった。文句なしのS。","今日は花丸。明日もこのリズムでいこ。","パーフェクト。体が喜んでるのが見えるようや。","隙のない一日、まさにプロの仕事やな。","最高の積み上げ。こういう日が体を作る。","今日のあんたに敵なし。ゆっくり休め。","継続は力、まさにそれ。満点街道まっしぐら。","こら見事。1日1日がこれなら鬼に金棒。","自分を褒めたってええ日や。よぉやった。"],
+  A:["上出来の一日。あと一歩で満点やった。","ええ仕事した。この積み重ねが効いてくる。","しっかり整った一日。合格の中でも上の方や。","惜しい所もあったが、十分すぎるほど立派。","危なげなし。ええ流れが来てるで。","よう頑張った。あと少しの詰めでS圏内や。","手堅い一日。こういう日が地味に効く。","体は正直、ちゃんと応えてくれる出来や。","ここで気ぃ抜かんのが職人。ええ調子。","しっかり者の一日。明日はSを狙お。","十分すぎる出来。自信持ってええで。","あと一味で完璧。惜しいけど上等や。"],
+  B:["まずまず堅実。悪くない一日やで。","及第点。ちょい詰めれば一気に伸びる。","土台はできてる。弱点を一個潰そか。","可もあり、伸びしろもあり。ええ感じ。","無難にまとめた。次はもう一段上を。","あと一工夫で化けるで、この一日は。","ちゃんとやってる。あと一歩の欲張りを。","悪くない。ただ、もったいない所も一個あるな。","合格ライン。ここから上げていこか。","地味やけど堅い。継続が大事や。","6割は超えた。残り4割に伸びしろあり。","そこそこ整った。明日はAを取りにいこ。"],
+  C:["まだまだ伸びる。今日は足場固めやな。","半分は来た。もう半分、明日取り返そ。","ちょい物足りん。でも0よりずっとええ。","やれてる所とサボった所が半々やな。","エンジンかかりきってへん。明日本気出そ。","一個か二個、手ぇ抜いた所があるやろ。","土台はある。あとはやるかやらんか。","今日は準備運動くらいの出来やな。","波に乗り切れず。切り替えていこ。","五分五分。明日の自分に期待や。","あんたはこんなもんやない。まだ本領やない。","ぼちぼち。ここから盛り返せる範囲や。"],
+  D:["今日は控えめやったな。明日仕切り直そ。","そんな日もある、気にすんな。明日や明日。","一個だけでもやれば景色変わるで。","責めへんけど、明日は一歩踏み出そ。","まずは飯か筋トレ、どっちか一個から。","今日はお休みモードか。明日エンジンかけよ。","積み上げは薄め。でも記録つけただけ偉い。","小さい一歩でええから、明日ひとつ。","無理せんでええ。明日ひとつ取り戻そ。","今日は充電日やな。明日に期待しとくで。","手ぶらに近いけど、まだ挽回できる範囲や。","スロースタートやな。焦らずいこ。"],
+  E:["まずは何か一個、記録するとこから。","今日はこれから。飯でも体重でも一個どうぞ。","小さい一歩が明日を変える。スタートや。","無理せず一個だけ、やってみよか。","まずは体重だけでも乗ってみ。","エンジン始動前。軽く一歩踏み出そ。","焦らんでええ、一個からでええねん。","埋めるのは今からでも間に合う。","手始めに飯を一個だけ記録してみよか。","ここからや。小さいことからコツコツと。"]};
+const EMPTY_MSG=["今日の記録はまだこれから。何か一個つけると評価が出るで。","まっさらの一日。飯・筋トレ・体重、どれか一個からどうぞ。","評価はまだお預け。記録を一個つけたら採点したるわ。","さあ今日はどうする？一個記録したら採点したるで。","白紙スタート。まずは気軽に一個、記録してみよ。"];
+const ADVICE={
+  P:["たんぱく質があと少し。プロテイン一杯で届くで。","筋肉の材料が足りてへん。卵か鶏むね足そ。","納豆・豆腐でも底上げできる。もう一品を。","P不足は伸び悩みの元。たんぱく源をもう一個。","肉・魚・卵・豆、どれか一個追加で変わる。","プロテイン一杯が今日の最短ルートや。","あと一押しでたんぱく質合格圏や。","サラダチキン一個でだいぶ変わるで。"],
+  Cover:["カロリー気持ちオーバー。夜は軽めにいこ。","食べ過ぎ気味。明日は間食ひとつ我慢や。","揚げ物か甘い物、どっちか減らそか。","オーバー気味やけど誤差の範囲。調整しよ。","ちょい食べ過ぎ。水多めで落ち着かせよ。","オーバー分は明日の運動で帳消しにできる。"],
+  Cunder:["カロリー少なめ。エネルギー切れに注意や。","食べる量が足りてへん。しっかり補給を。","省エネすぎ。ちゃんと食べた方が体は動く。","無理な我慢は逆効果。もうちょい食べてええ。","ガス欠は禁物。あと一品足しとこ。"],
+  Cnone:["まず飯を記録しよ。話はそれからや。","食事が未記録。一食でも入れると評価が動くで。","食べたもんを記録するだけで景色が変わる。"],
+  A:["お酒が多め。明日は休肝日にして回復させよ。","一杯減らすだけで体の戻りが全然ちゃう。","飲みすぎ注意。筋肉の回復にブレーキかかるで。","お酒はほどほどに。水を挟むと楽になる。","今日は飲んだな。明日はノンアルで整えよ。","せっかくの筋トレがもったいない。ほどほどに。"],
+  T:["今日は筋トレ0。一部位1セットでも変わる。","スクワット10回からでもええ、体を動かそ。","大きい筋肉を一個入れとこ。背中か太もも。","軽くでも刺激を入れよ。ゼロと1は大違いや。","セット少なめ。あと数セットで実感変わるで。","太もも・背中みたいな大きい所を一個やろ。"],
+  W:["体重の記録を忘れずに。習慣が一番の武器や。","朝イチで体重乗るだけで満点に近づく。","毎日乗ると変化が見えて楽しいで。","ひと手間、体重計に乗っとこ。データは裏切らん。"],
+  perfect:["弱点なし。今日は完璧や、胸張って休め。","隙なし。この一日を毎日コピーしたいくらいや。","全項目クリア。文句のつけようがない。","非の打ちどころなし。仕上がってきてるで。","完璧な布陣。この調子を明日へ。"]};
+function hashStr(s){let h=2166136261>>>0;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;}
+function seededPick(arr,seed){return arr[hashStr(seed)%arr.length];}
+function gradeOf(t){for(const gr of GRADES)if(t>=gr.min)return gr;return GRADES[GRADES.length-1];}
+function renderEval(){
+  const d=curDate,g=macroGoals();
+  const items=food[d]||[];let p=0,kc=0;items.forEach(i=>{p+=i.p;kc+=i.kcal;});
+  const drinks=alc[d]||0;kc+=drinks*ALC_KCAL;
+  const sets=(train[d]||[]).reduce((a,x)=>a+(+x.sets||0),0);
+  const hasWeight=weights[d]!=null;const logged=items.length>0;
+  const grEl=$("#evalGrade");
+  if(!logged&&!drinks&&!sets&&!hasWeight){
+    grEl.textContent="—";grEl.style.color="var(--muted)";
+    $("#evalScore").textContent="0";$("#evalBar").style.width="0%";
+    $("#evalComment").textContent=seededPick(EMPTY_MSG,d+"|e");
+    $("#evalAdvice").innerHTML="";$("#evalChips").innerHTML="";return;
+  }
+  const pr=g.p?p/g.p:0;
+  const sP=pr>=1?30:pr>=0.8?24:pr>=0.6?16:pr>=0.4?9:pr>0?4:0;
+  const ratio=kc/(g.kcal||2200),dev=Math.abs(ratio-1);
+  const sC=!logged?0:dev<=0.08?25:dev<=0.15?20:dev<=0.25?13:dev<=0.4?7:3;
+  const sA=drinks===0?15:drinks===1?11:drinks===2?7:drinks<=3?4:1;
+  const sT=sets>=6?20:sets>=4?16:sets>=2?11:sets>=1?6:0;
+  const sW=hasWeight?10:0;
+  const total=Math.round(sP+sC+sA+sT+sW);const gr=gradeOf(total);
+  grEl.textContent=gr.g;grEl.style.color=gr.col;
+  $("#evalScore").textContent=total;
+  $("#evalBar").style.width=total+"%";$("#evalBar").style.background=gr.col;
+  $("#evalComment").textContent=seededPick(GRADE_MSG[gr.g],d+"|c|"+gr.g+"|"+total);
+  const losses=[["P",30-sP],["C",25-sC],["A",15-sA],["T",20-sT],["W",10-sW]].sort((a,b)=>b[1]-a[1]);
+  const worst=losses[0];let pool,seed;
+  if(worst[1]<=5){pool=ADVICE.perfect;seed=d+"|perfect";}
+  else{const k=worst[0];seed=d+"|a|"+k;
+    if(k==="P")pool=ADVICE.P;
+    else if(k==="C")pool=!logged?ADVICE.Cnone:(kc>g.kcal?ADVICE.Cover:ADVICE.Cunder);
+    else if(k==="A")pool=ADVICE.A;
+    else if(k==="T")pool=ADVICE.T;
+    else pool=ADVICE.W;}
+  $("#evalAdvice").innerHTML=`<span class="ic">▸</span><span>${esc(seededPick(pool,seed))}</span>`;
+  const chips=[{ic:"🥩",ok:sP>=24,val:`P ${Math.round(p)}g`},{ic:"🔥",ok:sC>=20,val:`${Math.round(kc)}kcal`},
+    {ic:"🍺",ok:sA>=11,val:`${drinks}杯`},{ic:"💪",ok:sT>=11,val:`${sets}set`},{ic:"⚖",ok:sW>0,val:hasWeight?"記録済":"未記録"}];
+  $("#evalChips").innerHTML=chips.map(c=>`<span class="eval-chip ${c.ok?"ok":""}">${c.ic} ${esc(c.val)}</span>`).join("");
+}
 function renderToday(){
   const fd=fmtDate(curDate);$("#dateLabel").firstChild.textContent=fd.main;$("#dateSub").textContent=fd.sub;
   const g=macroGoals(),t=dayTotals(curDate);
@@ -400,6 +492,7 @@ function renderToday(){
   if(!items.length){wrap.innerHTML='<div class="empty">まだ記録がありません。下のボタンから追加。</div>';}
   else{wrap.innerHTML=items.map(i=>`<div class="log-item"><div class="info"><div class="n">${esc(i.name)}</div><div class="m">P ${r1(i.p)} ・ F ${r1(i.f)} ・ C ${r1(i.c)} g</div></div><div class="kc">${Math.round(i.kcal)} kcal</div><button class="del" data-id="${i.id}">×</button></div>`).join("");
     wrap.querySelectorAll(".del").forEach(b=>b.onclick=()=>{food[curDate]=items.filter(x=>x.id!==b.dataset.id);save(K.food,food);renderToday();});}
+  renderEval();
 }
 function addLog(item){if(!food[curDate])food[curDate]=[];
   food[curDate].push({id:uid(),name:item.name,kcal:+item.kcal||0,p:+item.p||0,f:+item.f||0,c:+item.c||0});
