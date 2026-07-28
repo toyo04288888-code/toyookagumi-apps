@@ -1,137 +1,77 @@
-// Cloudflare Pages Function: /calendar-feed
-// 特定自主検査・車検の期限を .ics カレンダーフィードとして配信する（購読用・自動更新）。
-// toyooka-kensa-shared.html の「🔔 カレンダーを購読」ボタンが叩くエンドポイント。
-// Supabase の kensa_vehicles テーブルを読み、HTML 側 buildICS() と同じ内容の ICS を返す。
+// ============================================================
+//  特自・車検管理  カレンダー自動配信（Cloudflare Pages Function）
 //
-// ※ 現在このプロジェクトは Cloudflare Workers（静的アセット配信のみ）構成のため、
-//    functions/ は自動ルーティングされない。Pages への移行、または Workers への
-//    ルーティング追加を行うと /calendar-feed として配信される。
+//  置き場所： リポジトリ内の  functions/calendar-feed.js
+//  配信URL ： https://<公開ドメイン>/calendar-feed
+//
+//  下の SB_KEY に anon public キーを貼るか、Cloudflare Pages の
+//  「環境変数」に SUPABASE_ANON_KEY を設定してください。
+// ============================================================
 
-const SB_URL = "https://cfvppxqwdtwwucnaurtb.supabase.co";
+const SB_URL_DEFAULT = "https://cfvppxqwdtwwucnaurtb.supabase.co";
 const SB_KEY = "sb_publishable_Ib5hD2wXpa7iuQkSvpyExQ_owiHvngd";
 
-export async function onRequest(context) {
+export async function onRequestGet(context) {
+  const url = context.env.SUPABASE_URL || SB_URL_DEFAULT;
+  const key = context.env.SUPABASE_ANON_KEY || SB_KEY;
+
+  let vehicles = [];
   try {
-    const res = await fetch(`${SB_URL}/rest/v1/kensa_vehicles?select=id,data`, {
-      headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` },
+    const res = await fetch(`${url}/rest/v1/kensa_vehicles?select=data`, {
+      headers: { apikey: key, Authorization: `Bearer ${key}` },
     });
-    if (!res.ok) throw new Error("supabase " + res.status);
     const rows = await res.json();
-    const vehicles = (rows || []).map((r) => r.data).filter(Boolean);
-    const ics = buildICS(vehicles);
-    return new Response(ics, {
-      status: 200,
-      headers: {
-        "Content-Type": "text/calendar; charset=utf-8",
-        "Content-Disposition": 'inline; filename="toyooka-kensa.ics"',
-        "Cache-Control": "public, max-age=1800",
-        "Access-Control-Allow-Origin": "*",
-      },
-    });
-  } catch (e) {
-    return new Response("ICS feed error: " + ((e && e.message) || e), {
-      status: 500,
-      headers: { "Content-Type": "text/plain; charset=utf-8" },
-    });
-  }
+    if (Array.isArray(rows)) vehicles = rows.map((r) => r.data).filter(Boolean);
+  } catch (e) {}
+
+  const ics = buildICS(vehicles);
+  return new Response(ics, {
+    headers: {
+      "Content-Type": "text/calendar; charset=utf-8",
+      "Content-Disposition": 'inline; filename="tokuji-shaken.ics"',
+      "Cache-Control": "public, max-age=3600",
+    },
+  });
 }
 
-/* ---------- Date helpers（UTC基準で全日イベントのズレを防ぐ） ---------- */
-function p(n) {
-  return String(n).padStart(2, "0");
-}
-function parseYmd(s) {
-  if (!s) return null;
-  const [y, m, d] = String(s).split("-").map(Number);
-  if (!y || !m || !d) return null;
-  return new Date(Date.UTC(y, m - 1, d));
-}
-function addMonths(dt, m) {
-  const d = new Date(dt);
-  const day = d.getUTCDate();
-  d.setUTCMonth(d.getUTCMonth() + m);
-  if (d.getUTCDate() < day) d.setUTCDate(0);
-  return d;
-}
-function fmt(dt) {
-  if (!dt) return "—";
-  return `${dt.getUTCFullYear()}.${p(dt.getUTCMonth() + 1)}.${p(dt.getUTCDate())}`;
-}
-function tokuteiNext(v) {
-  if (!v.tokTarget || !v.tokLast) return null;
-  return addMonths(parseYmd(v.tokLast), v.tokInt || 12);
-}
-function shakenNext(v) {
-  if (!v.shkTarget || !v.shkExp) return null;
-  return parseYmd(v.shkExp);
-}
+function pad(n) { return String(n).padStart(2, "0"); }
+function ymd(d) { return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}`; }
+function parseD(s) { if (!s) return null; const [y, m, da] = s.split("-").map(Number); return new Date(y, m - 1, da); }
+function fmtJ(d) { return `${d.getFullYear()}.${pad(d.getMonth() + 1)}.${pad(d.getDate())}`; }
+function addMonths(d, m) { const x = new Date(d); const day = x.getDate(); x.setMonth(x.getMonth() + m); if (x.getDate() < day) x.setDate(0); return x; }
+function esc(s) { return String(s == null ? "" : s).replace(/([,;\\])/g, "\\$1").replace(/\n/g, "\\n"); }
+function stamp() { const d = new Date(); return `${d.getUTCFullYear()}${pad(d.getUTCMonth() + 1)}${pad(d.getUTCDate())}T${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}${pad(d.getUTCSeconds())}Z`; }
 
-/* ---------- ICS 生成（HTML の buildICS と同一ロジック） ---------- */
-function icsDate(dt) {
-  return `${dt.getUTCFullYear()}${p(dt.getUTCMonth() + 1)}${p(dt.getUTCDate())}`;
-}
-function icsStamp() {
-  const d = new Date();
-  return `${d.getUTCFullYear()}${p(d.getUTCMonth() + 1)}${p(d.getUTCDate())}T${p(d.getUTCHours())}${p(d.getUTCMinutes())}${p(d.getUTCSeconds())}Z`;
-}
-function icsEsc(s) {
-  return String(s == null ? "" : s).replace(/([,;\\])/g, "\\$1").replace(/\n/g, "\\n");
-}
-function pushEv(L, stamp, uid, start, summary, desc) {
-  const end = new Date(start);
-  end.setUTCDate(end.getUTCDate() + 1);
+function ev(L, uid, start, summary, desc) {
+  const end = new Date(start); end.setDate(end.getDate() + 1);
   L.push(
-    "BEGIN:VEVENT",
-    "UID:" + uid,
-    "DTSTAMP:" + stamp,
-    "DTSTART;VALUE=DATE:" + icsDate(start),
-    "DTEND;VALUE=DATE:" + icsDate(end),
-    "SUMMARY:" + icsEsc(summary),
-    "DESCRIPTION:" + icsEsc(desc),
-    "TRANSP:TRANSPARENT",
-    "BEGIN:VALARM",
-    "ACTION:DISPLAY",
-    "DESCRIPTION:" + icsEsc(summary),
-    "TRIGGER:PT9H",
-    "END:VALARM",
+    "BEGIN:VEVENT", "UID:" + uid, "DTSTAMP:" + stamp(),
+    "DTSTART;VALUE=DATE:" + ymd(start), "DTEND;VALUE=DATE:" + ymd(end),
+    "SUMMARY:" + esc(summary), "DESCRIPTION:" + esc(desc), "TRANSP:TRANSPARENT",
+    "BEGIN:VALARM", "ACTION:DISPLAY", "DESCRIPTION:" + esc(summary), "TRIGGER:PT9H", "END:VALARM",
     "END:VEVENT"
   );
 }
+
 function buildICS(vehicles) {
   const L = [
-    "BEGIN:VCALENDAR",
-    "VERSION:2.0",
-    "PRODID:-//Toyooka-gumi//Kensa//JA",
-    "CALSCALE:GREGORIAN",
-    "METHOD:PUBLISH",
-    "X-WR-CALNAME:特自・車検 期限",
-    "X-WR-TIMEZONE:Asia/Tokyo",
+    "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Toyooka-gumi//Kensa//JA",
+    "CALSCALE:GREGORIAN", "METHOD:PUBLISH", "X-WR-CALNAME:特自・車検管理", "X-WR-TIMEZONE:Asia/Tokyo",
   ];
-  const stamp = icsStamp();
-  (vehicles || []).forEach((v) => {
+  for (const v of vehicles) {
+    if (!v) continue;
     const items = [];
-    if (v.tokTarget && tokuteiNext(v)) items.push(["特定自主検査", tokuteiNext(v)]);
-    if (v.shkTarget && shakenNext(v)) items.push(["車検満了", shakenNext(v)]);
-    items.forEach(([label, dt]) => {
-      const info = `${v.type}${v.kanri ? " / " + v.kanri : ""}${v.bangou ? " / " + v.bangou : ""}`;
-      pushEv(
-        L,
-        stamp,
-        `${v.id}-${label}-r-${icsDate(dt)}@toyooka`,
-        addMonths(dt, -1),
-        `🔔【1か月前】${label}：${v.name}`,
-        `${label}の期限は ${fmt(dt)} です。（${info}）`
-      );
-      pushEv(
-        L,
-        stamp,
-        `${v.id}-${label}-d-${icsDate(dt)}@toyooka`,
-        dt,
-        `⚠️【${label}期限】${v.name}`,
-        `本日が ${label} の期限です。（${info}）`
-      );
-    });
-  });
+    if (v.tokTarget && v.tokLast) items.push(["特定自主検査", addMonths(parseD(v.tokLast), v.tokInt || 12)]);
+    if (v.shkTarget && v.shkExp) items.push(["車検満了", parseD(v.shkExp)]);
+    for (const [label, dt] of items) {
+      if (!dt) continue;
+      const info = `${v.type || ""}${v.kanri ? " / " + v.kanri : ""}${v.bangou ? " / " + v.bangou : ""}`;
+      ev(L, `${v.id}-${label}-r-${ymd(dt)}@toyooka`, addMonths(dt, -1),
+        `🔔【1か月前】${label}：${v.name}`, `${label}の期限は ${fmtJ(dt)} です。（${info}）`);
+      ev(L, `${v.id}-${label}-d-${ymd(dt)}@toyooka`, dt,
+        `⚠️【${label}期限】${v.name}`, `本日が ${label} の期限です。（${info}）`);
+    }
+  }
   L.push("END:VCALENDAR");
   return L.join("\r\n");
 }
