@@ -1,0 +1,1229 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0d1826">
+<title>特自・車検管理</title>
+<style>
+  :root{
+    --navy-900:#0b1521;
+    --navy-800:#0f1b2c;
+    --navy-700:#16263b;
+    --navy-600:#1d3252;
+    --line:#2a3f5c;
+    --amber:#f5a623;
+    --amber-soft:#fbbf24;
+    --text:#e9eef6;
+    --muted:#8ea3c0;
+    --muted-2:#61748f;
+    --red:#f4553f;
+    --orange:#f5a623;
+    --yellow:#e0c341;
+    --green:#39c07a;
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,"Roboto Mono",monospace;
+    --jp:"Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic",Meiryo,system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{
+    font-family:var(--jp);
+    background:
+      radial-gradient(1200px 600px at 80% -10%,rgba(245,166,35,.07),transparent 60%),
+      radial-gradient(900px 500px at -10% 20%,rgba(29,50,82,.5),transparent 55%),
+      var(--navy-900);
+    color:var(--text);
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+    padding-bottom:env(safe-area-inset-bottom);
+  }
+  button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+  input,select,textarea{font-family:inherit;font-size:16px}
+
+  /* ---------- Lock ---------- */
+  #lock{
+    position:fixed;inset:0;z-index:100;
+    background:var(--navy-900);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:26px;
+    padding:24px;
+  }
+  #lock .mark{
+    width:66px;height:66px;border-radius:16px;
+    background:linear-gradient(160deg,var(--amber),#c9791a);
+    display:grid;place-items:center;color:#1a1206;font-weight:800;font-size:26px;
+    box-shadow:0 10px 30px rgba(245,166,35,.25);
+  }
+  #lock h1{font-size:19px;font-weight:700;letter-spacing:.04em}
+  #lock p{color:var(--muted);font-size:13px;margin-top:-16px}
+  .pin-row{display:flex;gap:14px}
+  .pin-dot{width:14px;height:14px;border-radius:50%;border:1.5px solid var(--line);transition:.15s}
+  .pin-dot.on{background:var(--amber);border-color:var(--amber);box-shadow:0 0 12px rgba(245,166,35,.5)}
+  .pad{display:grid;grid-template-columns:repeat(3,72px);gap:14px}
+  .pad button{
+    height:72px;border-radius:50%;font-size:24px;font-weight:600;color:var(--text);
+    background:var(--navy-700);border:1px solid var(--line);
+    transition:.1s;font-variant-numeric:tabular-nums;
+  }
+  .pad button:active{background:var(--navy-600);transform:scale(.95)}
+  .pad .fn{font-size:14px;color:var(--muted);background:transparent;border-color:transparent}
+  .lock-err{color:var(--red);font-size:13px;height:18px}
+
+  /* ---------- Shell ---------- */
+  .wrap{max-width:1180px;margin:0 auto;padding:0 16px}
+  header.app{
+    position:sticky;top:0;z-index:30;
+    background:linear-gradient(var(--navy-900),rgba(11,21,33,.86));
+    backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line);
+  }
+  .head-in{display:flex;align-items:center;gap:12px;padding:14px 0 12px}
+  .logo{
+    width:38px;height:38px;border-radius:10px;flex:none;
+    background:linear-gradient(160deg,var(--amber),#c9791a);
+    display:grid;place-items:center;color:#1a1206;font-weight:800;font-size:17px;
+  }
+  .title h1{font-size:16px;font-weight:700;letter-spacing:.02em}
+  .title span{font-size:11px;color:var(--muted);letter-spacing:.08em}
+  .head-actions{margin-left:auto;display:flex;gap:8px}
+  .btn{
+    display:inline-flex;align-items:center;gap:7px;
+    padding:9px 15px;border-radius:10px;font-size:13.5px;font-weight:600;
+    background:var(--navy-700);border:1px solid var(--line);color:var(--text);transition:.12s;
+  }
+  .btn:hover{border-color:var(--muted-2)}
+  .btn.primary{background:linear-gradient(160deg,var(--amber),#dd8c17);color:#1a1206;border-color:transparent}
+  .btn.primary:hover{filter:brightness(1.05)}
+  .btn.ghost{background:transparent}
+  .btn svg{width:16px;height:16px}
+
+  /* summary */
+  .summary{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:16px 0}
+  .stat{
+    background:var(--navy-800);border:1px solid var(--line);border-radius:14px;
+    padding:14px 16px;position:relative;overflow:hidden;
+  }
+  .stat .n{font-family:var(--mono);font-size:30px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
+  .stat .l{font-size:12px;color:var(--muted);margin-top:6px}
+  .stat::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px}
+  .stat.red::before{background:var(--red)} .stat.red .n{color:var(--red)}
+  .stat.org::before{background:var(--orange)} .stat.org .n{color:var(--orange)}
+  .stat.grn::before{background:var(--green)} .stat.grn .n{color:var(--green)}
+  .stat.all::before{background:var(--amber)} .stat.all .n{color:var(--amber-soft)}
+
+  /* controls */
+  .controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:16px}
+  .search{
+    flex:1;min-width:200px;display:flex;align-items:center;gap:8px;
+    background:var(--navy-800);border:1px solid var(--line);border-radius:10px;padding:0 12px;
+  }
+  .search input{background:transparent;border:none;color:var(--text);padding:10px 0;flex:1;outline:none}
+  .search svg{width:16px;height:16px;color:var(--muted-2);flex:none}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap}
+  .tab{
+    padding:8px 13px;border-radius:9px;font-size:13px;font-weight:600;color:var(--muted);
+    background:var(--navy-800);border:1px solid var(--line);transition:.12s;
+  }
+  .tab.on{color:#1a1206;background:var(--amber);border-color:transparent}
+  select.sort{
+    background:var(--navy-800);border:1px solid var(--line);color:var(--text);
+    border-radius:10px;padding:9px 12px;font-size:13px;outline:none;
+  }
+
+  /* grid */
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:14px;padding-bottom:60px}
+  .card{
+    background:var(--navy-800);border:1px solid var(--line);border-radius:16px;
+    padding:16px;display:flex;flex-direction:column;gap:14px;transition:.15s;
+  }
+  .card:hover{border-color:var(--muted-2);transform:translateY(-2px)}
+  .card-head{display:flex;align-items:flex-start;gap:10px}
+  .veh-type{
+    font-size:11px;font-weight:700;color:var(--amber-soft);letter-spacing:.05em;
+    background:rgba(245,166,35,.1);padding:3px 8px;border-radius:6px;display:inline-block;
+  }
+  .veh-name{font-size:16.5px;font-weight:700;margin-top:5px;line-height:1.3}
+  .veh-meta{font-size:11.5px;color:var(--muted-2);margin-top:2px;font-family:var(--mono)}
+  .card-head .edit{margin-left:auto;flex:none;color:var(--muted-2);padding:4px;border-radius:8px}
+  .card-head .edit:hover{color:var(--text);background:var(--navy-700)}
+  .card-head .edit svg{width:16px;height:16px;display:block}
+
+  .insp-row{display:flex;gap:12px}
+  .insp{
+    flex:1;background:var(--navy-900);border:1px solid var(--line);border-radius:12px;
+    padding:12px;display:flex;gap:12px;align-items:center;position:relative;min-width:0;
+  }
+  .insp.off{opacity:.45}
+  .insp-label{font-size:11px;color:var(--muted);font-weight:600}
+  .insp-date{font-size:12.5px;color:var(--text);font-family:var(--mono);margin-top:3px;font-variant-numeric:tabular-nums}
+  .insp-sub{font-size:10.5px;color:var(--muted-2);margin-top:1px}
+
+  /* gauge */
+  .gauge{position:relative;width:58px;height:58px;flex:none}
+  .gauge svg{transform:rotate(-90deg)}
+  .gauge .days{
+    position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    font-family:var(--mono);font-variant-numeric:tabular-nums;line-height:1;
+  }
+  .gauge .days b{font-size:17px;font-weight:700}
+  .gauge .days em{font-size:8.5px;color:var(--muted);font-style:normal;margin-top:1px}
+
+  .badge{
+    font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:20px;letter-spacing:.03em;
+    position:absolute;top:9px;right:9px;
+  }
+  .b-red{background:rgba(244,85,63,.16);color:var(--red)}
+  .b-org{background:rgba(245,166,35,.16);color:var(--orange)}
+  .b-yel{background:rgba(224,195,65,.16);color:var(--yellow)}
+  .b-grn{background:rgba(57,192,122,.16);color:var(--green)}
+  .b-off{background:var(--navy-700);color:var(--muted-2)}
+
+  .card-foot{display:flex;gap:8px;margin-top:2px}
+  .mini{
+    flex:1;font-size:12px;font-weight:600;padding:8px;border-radius:9px;text-align:center;
+    background:var(--navy-700);border:1px solid var(--line);color:var(--muted);transition:.12s;
+  }
+  .mini:hover{color:var(--text);border-color:var(--muted-2)}
+  .mini.acc{color:var(--amber-soft)}
+
+  .empty{
+    grid-column:1/-1;text-align:center;padding:70px 20px;color:var(--muted);
+    border:1.5px dashed var(--line);border-radius:16px;
+  }
+  .empty svg{width:44px;height:44px;color:var(--muted-2);margin-bottom:14px}
+  .empty h3{font-size:16px;color:var(--text);font-weight:700;margin-bottom:6px}
+  .empty p{font-size:13px}
+
+  /* ---------- Modal ---------- */
+  .overlay{
+    position:fixed;inset:0;z-index:60;background:rgba(6,12,20,.7);
+    display:none;align-items:flex-start;justify-content:center;padding:24px 14px;overflow-y:auto;
+    backdrop-filter:blur(3px);
+  }
+  .overlay.on{display:flex}
+  .modal{
+    width:100%;max-width:560px;background:var(--navy-800);border:1px solid var(--line);
+    border-radius:18px;padding:22px;margin:auto;
+  }
+  .modal h2{font-size:17px;font-weight:700;margin-bottom:4px}
+  .modal .hint{font-size:12px;color:var(--muted);margin-bottom:18px}
+  .field{margin-bottom:14px}
+  .field label{display:block;font-size:12.5px;font-weight:600;color:var(--muted);margin-bottom:6px}
+  .field input,.field select,.field textarea{
+    width:100%;background:var(--navy-900);border:1px solid var(--line);color:var(--text);
+    border-radius:10px;padding:11px 12px;outline:none;transition:.12s;
+  }
+  .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--amber)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .toggle-sec{
+    border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:14px;background:var(--navy-900);
+  }
+  .toggle-head{display:flex;align-items:center;gap:10px;margin-bottom:2px}
+  .toggle-head b{font-size:13.5px}
+  .switch{margin-left:auto;position:relative;width:42px;height:24px;flex:none}
+  .switch input{opacity:0;width:100%;height:100%;cursor:pointer}
+  .slider{position:absolute;inset:0;background:var(--navy-700);border:1px solid var(--line);border-radius:20px;transition:.15s;pointer-events:none}
+  .slider::after{content:"";position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:var(--muted);transition:.15s}
+  .switch input:checked+.slider{background:var(--amber);border-color:var(--amber)}
+  .switch input:checked+.slider::after{transform:translateX(18px);background:#1a1206}
+  .sec-body{margin-top:12px}
+  .sec-body.hide{display:none}
+  .modal-foot{display:flex;gap:10px;margin-top:8px}
+  .modal-foot .btn{flex:1;justify-content:center;padding:12px}
+  .del-btn{color:var(--red)!important}
+  .info-line{font-size:11.5px;color:var(--muted-2);margin-top:6px;line-height:1.5}
+
+  /* detail history */
+  .hist{list-style:none;margin-top:6px;display:flex;flex-direction:column;gap:8px;max-height:280px;overflow:auto}
+  .hist li{display:flex;gap:12px;align-items:baseline;background:var(--navy-900);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+  .hist .hd{font-family:var(--mono);font-size:12.5px;color:var(--amber-soft);flex:none}
+  .hist .ht{font-size:11px;color:var(--muted-2);flex:none}
+  .hist .hn{font-size:12.5px;color:var(--text)}
+  .no-hist{font-size:12.5px;color:var(--muted-2);text-align:center;padding:16px}
+
+  /* toast */
+  #toast{
+    position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);
+    background:var(--navy-600);border:1px solid var(--line);color:var(--text);
+    padding:11px 20px;border-radius:12px;font-size:13.5px;font-weight:600;
+    opacity:0;pointer-events:none;transition:.25s;z-index:90;box-shadow:0 12px 30px rgba(0,0,0,.4);
+  }
+  #toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  /* alert bar */
+  .alert-bar{
+    background:linear-gradient(120deg,rgba(244,85,63,.10),rgba(245,166,35,.10));
+    border:1px solid rgba(245,166,35,.35);border-radius:14px;padding:12px 14px;margin-top:16px;
+  }
+  .alert-top{display:flex;align-items:center;gap:9px}
+  .alert-top svg{width:17px;height:17px;color:var(--amber);flex:none}
+  .alert-top b{font-size:13.5px;color:var(--amber-soft)}
+  .alert-top .push{margin-left:auto;font-size:11.5px;color:var(--muted-2)}
+  .alert-list{display:flex;flex-direction:column;gap:6px;margin-top:9px}
+  .alert-item{display:flex;align-items:center;gap:10px;font-size:12.5px;background:var(--navy-900);border:1px solid var(--line);border-radius:9px;padding:7px 10px}
+  .alert-item .dot{width:8px;height:8px;border-radius:50%;flex:none}
+  .alert-item .nm{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .alert-item .tp{color:var(--muted);flex:none}
+  .alert-item .dd{margin-left:auto;font-family:var(--mono);font-variant-numeric:tabular-nums;flex:none;font-weight:700}
+  .alert-item .rec{flex:none;font-size:11px;font-weight:600;color:var(--amber-soft);border:1px solid var(--line);border-radius:7px;padding:4px 9px;background:var(--navy-700)}
+  .alert-item .rec:hover{border-color:var(--amber)}
+  .bell-on{color:var(--amber)!important;border-color:rgba(245,166,35,.5)!important}
+  .net-dot{width:9px;height:9px;border-radius:50%;background:var(--green);align-self:center;margin-right:2px;box-shadow:0 0 8px rgba(57,192,122,.5);flex:none}
+  .net-dot.off{background:var(--muted-2);box-shadow:none}
+
+  /* card actions (2 rows) */
+  .card-actions{display:flex;flex-direction:column;gap:8px;margin-top:2px}
+  .frow{display:flex;gap:8px}
+  .doc-count{color:var(--amber-soft)}
+
+  /* documents */
+  .doc-add{display:flex;gap:10px;align-items:center;margin-bottom:14px}
+  .doc-add select{background:var(--navy-900);border:1px solid var(--line);color:var(--text);border-radius:10px;padding:10px 12px;outline:none;flex:none}
+  .doc-list{display:flex;flex-direction:column;gap:9px;max-height:52vh;overflow:auto;margin-bottom:6px}
+  .doc-group-h{font-size:11.5px;font-weight:700;color:var(--muted);letter-spacing:.04em;margin:4px 0 -2px}
+  .doc-item{display:flex;gap:12px;align-items:center;background:var(--navy-900);border:1px solid var(--line);border-radius:11px;padding:10px}
+  .doc-thumb{width:46px;height:46px;border-radius:8px;flex:none;object-fit:cover;background:var(--navy-700);border:1px solid var(--line)}
+  .doc-thumb.pdf{display:grid;place-items:center;font-size:10px;font-weight:800;color:var(--red);letter-spacing:.02em}
+  .doc-info{flex:1;min-width:0}
+  .doc-info .dn{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .doc-info .dm{font-size:11px;color:var(--muted-2);font-family:var(--mono);margin-top:2px}
+  .doc-btns{display:flex;gap:6px;flex:none}
+  .doc-btns button{font-size:11.5px;font-weight:600;color:var(--muted);border:1px solid var(--line);background:var(--navy-700);border-radius:8px;padding:6px 9px}
+  .doc-btns button:hover{color:var(--text);border-color:var(--muted-2)}
+  .doc-btns .del:hover{color:var(--red);border-color:var(--red)}
+  .doc-empty{text-align:center;color:var(--muted-2);font-size:12.5px;padding:24px;border:1.5px dashed var(--line);border-radius:12px}
+
+  @media(max-width:620px){
+    .summary{grid-template-columns:1fr 1fr}
+    .grid{grid-template-columns:1fr}
+    .title span{display:none}
+    .head-actions .btn span{display:none}
+    .head-actions .btn{padding:9px 11px}
+    .grid2{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+
+<!-- APP -->
+<div id="app">
+  <header class="app">
+    <div class="wrap head-in">
+      <div class="logo">豊</div>
+      <div class="title">
+        <h1>特自・車検管理</h1>
+        <span>TOKUTEI-JISHU-KENSA ／ SHAKEN</span>
+      </div>
+      <div class="head-actions">
+        <span id="netDot" class="net-dot" title="オンライン（同期中）"></span>
+        <button class="btn ghost" id="btnBell" title="端末通知の許可">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0"/></svg>
+        </button>
+        <button class="btn ghost" id="btnMenu" title="バックアップ・書き出し">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v6a2 2 0 002 2h12a2 2 0 002-2v-6M8 8l4-4 4 4M12 4v12"/></svg>
+          <span>データ</span>
+        </button>
+        <button class="btn primary" id="btnAdd">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>
+          <span>車両・機械を追加</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <div class="alert-bar" id="alertBar" style="display:none"></div>
+    <div class="summary" id="summary"></div>
+
+    <div class="controls">
+      <div class="search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>
+        <input id="search" placeholder="車両名・管理番号・種類で検索">
+      </div>
+      <div class="tabs" id="tabs">
+        <button class="tab on" data-f="all">すべて</button>
+        <button class="tab" data-f="due">要対応</button>
+        <button class="tab" data-f="tokutei">特定自主検査</button>
+        <button class="tab" data-f="shaken">車検</button>
+      </div>
+      <select class="sort" id="sort">
+        <option value="urgent">期限が近い順</option>
+        <option value="name">名前順</option>
+        <option value="kanri">管理番号順</option>
+      </select>
+    </div>
+
+    <div class="grid" id="grid"></div>
+  </div>
+</div>
+
+<!-- EDIT MODAL -->
+<div class="overlay" id="editOverlay">
+  <div class="modal">
+    <h2 id="editTitle">車両・機械を追加</h2>
+    <p class="hint">法定検査の対象になる建設機械・車両を登録します。</p>
+    <div class="grid2">
+      <div class="field"><label>管理番号</label><input id="f_kanri" placeholder="例：D-03"></div>
+      <div class="field"><label>種類</label>
+        <select id="f_type">
+          <option>ダンプトラック</option>
+          <option>バックホウ（油圧ショベル）</option>
+          <option>ホイールローダー</option>
+          <option>ブルドーザー</option>
+          <option>フォークリフト</option>
+          <option>高所作業車</option>
+          <option>ローラー（転圧機械）</option>
+          <option>移動式クレーン</option>
+          <option>不整地運搬車</option>
+          <option>乗用車・軽トラック</option>
+          <option>その他</option>
+        </select>
+      </div>
+    </div>
+    <div class="field"><label>車両名 / 機械名</label><input id="f_name" placeholder="例：コマツ PC30 3号機"></div>
+    <div class="grid2">
+      <div class="field"><label>メーカー・型式</label><input id="f_maker" placeholder="例：コマツ PC30MR-5"></div>
+      <div class="field"><label>車両番号 / 車台番号</label><input id="f_bangou" placeholder="例：福井 800 あ 12-34"></div>
+    </div>
+
+    <div class="toggle-sec">
+      <div class="toggle-head">
+        <b>特定自主検査</b>
+        <label class="switch"><input type="checkbox" id="f_tokTgt" checked><span class="slider"></span></label>
+      </div>
+      <div class="info-line">労働安全衛生法に基づく年次検査。<b>1年以内ごとに1回</b>、有資格者または検査業者が実施。記録は3年間保存。</div>
+      <div class="sec-body" id="tokBody">
+        <div class="grid2">
+          <div class="field"><label>前回の検査日</label><input type="date" id="f_tokLast"></div>
+          <div class="field"><label>次回までの間隔</label>
+            <select id="f_tokInt"><option value="12">12か月（年1回）</option><option value="6">6か月</option></select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="toggle-sec">
+      <div class="toggle-head">
+        <b>車検（継続検査）</b>
+        <label class="switch"><input type="checkbox" id="f_shkTgt" checked><span class="slider"></span></label>
+      </div>
+      <div class="info-line">満了日の <b>1か月前から</b> 更新可能（満了日を引き継げます）。</div>
+      <div class="sec-body" id="shkBody">
+        <div class="field"><label>車検満了日</label><input type="date" id="f_shkExp"></div>
+      </div>
+    </div>
+
+    <div class="field"><label>メモ（任意）</label><input id="f_memo" placeholder="例：検査業者 ○○リース／担当 弟"></div>
+
+    <div class="modal-foot">
+      <button class="btn ghost del-btn" id="btnDelete" style="display:none">削除</button>
+      <button class="btn ghost" id="btnCancel">キャンセル</button>
+      <button class="btn primary" id="btnSave">保存する</button>
+    </div>
+  </div>
+</div>
+
+<!-- RECORD MODAL -->
+<div class="overlay" id="recOverlay">
+  <div class="modal" style="max-width:440px">
+    <h2 id="recTitle">検査完了を記録</h2>
+    <p class="hint" id="recHint"></p>
+    <div class="field"><label id="recDateLabel">検査を実施した日</label><input type="date" id="rec_date"></div>
+    <div class="field"><label>実施者 / 業者（任意）</label><input id="rec_by" placeholder="例：○○リース 田中"></div>
+    <div class="field"><label>メモ（任意）</label><input id="rec_note" placeholder="例：異常なし"></div>
+    <div class="info-line" id="recPreview"></div>
+    <div class="modal-foot">
+      <button class="btn ghost" id="recCancel">キャンセル</button>
+      <button class="btn primary" id="recSave">記録して期限を更新</button>
+    </div>
+  </div>
+</div>
+
+<!-- DETAIL MODAL -->
+<div class="overlay" id="detOverlay">
+  <div class="modal">
+    <h2 id="detTitle"></h2>
+    <p class="hint" id="detSub"></p>
+    <div style="font-size:12.5px;font-weight:700;color:var(--muted);margin:4px 0 2px">検査履歴</div>
+    <ul class="hist" id="detHist"></ul>
+    <div class="modal-foot">
+      <button class="btn ghost" id="detClose">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<!-- DOCUMENTS MODAL -->
+<div class="overlay" id="docOverlay">
+  <div class="modal">
+    <h2 id="docTitle"></h2>
+    <p class="hint">車検証・特定自主検査記録表などを添付します。写真(JPEG/PNG)・PDFに対応。</p>
+    <div class="doc-add">
+      <select id="docCat">
+        <option value="特定自主検査">特定自主検査</option>
+        <option value="車検">車検</option>
+        <option value="その他">その他</option>
+      </select>
+      <label class="btn primary" for="docFile" style="padding:10px 14px;cursor:pointer">＋ ファイルを添付</label>
+      <input type="file" id="docFile" accept="image/*,application/pdf" multiple style="display:none">
+    </div>
+    <div id="docList" class="doc-list"></div>
+    <div class="modal-foot">
+      <button class="btn" id="docPrintAll" style="flex:1;justify-content:center;padding:12px">🖨 まとめて印刷</button>
+      <button class="btn ghost" id="docClose" style="flex:1;justify-content:center;padding:12px">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<!-- DATA MENU -->
+<div class="overlay" id="menuOverlay">
+  <div class="modal" style="max-width:420px">
+    <h2>データの管理</h2>
+    <p class="hint">この端末に保存されています。定期的にバックアップを取ってください。</p>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <button class="btn" id="expIcs" style="justify-content:flex-start;padding:13px">🗓 カレンダーに登録（1回書き出し）</button>
+      <button class="btn" id="subCal" style="justify-content:flex-start;padding:13px">🔔 カレンダーを購読（自動更新）</button>
+      <button class="btn" id="printLedger" style="justify-content:flex-start;padding:13px">🖨 検査台帳を印刷（提出用一覧）</button>
+      <button class="btn" id="expJson" style="justify-content:flex-start;padding:13px">📦 バックアップを保存（JSON）</button>
+      <button class="btn" id="expCsv" style="justify-content:flex-start;padding:13px">📊 一覧をExcel用に書き出し（CSV）</button>
+      <button class="btn" id="impBtn" style="justify-content:flex-start;padding:13px">📥 バックアップから復元（JSON）</button>
+      <input type="file" id="impFile" accept="application/json" style="display:none">
+    </div>
+    <div class="modal-foot"><button class="btn ghost" id="menuClose" style="flex:1;justify-content:center;padding:12px">閉じる</button></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script>
+"use strict";
+/* ===================== Supabase 設定 =====================
+   下の SB_KEY に、Supabaseの anon public キーを貼ってください。
+   （Supabase → Project Settings → API → Project API keys → anon public）
+========================================================= */
+const SB_URL="https://cfvppxqwdtwwucnaurtb.supabase.co";
+const SB_KEY="sb_publishable_Ib5hD2wXpa7iuQkSvpyExQ_owiHvngd";
+const sb=(window.supabase && !SB_KEY.startsWith("__")) ? window.supabase.createClient(SB_URL,SB_KEY) : null;
+/* ======================================================== */
+const PIN="0428", KEY="toyooka_kensa_cache";
+const $=id=>document.getElementById(id);
+
+/* ---------- State ---------- */
+let data=[];
+let filter="all", sortBy="urgent", search="";
+let editId=null, recCtx=null;
+
+let netOK=true;
+function setOnline(ok){netOK=ok;const d=$("netDot");if(d){d.classList.toggle("off",!ok);d.title=ok?"オンライン（同期中）":"オフライン（表示のみ）";}}
+async function load(){
+  try{const c=JSON.parse(localStorage.getItem(KEY));if(Array.isArray(c))data=c;}catch(e){}
+  render();
+  if(!sb){return;}
+  try{
+    const {data:rows,error}=await sb.from("kensa_vehicles").select("id,data");
+    if(error)throw error;
+    data=(rows||[]).map(r=>r.data);
+    localStorage.setItem(KEY,JSON.stringify(data));
+    setOnline(true);
+  }catch(e){setOnline(false);}
+  render();updateBell();maybeNotify();
+}
+function save(){
+  localStorage.setItem(KEY,JSON.stringify(data));
+  if(!sb){return;}
+  const rows=data.map(v=>({id:v.id,data:v}));
+  sb.from("kensa_vehicles").upsert(rows).then(({error})=>{
+    if(error){setOnline(false);toast("保存に失敗しました（通信をご確認ください）");}else setOnline(true);
+  });
+}
+async function deleteVehicle(id){
+  const v=data.find(x=>x.id===id);
+  const fileIds=((v&&v.docs)||[]).map(d=>d.id);
+  if(!sb)return;
+  try{
+    await sb.from("kensa_vehicles").delete().eq("id",id);
+    if(fileIds.length)await sb.from("kensa_files").delete().in("id",fileIds);
+  }catch(e){toast("削除の同期に失敗しました");}
+}
+let refreshT;
+function scheduleRefresh(){clearTimeout(refreshT);refreshT=setTimeout(refreshData,400);}
+async function refreshData(){
+  if(!sb)return;
+  try{
+    const {data:rows,error}=await sb.from("kensa_vehicles").select("id,data");
+    if(error)throw error;
+    data=(rows||[]).map(r=>r.data);
+    localStorage.setItem(KEY,JSON.stringify(data));
+    setOnline(true);render();
+  }catch(e){setOnline(false);}
+}
+function subscribeRealtime(){
+  if(!sb)return;
+  try{sb.channel("kensa").on("postgres_changes",{event:"*",schema:"public",table:"kensa_vehicles"},scheduleRefresh).subscribe();}catch(e){}
+  document.addEventListener("visibilitychange",()=>{if(!document.hidden)scheduleRefresh();});
+  window.addEventListener("focus",scheduleRefresh);
+}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
+
+/* ---------- 書類保存（Supabase: kensa_files） ---------- */
+async function idbPut(o){ // o={id, dataUrl, ...meta(未使用)}
+  if(!sb)throw new Error("no-connection");
+  const {error}=await sb.from("kensa_files").upsert({id:o.id,data:o.dataUrl});
+  if(error)throw error;
+}
+async function idbGet(id){
+  if(!sb)return null;
+  const {data:r,error}=await sb.from("kensa_files").select("data").eq("id",id).single();
+  if(error||!r)return null;
+  return {id,dataUrl:r.data};
+}
+async function idbDel(id){if(sb)await sb.from("kensa_files").delete().eq("id",id);}
+async function idbAll(){
+  if(!sb)return [];
+  const {data:r,error}=await sb.from("kensa_files").select("id,data");
+  if(error)return [];
+  return (r||[]).map(x=>({id:x.id,dataUrl:x.data}));
+}
+function findDocMeta(id){for(const v of data){for(const d of (v.docs||[]))if(d.id===id)return d;}return null;}
+
+
+function fileToDataUrl(f){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=()=>rej(r.error);r.readAsDataURL(f)})}
+function dataUrlToBlob(u){const[meta,b64]=u.split(",");const mime=(meta.match(/:(.*?);/)||[])[1]||"application/octet-stream";const bin=atob(b64);const a=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)a[i]=bin.charCodeAt(i);return new Blob([a],{type:mime})}
+function fileSize(n){return n<1024?n+" B":n<1048576?(n/1024).toFixed(0)+" KB":(n/1048576).toFixed(1)+" MB"}
+function isImg(t){return(t||"").startsWith("image/")}
+
+async function addDocs(vehicleId,cat,fileList){
+  const v=data.find(x=>x.id===vehicleId);if(!v)return;
+  v.docs=v.docs||[];
+  for(const f of fileList){
+    const dataUrl=await fileToDataUrl(f);
+    const id=uid(),addedAt=Date.now();
+    await idbPut({id,vehicleId,cat,name:f.name,type:f.type,dataUrl,addedAt});
+    v.docs.push({id,cat,name:f.name,type:f.type,size:f.size,addedAt});
+  }
+  save();
+}
+async function removeDoc(vehicleId,docId){
+  const v=data.find(x=>x.id===vehicleId);if(!v)return;
+  await idbDel(docId);
+  v.docs=(v.docs||[]).filter(d=>d.id!==docId);
+  save();
+}
+
+/* ---------- Date helpers ---------- */
+function toDate(s){if(!s)return null;const[y,m,d]=s.split("-").map(Number);return new Date(y,m-1,d)}
+function today(){const t=new Date();return new Date(t.getFullYear(),t.getMonth(),t.getDate())}
+function addMonths(dt,m){const d=new Date(dt);const day=d.getDate();d.setMonth(d.getMonth()+m);if(d.getDate()<day)d.setDate(0);return d}
+function fmt(dt){if(!dt)return"—";return`${dt.getFullYear()}.${String(dt.getMonth()+1).padStart(2,"0")}.${String(dt.getDate()).padStart(2,"0")}`}
+function daysLeft(dt){if(!dt)return null;return Math.round((dt-today())/86400000)}
+
+function tokuteiNext(v){if(!v.tokTarget||!v.tokLast)return null;return addMonths(toDate(v.tokLast),v.tokInt||12)}
+function shakenNext(v){if(!v.shkTarget||!v.shkExp)return null;return toDate(v.shkExp)}
+
+function statusOf(days){
+  if(days===null)return{k:"off",t:"未設定"};
+  if(days<0)return{k:"red",t:"期限切れ"};
+  if(days<=30)return{k:"org",t:"要更新"};
+  if(days<=60)return{k:"yel",t:"注意"};
+  return{k:"grn",t:"良好"};
+}
+const COLOR={red:"var(--red)",org:"var(--orange)",yel:"var(--yellow)",grn:"var(--green)",off:"var(--muted-2)"};
+
+// worst (most urgent) days across both inspections
+function urgency(v){
+  const arr=[daysLeft(tokuteiNext(v)),daysLeft(shakenNext(v))].filter(x=>x!==null);
+  return arr.length?Math.min(...arr):9999;
+}
+
+/* ---------- Alerts & notifications ---------- */
+function dueItems(){
+  const out=[];
+  data.forEach(v=>{
+    if(v.tokTarget){const d=daysLeft(tokuteiNext(v));if(d!==null&&d<=30)out.push({v,type:"tok",label:"特定自主検査",days:d});}
+    if(v.shkTarget){const d=daysLeft(shakenNext(v));if(d!==null&&d<=30)out.push({v,type:"shk",label:"車検",days:d});}
+  });
+  return out.sort((a,b)=>a.days-b.days);
+}
+function renderAlert(){
+  const bar=$("alertBar"),items=dueItems();
+  if(!items.length){bar.style.display="none";return;}
+  const perm=("Notification"in window)?Notification.permission:"unsupported";
+  const pushTxt=perm==="granted"?"端末通知オン":(perm==="denied"?"端末通知はブロック中":"ベルで通知を許可できます");
+  bar.style.display="block";
+  bar.innerHTML=`
+    <div class="alert-top">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.3 3.9l-8 14A2 2 0 004 21h16a2 2 0 001.7-3l-8-14a2 2 0 00-3.4 0zM12 9v4M12 17h.01"/></svg>
+      <b>期限が近い検査が ${items.length} 件あります</b>
+      <span class="push">${pushTxt}</span>
+    </div>
+    <div class="alert-list">
+      ${items.map(i=>{
+        const st=statusOf(i.days);
+        const dd=i.days<0?`${-i.days}日超過`:`あと${i.days}日`;
+        return `<div class="alert-item">
+          <span class="dot" style="background:${COLOR[st.k]}"></span>
+          <span class="nm">${esc(i.v.name)}</span>
+          <span class="tp">${i.label}</span>
+          <span class="dd" style="color:${COLOR[st.k]}">${dd}</span>
+          <button class="rec" onclick="openRec('${i.v.id}','${i.type}')">記録</button>
+        </div>`;
+      }).join("")}
+    </div>`;
+}
+function updateBell(){
+  const b=$("btnBell");if(!b)return;
+  b.classList.toggle("bell-on",("Notification"in window)&&Notification.permission==="granted");
+}
+function askNotify(){
+  if(!("Notification"in window)){toast("この端末は端末通知に対応していません");return;}
+  if(Notification.permission==="granted"){toast("端末通知はオンです。カレンダー登録なら閉じていても届きます");maybeNotify();return;}
+  Notification.requestPermission().then(p=>{
+    updateBell();
+    if(p==="granted"){toast("通知をオンにしました（アプリを開いた時にお知らせ）");maybeNotify();}
+    else toast("通知が許可されませんでした");
+  });
+}
+function maybeNotify(){
+  if(!("Notification"in window)||Notification.permission!=="granted")return;
+  const items=dueItems();if(!items.length)return;
+  const over=items.filter(i=>i.days<0).length;
+  const body=items.slice(0,4).map(i=>`${i.v.name}／${i.label} ${i.days<0?(-i.days)+"日超過":"あと"+i.days+"日"}`).join("\n");
+  try{new Notification("検査期限のお知らせ",{body:(over?`期限切れ ${over}件を含む `:"")+`${items.length}件\n`+body});}catch(e){}
+}
+
+/* ---------- Calendar (.ics) ---------- */
+function icsDate(dt){return`${dt.getFullYear()}${String(dt.getMonth()+1).padStart(2,"0")}${String(dt.getDate()).padStart(2,"0")}`}
+function icsStamp(){const d=new Date(),p=n=>String(n).padStart(2,"0");return`${d.getUTCFullYear()}${p(d.getUTCMonth()+1)}${p(d.getUTCDate())}T${p(d.getUTCHours())}${p(d.getUTCMinutes())}${p(d.getUTCSeconds())}Z`}
+function icsEsc(s){return String(s==null?"":s).replace(/([,;\\])/g,"\\$1").replace(/\n/g,"\\n")}
+function pushEv(L,stamp,uid,start,summary,desc){
+  const end=new Date(start);end.setDate(end.getDate()+1);
+  L.push("BEGIN:VEVENT","UID:"+uid,"DTSTAMP:"+stamp,
+    "DTSTART;VALUE=DATE:"+icsDate(start),"DTEND;VALUE=DATE:"+icsDate(end),
+    "SUMMARY:"+icsEsc(summary),"DESCRIPTION:"+icsEsc(desc),"TRANSP:TRANSPARENT",
+    "BEGIN:VALARM","ACTION:DISPLAY","DESCRIPTION:"+icsEsc(summary),"TRIGGER:PT9H","END:VALARM",
+    "END:VEVENT");
+}
+function buildICS(){
+  const L=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Toyooka-gumi//Kensa//JA","CALSCALE:GREGORIAN","METHOD:PUBLISH"];
+  const stamp=icsStamp();let n=0;
+  data.forEach(v=>{
+    const items=[];
+    if(v.tokTarget&&tokuteiNext(v))items.push(["特定自主検査",tokuteiNext(v)]);
+    if(v.shkTarget&&shakenNext(v))items.push(["車検満了",shakenNext(v)]);
+    items.forEach(([label,dt])=>{
+      const info=`${v.type}${v.kanri?" / "+v.kanri:""}${v.bangou?" / "+v.bangou:""}`;
+      pushEv(L,stamp,`${v.id}-${label}-r-${icsDate(dt)}@toyooka`,addMonths(dt,-1),
+        `🔔【1か月前】${label}：${v.name}`,`${label}の期限は ${fmt(dt)} です。（${info}）`);
+      pushEv(L,stamp,`${v.id}-${label}-d-${icsDate(dt)}@toyooka`,dt,
+        `⚠️【${label}期限】${v.name}`,`本日が ${label} の期限です。（${info}）`);
+      n++;
+    });
+  });
+  L.push("END:VCALENDAR");
+  return{ics:L.join("\r\n"),count:n};
+}
+
+/* ---------- Render ---------- */
+function render(){
+  renderAlert();
+  // summary
+  let over=0,soon=0,ok=0;
+  data.forEach(v=>{
+    [tokuteiNext(v),shakenNext(v)].forEach(nd=>{
+      const d=daysLeft(nd);if(d===null)return;
+      if(d<0)over++;else if(d<=30)soon++;else ok++;
+    });
+  });
+  $("summary").innerHTML=`
+    <div class="stat all"><div class="n">${data.length}</div><div class="l">登録台数</div></div>
+    <div class="stat red"><div class="n">${over}</div><div class="l">期限切れ</div></div>
+    <div class="stat org"><div class="n">${soon}</div><div class="l">30日以内</div></div>
+    <div class="stat grn"><div class="n">${ok}</div><div class="l">期限内</div></div>`;
+
+  // filter
+  let list=data.slice();
+  const q=search.trim().toLowerCase();
+  if(q)list=list.filter(v=>[v.name,v.kanri,v.type,v.maker,v.bangou].join(" ").toLowerCase().includes(q));
+  if(filter==="tokutei")list=list.filter(v=>v.tokTarget);
+  if(filter==="shaken")list=list.filter(v=>v.shkTarget);
+  if(filter==="due")list=list.filter(v=>urgency(v)<=30);
+
+  // sort
+  if(sortBy==="urgent")list.sort((a,b)=>urgency(a)-urgency(b));
+  if(sortBy==="name")list.sort((a,b)=>(a.name||"").localeCompare(b.name||"","ja"));
+  if(sortBy==="kanri")list.sort((a,b)=>(a.kanri||"").localeCompare(b.kanri||"","ja",{numeric:true}));
+
+  const grid=$("grid");
+  if(!list.length){
+    grid.innerHTML=`<div class="empty">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 13l2-5h14l2 5M5 13h14v5a1 1 0 01-1 1h-1a2 2 0 01-4 0H9a2 2 0 01-4 0H5a1 1 0 01-1-1v-5z"/><circle cx="7.5" cy="18.5" r="1.5"/><circle cx="16.5" cy="18.5" r="1.5"/></svg>
+      <h3>${data.length?"該当する車両がありません":"車両・機械が未登録です"}</h3>
+      <p>${data.length?"検索条件やフィルターを変えてみてください":"右上の「追加」から登録を始めましょう"}</p>
+    </div>`;
+    return;
+  }
+  grid.innerHTML=list.map(v=>card(v)).join("");
+}
+
+function gaugeSVG(days){
+  const st=statusOf(days);
+  const col=COLOR[st.k];
+  const win=183; // 6か月を満タンの目安
+  let frac = days===null?0 : Math.max(0,Math.min(1,days/win));
+  if(days!==null&&days<0)frac=1; // overdue = full red ring
+  const r=25,c=2*Math.PI*r,off=c*(1-frac);
+  const num = days===null?"—" : (days<0?"超過":days);
+  const unit = days===null?"未設定" : (days<0?`${-days}日`:"日");
+  return `<div class="gauge">
+    <svg width="58" height="58" viewBox="0 0 58 58">
+      <circle cx="29" cy="29" r="${r}" fill="none" stroke="var(--line)" stroke-width="5"/>
+      <circle cx="29" cy="29" r="${r}" fill="none" stroke="${col}" stroke-width="5" stroke-linecap="round"
+        stroke-dasharray="${c}" stroke-dashoffset="${off}"/>
+    </svg>
+    <div class="days"><b style="color:${col}">${num}</b><em>${unit}</em></div>
+  </div>`;
+}
+
+function inspBlock(v,type){
+  const isTok=type==="tok";
+  const on = isTok?v.tokTarget:v.shkTarget;
+  const nd = isTok?tokuteiNext(v):shakenNext(v);
+  const days=daysLeft(nd);
+  const st=statusOf(on?days:null);
+  const label=isTok?"特定自主検査":"車検 満了";
+  if(!on)return `<div class="insp off"><div style="flex:1"><div class="insp-label">${label}</div><div class="insp-sub">対象外</div></div></div>`;
+  const sub = isTok
+    ? (v.tokLast?`前回 ${fmt(toDate(v.tokLast))}`:"前回未入力")
+    : (v.shkExp?"満了日":"未入力");
+  return `<div class="insp">
+    <span class="badge b-${st.k}">${st.t}</span>
+    ${gaugeSVG(days)}
+    <div style="flex:1;min-width:0">
+      <div class="insp-label">${label}</div>
+      <div class="insp-date">${fmt(nd)}</div>
+      <div class="insp-sub">${sub}</div>
+    </div>
+  </div>`;
+}
+
+function card(v){
+  return `<div class="card">
+    <div class="card-head">
+      <div style="flex:1;min-width:0">
+        <span class="veh-type">${v.type||"車両"}</span>
+        <div class="veh-name">${esc(v.name)||"（名称未設定）"}</div>
+        <div class="veh-meta">${[v.kanri,v.bangou].filter(Boolean).map(esc).join("　/　")||"&nbsp;"}</div>
+      </div>
+      <button class="edit" onclick="openEdit('${v.id}')" title="編集">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
+      </button>
+    </div>
+    <div class="insp-row">
+      ${inspBlock(v,"tok")}
+      ${inspBlock(v,"shk")}
+    </div>
+    <div class="card-actions">
+      ${(v.tokTarget||v.shkTarget)?`<div class="frow">
+        ${v.tokTarget?`<button class="mini acc" onclick="openRec('${v.id}','tok')">特定自主検査を記録</button>`:""}
+        ${v.shkTarget?`<button class="mini acc" onclick="openRec('${v.id}','shk')">車検を記録</button>`:""}
+      </div>`:""}
+      <div class="frow">
+        <button class="mini" onclick="openDetail('${v.id}')">履歴</button>
+        <button class="mini" onclick="openDocs('${v.id}')">📎 書類<span class="doc-count">${(v.docs||[]).length?" "+(v.docs||[]).length:""}</span></button>
+      </div>
+    </div>
+  </div>`;
+}
+function esc(s){return(s==null?"":String(s)).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+
+/* ---------- Edit ---------- */
+function openEdit(id){
+  editId=id;
+  const v=id?data.find(x=>x.id===id):null;
+  $("editTitle").textContent=id?"車両・機械を編集":"車両・機械を追加";
+  $("btnDelete").style.display=id?"block":"none";
+  $("f_kanri").value=v?.kanri||"";
+  $("f_type").value=v?.type||"ダンプトラック";
+  $("f_name").value=v?.name||"";
+  $("f_maker").value=v?.maker||"";
+  $("f_bangou").value=v?.bangou||"";
+  $("f_tokTgt").checked=v?v.tokTarget:true;
+  $("f_tokLast").value=v?.tokLast||"";
+  $("f_tokInt").value=v?.tokInt||12;
+  $("f_shkTgt").checked=v?v.shkTarget:true;
+  $("f_shkExp").value=v?.shkExp||"";
+  $("f_memo").value=v?.memo||"";
+  syncToggles();
+  $("editOverlay").classList.add("on");
+}
+function syncToggles(){
+  $("tokBody").classList.toggle("hide",!$("f_tokTgt").checked);
+  $("shkBody").classList.toggle("hide",!$("f_shkTgt").checked);
+}
+$("f_tokTgt").onchange=syncToggles;
+$("f_shkTgt").onchange=syncToggles;
+
+$("btnSave").onclick=()=>{
+  const name=$("f_name").value.trim();
+  if(!name){toast("車両名を入力してください");return;}
+  const rec={
+    id:editId||uid(),
+    kanri:$("f_kanri").value.trim(),
+    type:$("f_type").value,
+    name,
+    maker:$("f_maker").value.trim(),
+    bangou:$("f_bangou").value.trim(),
+    tokTarget:$("f_tokTgt").checked,
+    tokLast:$("f_tokLast").value,
+    tokInt:Number($("f_tokInt").value),
+    shkTarget:$("f_shkTgt").checked,
+    shkExp:$("f_shkExp").value,
+    memo:$("f_memo").value.trim(),
+    history:editId?(data.find(x=>x.id===editId)?.history||[]):[]
+  };
+  if(editId){const i=data.findIndex(x=>x.id===editId);data[i]=rec;}
+  else data.push(rec);
+  save();render();closeAll();
+  toast(editId?"更新しました":"登録しました");
+};
+$("btnDelete").onclick=()=>{
+  if(!editId)return;
+  if(confirm("この車両・機械を削除しますか？履歴も削除されます。")){
+    const id=editId;
+    deleteVehicle(id);
+    data=data.filter(x=>x.id!==id);save();render();closeAll();toast("削除しました");
+  }
+};
+
+/* ---------- Record inspection ---------- */
+function openRec(id,type){
+  recCtx={id,type};
+  const v=data.find(x=>x.id===id);
+  const isTok=type==="tok";
+  $("recTitle").textContent=isTok?"特定自主検査を記録":"車検を記録";
+  $("recHint").textContent=`${v.name}（${v.type}）`;
+  $("recDateLabel").textContent=isTok?"検査を実施した日":"新しい車検満了日";
+  $("rec_date").value=isTok?fmtInput(today()):"";
+  $("rec_by").value="";$("rec_note").value="";
+  updateRecPreview();
+  $("recOverlay").classList.add("on");
+}
+function fmtInput(dt){return`${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,"0")}-${String(dt.getDate()).padStart(2,"0")}`}
+$("rec_date").oninput=updateRecPreview;
+function updateRecPreview(){
+  if(!recCtx)return;
+  const v=data.find(x=>x.id===recCtx.id);
+  const d=$("rec_date").value;
+  if(!d){$("recPreview").textContent="";return;}
+  if(recCtx.type==="tok"){
+    const next=addMonths(toDate(d),v.tokInt||12);
+    $("recPreview").innerHTML=`次回検査期限 → <b style="color:var(--amber-soft)">${fmt(next)}</b>`;
+  }else{
+    $("recPreview").innerHTML=`車検満了日 → <b style="color:var(--amber-soft)">${fmt(toDate(d))}</b>`;
+  }
+}
+$("recSave").onclick=()=>{
+  if(!recCtx)return;
+  const d=$("rec_date").value;
+  if(!d){toast("日付を入力してください");return;}
+  const v=data.find(x=>x.id===recCtx.id);
+  v.history=v.history||[];
+  if(recCtx.type==="tok"){
+    v.tokLast=d;
+    v.history.unshift({type:"特定自主検査",date:d,by:$("rec_by").value.trim(),note:$("rec_note").value.trim(),ts:Date.now()});
+  }else{
+    v.shkExp=d;
+    v.history.unshift({type:"車検",date:d,by:$("rec_by").value.trim(),note:$("rec_note").value.trim(),ts:Date.now()});
+  }
+  save();render();closeAll();toast("記録して期限を更新しました");
+};
+
+/* ---------- Detail / history ---------- */
+function openDetail(id){
+  const v=data.find(x=>x.id===id);
+  $("detTitle").textContent=v.name;
+  $("detSub").textContent=`${v.type}　${[v.kanri,v.bangou].filter(Boolean).join("　/　")}${v.memo?"　／　"+v.memo:""}`;
+  const h=(v.history||[]);
+  $("detHist").innerHTML=h.length
+    ? h.map(x=>`<li><span class="hd">${fmt(toDate(x.date))}</span><span class="ht">${x.type}</span><span class="hn">${esc(x.by)||"—"}${x.note?"　"+esc(x.note):""}</span></li>`).join("")
+    : `<div class="no-hist">まだ履歴がありません。「特定自主検査を記録」「車検を記録」から追加できます。</div>`;
+  $("detOverlay").classList.add("on");
+}
+
+/* ---------- Documents ---------- */
+let docCtx=null;
+function openDocs(id){docCtx=id;renderDocs();$("docOverlay").classList.add("on");}
+async function renderDocs(){
+  const v=data.find(x=>x.id===docCtx);if(!v)return;
+  $("docTitle").textContent=`${v.name} の検査書類`;
+  const docs=(v.docs||[]).slice().sort((a,b)=>b.addedAt-a.addedAt);
+  const box=$("docList");
+  if(!docs.length){box.innerHTML=`<div class="doc-empty">まだ書類がありません。上の「＋ファイルを添付」から車検証・記録表などを追加できます。</div>`;return;}
+  const cats=["特定自主検査","車検","その他"];
+  let html="";
+  for(const cat of cats){
+    const items=docs.filter(d=>d.cat===cat);
+    if(!items.length)continue;
+    html+=`<div class="doc-group-h">${cat}（${items.length}）</div>`;
+    for(const d of items){
+      let thumb;
+      if(isImg(d.type)){const rec=await idbGet(d.id);thumb=`<img class="doc-thumb" src="${rec?rec.dataUrl:""}">`;}
+      else thumb=`<div class="doc-thumb pdf">PDF</div>`;
+      html+=`<div class="doc-item">
+        ${thumb}
+        <div class="doc-info">
+          <div class="dn">${esc(d.name)}</div>
+          <div class="dm">${fileSize(d.size)}　${fmt(new Date(d.addedAt))}</div>
+        </div>
+        <div class="doc-btns">
+          <button onclick="viewDoc('${d.id}')">表示</button>
+          <button onclick="printDoc('${d.id}')">印刷</button>
+          <button class="del" onclick="askDelDoc('${v.id}','${d.id}')">削除</button>
+        </div>
+      </div>`;
+    }
+  }
+  box.innerHTML=html;
+}
+async function viewDoc(id){const rec=await idbGet(id);if(!rec)return;const url=URL.createObjectURL(dataUrlToBlob(rec.dataUrl));window.open(url,"_blank");}
+async function printDoc(id){
+  const meta=findDocMeta(id)||{};
+  const rec=await idbGet(id);if(!rec)return;
+  if(isImg(meta.type)){
+    const w=window.open("","_blank");
+    w.document.write(`<html><head><meta charset="utf-8"><title>${esc(meta.name)}</title><style>@page{margin:12mm}body{margin:0;font-family:sans-serif}h3{font-size:12px;color:#333;margin:0 0 8px}img{max-width:100%;max-height:92vh;display:block;margin:0 auto}</style></head><body onload="window.focus();window.print()"><h3>${esc(meta.cat)}／${esc(meta.name)}</h3><img src="${rec.dataUrl}"></body></html>`);
+    w.document.close();
+  }else{
+    const url=URL.createObjectURL(dataUrlToBlob(rec.dataUrl));
+    window.open(url,"_blank");
+    toast("開いたタブで Ctrl+P（⌘P）で印刷できます");
+  }
+}
+function askDelDoc(vid,did){if(confirm("この書類を削除しますか？")){removeDoc(vid,did).then(()=>{renderDocs();render();toast("削除しました");});}}
+function dataUrlToBytes(u){const b64=u.split(",")[1]||"";const bin=atob(b64);const a=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)a[i]=bin.charCodeAt(i);return a;}
+async function buildCoverPng(v,imgN,pdfN){
+  const tokN=v.tokTarget?fmt(tokuteiNext(v)):"対象外";
+  const shkN=v.shkTarget?fmt(shakenNext(v)):"対象外";
+  const d=new Date();
+  const row=(k,val)=>`<tr><th style="border:1px solid #999;padding:11px 13px;background:#f0f0f0;text-align:left;width:36%">${k}</th><td style="border:1px solid #999;padding:11px 13px;text-align:left">${val}</td></tr>`;
+  const el=document.createElement("div");
+  el.style.cssText="position:fixed;left:-99999px;top:0;width:794px;padding:52px;background:#fff;color:#111;font-family:'Hiragino Kaku Gothic ProN','Yu Gothic',Meiryo,sans-serif;box-sizing:border-box";
+  el.innerHTML=`<div style="font-size:27px;font-weight:700;margin-bottom:6px">検査書類　${esc(v.name)}</div>
+    <div style="font-size:15px;color:#555;margin-bottom:30px">株式会社豊岡組　${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日 出力</div>
+    <table style="width:100%;border-collapse:collapse;font-size:17px">
+      ${row("管理番号",esc(v.kanri)||"—")}
+      ${row("種類",esc(v.type)||"—")}
+      ${row("メーカー・型式",esc(v.maker)||"—")}
+      ${row("車両番号・車台番号",esc(v.bangou)||"—")}
+      ${row("特定自主検査 次回",tokN+(v.tokLast?`（前回 ${fmt(toDate(v.tokLast))}）`:""))}
+      ${row("車検満了日",shkN)}
+      ${row("添付書類",`写真 ${imgN} 件 ／ PDF ${pdfN} 件`)}
+    </table>`;
+  document.body.appendChild(el);
+  const canvas=await html2canvas(el,{scale:2,backgroundColor:"#ffffff"});
+  document.body.removeChild(el);
+  return canvas.toDataURL("image/png");
+}
+function drawFit(page,img,pw,ph){
+  const m=28,maxW=pw-m*2,maxH=ph-m*2;
+  const s=Math.min(maxW/img.width,maxH/img.height);
+  const w=img.width*s,h=img.height*s;
+  page.drawImage(img,{x:(pw-w)/2,y:(ph-h)/2,width:w,height:h});
+}
+async function printVehicleDocs(id){
+  const v=data.find(x=>x.id===id);if(!v)return;
+  const docs=(v.docs||[]);
+  if(!docs.length){toast("印刷できる書類がありません");return;}
+  toast("印刷用PDFを作成中…");
+  const recs=[];for(const d of docs){const r=await idbGet(d.id);if(r)recs.push({...d,dataUrl:r.dataUrl});}
+  const imgs=recs.filter(r=>isImg(r.type));
+  const pdfs=recs.filter(r=>!isImg(r.type));
+  try{
+    if(!window.PDFLib)throw new Error("no-pdflib");
+    const {PDFDocument}=PDFLib;
+    const out=await PDFDocument.create();
+    const PW=595.28,PH=841.89;
+    try{
+      const cover=await buildCoverPng(v,imgs.length,pdfs.length);
+      const png=await out.embedPng(dataUrlToBytes(cover));
+      drawFit(out.addPage([PW,PH]),png,PW,PH);
+    }catch(e){}
+    for(const im of imgs){
+      try{
+        const bytes=dataUrlToBytes(im.dataUrl);
+        const isPng=(im.type==="image/png")||im.dataUrl.startsWith("data:image/png");
+        const img=isPng?await out.embedPng(bytes):await out.embedJpg(bytes);
+        drawFit(out.addPage([PW,PH]),img,PW,PH);
+      }catch(e){}
+    }
+    for(const pd of pdfs){
+      try{
+        const src=await PDFDocument.load(dataUrlToBytes(pd.dataUrl),{ignoreEncryption:true});
+        const pages=await out.copyPages(src,src.getPageIndices());
+        pages.forEach(p=>out.addPage(p));
+      }catch(e){}
+    }
+    const bytes=await out.save();
+    const url=URL.createObjectURL(new Blob([bytes],{type:"application/pdf"}));
+    const w=window.open(url,"_blank");
+    if(!w)toast("ポップアップを許可すると開きます");
+    else toast("まとめPDFを開きました（Ctrl+P / ⌘P で印刷）");
+  }catch(e){
+    fallbackPrintDocs(v,imgs,pdfs);
+  }
+}
+function fallbackPrintDocs(v,imgs,pdfs){
+  const tokN=v.tokTarget?fmt(tokuteiNext(v)):"対象外";
+  const shkN=v.shkTarget?fmt(shakenNext(v)):"対象外";
+  let html=`<html><head><meta charset="utf-8"><title>${esc(v.name)} 検査書類</title>
+    <style>@page{margin:14mm}*{box-sizing:border-box}body{font-family:"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;color:#111;margin:0}
+    .cover{page-break-after:always}h1{font-size:18px;margin:0 0 4px}.sub{color:#555;font-size:12px;margin-bottom:16px}
+    table{width:100%;border-collapse:collapse;font-size:13px}th,td{border:1px solid #999;padding:7px 9px;text-align:left}th{background:#f0f0f0;width:34%}
+    .note{font-size:11px;color:#666;margin-top:14px}
+    .page{page-break-after:always;text-align:center}.cap{font-size:12px;color:#333;margin:0 0 8px;text-align:left}
+    .page img{max-width:100%;max-height:90vh}</style></head><body>
+    <div class="cover"><h1>検査書類　${esc(v.name)}</h1>
+    <div class="sub">株式会社豊岡組　${new Date().getFullYear()}年${new Date().getMonth()+1}月${new Date().getDate()}日 出力</div>
+    <table><tr><th>管理番号</th><td>${esc(v.kanri)||"—"}</td></tr><tr><th>種類</th><td>${esc(v.type)||"—"}</td></tr>
+      <tr><th>メーカー・型式</th><td>${esc(v.maker)||"—"}</td></tr><tr><th>車両番号・車台番号</th><td>${esc(v.bangou)||"—"}</td></tr>
+      <tr><th>特定自主検査 次回</th><td>${tokN}</td></tr><tr><th>車検満了日</th><td>${shkN}</td></tr></table>
+    ${pdfs.length?`<div class="note">※ 通信環境によりPDF結合ができませんでした。PDF書類は各ファイルの「印刷」から印刷してください。</div>`:""}</div>`;
+  imgs.forEach(r=>{html+=`<div class="page"><div class="cap">${esc(r.cat)}／${esc(r.name)}</div><img src="${r.dataUrl}"></div>`;});
+  html+=`<scr`+`ipt>window.onload=function(){window.focus();window.print();}</scr`+`ipt></body></html>`;
+  const w=window.open("","_blank");w.document.write(html);w.document.close();
+}
+
+function printLedger(){
+  if(!data.length){toast("車両が登録されていません");return;}
+  const list=data.slice().sort((a,b)=>urgency(a)-urgency(b));
+  const rows=list.map(v=>`<tr>
+    <td>${esc(v.kanri)||"—"}</td>
+    <td>${esc(v.name)}</td>
+    <td>${esc(v.type)||"—"}</td>
+    <td>${v.tokTarget?fmt(tokuteiNext(v)):"対象外"}</td>
+    <td>${v.shkTarget?fmt(shakenNext(v)):"対象外"}</td>
+  </tr>`).join("");
+  const d=new Date();
+  const html=`<html><head><meta charset="utf-8"><title>検査台帳</title>
+    <style>@page{margin:14mm}body{font-family:"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;color:#111}
+    h1{font-size:17px;margin:0 0 2px}.sub{font-size:12px;color:#555;margin-bottom:14px}
+    table{width:100%;border-collapse:collapse;font-size:12.5px}th,td{border:1px solid #999;padding:6px 8px;text-align:left}
+    th{background:#f0f0f0}tr:nth-child(even) td{background:#fafafa}</style></head>
+    <body onload="window.focus();window.print()">
+    <h1>特定自主検査・車検　管理台帳</h1>
+    <div class="sub">株式会社豊岡組　${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日 現在（全${data.length}台）</div>
+    <table><thead><tr><th>管理番号</th><th>車両名・機械名</th><th>種類</th><th>特定自主検査 次回</th><th>車検満了日</th></tr></thead>
+    <tbody>${rows}</tbody></table></body></html>`;
+  const w=window.open("","_blank");w.document.write(html);w.document.close();
+}
+
+/* ---------- Data menu ---------- */
+$("expIcs").onclick=()=>{
+  const r=buildICS();
+  if(!r.count){toast("期限が設定された検査がありません");return;}
+  dl(r.ics,`検査リマインダー_${stamp()}.ics`,"text/calendar");
+  toast("カレンダー用ファイルを保存しました（Googleカレンダー等に取り込み）");
+};
+$("subCal").onclick=()=>{
+  const httpUrl=`${location.origin}/calendar-feed`;
+  const webcal=`webcal://${location.host}/calendar-feed`;
+  if(navigator.clipboard)navigator.clipboard.writeText(webcal).catch(()=>{});
+  toast("購読URLをコピーしました");
+  prompt("カレンダーアプリの「照会 / 購読 / URLで追加」に、この購読URLを貼り付けてください（コピー済み）。\n\n※Googleカレンダーの場合は http:// の方を使ってください：\n"+httpUrl,webcal);
+};
+$("expJson").onclick=async ()=>{
+  toast("バックアップを作成中…");
+  let files=[];try{files=await idbAll();}catch(e){}
+  const payload={app:"toyooka_kensa",version:2,exportedAt:Date.now(),vehicles:data,files};
+  dl(JSON.stringify(payload),`検査管理_backup_${stamp()}.json`,"application/json");
+  toast(`バックアップを保存しました（書類 ${files.length} 件を含む）`);
+};
+$("expCsv").onclick=()=>{
+  const head=["管理番号","車両名","種類","メーカー・型式","車両番号","特定自主検査_前回","特定自主検査_次回","車検満了日","メモ"];
+  const rows=data.map(v=>[v.kanri,v.name,v.type,v.maker,v.bangou,
+    v.tokTarget?(v.tokLast||""):"対象外",
+    v.tokTarget?fmt(tokuteiNext(v)):"対象外",
+    v.shkTarget?(v.shkExp||""):"対象外",v.memo]
+    .map(c=>`"${String(c==null?"":c).replace(/"/g,'""')}"`).join(","));
+  dl("\uFEFF"+[head.join(","),...rows].join("\r\n"),`検査一覧_${stamp()}.csv`,"text/csv");
+  toast("CSVを書き出しました");
+};
+$("impBtn").onclick=()=>$("impFile").click();
+$("impFile").onchange=e=>{
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=async ()=>{
+    try{
+      const parsed=JSON.parse(r.result);
+      let vehicles,files=[];
+      if(Array.isArray(parsed)){vehicles=parsed;}                 // 旧形式
+      else if(parsed&&Array.isArray(parsed.vehicles)){vehicles=parsed.vehicles;files=parsed.files||[];}
+      else throw 0;
+      if(confirm(`車両 ${vehicles.length} 台・書類 ${files.length} 件を読み込みます。現在のデータは上書きされます。よろしいですか？`)){
+        data=vehicles;save();
+        for(const fl of files){try{await idbPut(fl);}catch(e){}}
+        render();closeAll();toast("復元しました（書類含む）");
+      }
+    }catch(e){toast("ファイルを読み込めませんでした");}
+  };
+  r.readAsText(f);e.target.value="";
+};
+function dl(text,name,type){
+  const b=new Blob([text],{type});const u=URL.createObjectURL(b);
+  const a=document.createElement("a");a.href=u;a.download=name;a.click();URL.revokeObjectURL(u);
+}
+function stamp(){const d=new Date();return`${d.getFullYear()}${String(d.getMonth()+1).padStart(2,"0")}${String(d.getDate()).padStart(2,"0")}`}
+
+/* ---------- UI wiring ---------- */
+$("btnAdd").onclick=()=>openEdit(null);
+$("btnCancel").onclick=closeAll;
+$("recCancel").onclick=closeAll;
+$("detClose").onclick=closeAll;
+$("docClose").onclick=closeAll;
+$("printLedger").onclick=printLedger;
+$("docPrintAll").onclick=()=>{if(docCtx)printVehicleDocs(docCtx);};
+$("docFile").onchange=async e=>{
+  const files=e.target.files;if(!files.length||!docCtx)return;
+  const cat=$("docCat").value;
+  toast("添付中…");
+  try{await addDocs(docCtx,cat,files);renderDocs();render();toast(`${files.length}件を添付しました`);}
+  catch(err){toast("添付に失敗しました（容量オーバーの可能性）");}
+  e.target.value="";
+};
+$("btnBell").onclick=askNotify;
+$("btnMenu").onclick=()=>$("menuOverlay").classList.add("on");
+$("menuClose").onclick=closeAll;
+$("search").oninput=e=>{search=e.target.value;render();};
+$("sort").onchange=e=>{sortBy=e.target.value;render();};
+$("tabs").onclick=e=>{
+  const b=e.target.closest(".tab");if(!b)return;
+  [...$("tabs").children].forEach(t=>t.classList.remove("on"));
+  b.classList.add("on");filter=b.dataset.f;render();
+};
+document.querySelectorAll(".overlay").forEach(o=>o.onclick=e=>{if(e.target===o)closeAll();});
+function closeAll(){document.querySelectorAll(".overlay").forEach(o=>o.classList.remove("on"));editId=null;recCtx=null;docCtx=null;}
+
+let toastT;
+function toast(msg){const t=$("toast");t.textContent=msg;t.classList.add("on");clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove("on"),2200);}
+
+window.openEdit=openEdit;window.openRec=openRec;window.openDetail=openDetail;
+window.openDocs=openDocs;window.viewDoc=viewDoc;window.printDoc=printDoc;window.askDelDoc=askDelDoc;
+
+/* ---------- Init ---------- */
+async function init(){
+  if(!sb){
+    $("app").innerHTML=`<div style="max-width:620px;margin:40px auto;padding:24px;background:var(--navy-800);border:1px solid var(--line);border-radius:16px;line-height:1.9">
+      <h2 style="font-size:17px;margin-bottom:10px">Supabaseの接続キーが未設定です</h2>
+      <p style="color:var(--muted);font-size:14px">HTMLファイル上部の <code style="color:var(--amber-soft)">SB_KEY</code> に、Supabaseの <b>anon public</b> キーを貼り付けてから公開してください。</p>
+      <p style="color:var(--muted-2);font-size:12.5px;margin-top:10px">Supabase → Project Settings → API → Project API keys → anon public</p>
+    </div>`;
+    return;
+  }
+  await load();
+  subscribeRealtime();
+}
+init();
+</script>
+</body>
+</html>
