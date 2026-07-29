@@ -219,6 +219,9 @@
   .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--amber)}
   .field input[type=date]{color-scheme:dark;cursor:pointer}
   .field input[type=date]::-webkit-calendar-picker-indicator{opacity:.85;cursor:pointer;padding-left:4px}
+  .check-row{display:flex;align-items:center;gap:9px;margin-top:6px;cursor:pointer;font-size:13.5px;color:var(--text)}
+  .check-row input{width:18px;height:18px;flex:none;accent-color:var(--amber);cursor:pointer}
+  .check-row span{user-select:none}
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
   .toggle-sec{
     border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:14px;background:var(--navy-900);
@@ -373,6 +376,11 @@
     </div>
     <div class="field"><label>メーカー・型式</label><input id="f_maker" placeholder="例：コマツ PC30MR-5"></div>
     <div class="field"><label>車両名 / 機械名（任意）</label><input id="f_name" placeholder="例：3号機・○○現場ダンプ"></div>
+    <div class="grid2">
+      <div class="field"><label>保管場所</label><input id="f_hokan" placeholder="例：本社車庫"></div>
+      <div class="field"><label>取得日</label><input type="date" id="f_shutoku"></div>
+    </div>
+    <div class="field"><label>登録承認</label><input id="f_touroku" placeholder="例：承認者名や ○"></div>
 
     <div class="toggle-sec">
       <div class="toggle-head">
@@ -387,6 +395,12 @@
             <select id="f_tokInt"><option value="12">12か月（年1回）</option><option value="6">6か月</option></select>
           </div>
         </div>
+        <div class="grid2">
+          <div class="field"><label>容量（㎥）</label><input id="f_capacity" placeholder="例：0.28"></div>
+          <div class="field"><label>廃車日</label><input type="date" id="f_haisha"></div>
+        </div>
+        <div class="field"><label>廃車承認</label><input id="f_haishaOk" placeholder="例：承認者名や ○"></div>
+        <label class="check-row"><input type="checkbox" id="f_keishin"><span>経審に提出する（重機一覧表に○表示）</span></label>
       </div>
     </div>
 
@@ -398,6 +412,10 @@
       <div class="info-line">満了日の <b>1か月前から</b> 更新可能（満了日を引き継げます）。</div>
       <div class="sec-body" id="shkBody">
         <div class="field"><label>車検満了日</label><input type="date" id="f_shkExp"></div>
+        <div class="grid2">
+          <div class="field"><label>自賠責保険 満了日</label><input type="date" id="f_jibai"></div>
+          <div class="field"><label>車検業者</label><input id="f_shakenGyo" placeholder="例：○○モータース"></div>
+        </div>
       </div>
     </div>
 
@@ -470,7 +488,11 @@
     <div style="display:flex;flex-direction:column;gap:10px">
       <button class="btn" id="expIcs" style="justify-content:flex-start;padding:13px">🗓 カレンダーに登録（1回書き出し）</button>
       <button class="btn" id="subCal" style="justify-content:flex-start;padding:13px">🔔 カレンダーを購読（自動更新）</button>
-      <button class="btn" id="printLedger" style="justify-content:flex-start;padding:13px">🖨 検査台帳を印刷（提出用一覧）</button>
+      <div style="border:1px solid var(--line);border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:8px">
+        <div style="font-size:12.5px;color:var(--muted);font-weight:600;padding-left:2px">🖨 検査台帳を印刷（提出用一覧・A4縦）</div>
+        <button class="btn" id="printMachine" style="justify-content:flex-start;padding:12px">重機一覧表を印刷</button>
+        <button class="btn" id="printVehicle" style="justify-content:flex-start;padding:12px">車両一覧表を印刷</button>
+      </div>
       <button class="btn" id="expJson" style="justify-content:flex-start;padding:13px">📦 バックアップを保存（JSON）</button>
       <button class="btn" id="expCsv" style="justify-content:flex-start;padding:13px">📊 一覧をExcel用に書き出し（CSV）</button>
       <button class="btn" id="impBtn" style="justify-content:flex-start;padding:13px">📥 バックアップから復元（JSON）</button>
@@ -843,11 +865,20 @@ function openEdit(id){
   $("f_name").value=v?.name||"";
   $("f_maker").value=v?.maker||"";
   $("f_bangou").value=v?.bangou||"";
+  $("f_hokan").value=v?.hokan||"";
+  $("f_shutoku").value=v?.shutoku||"";
+  $("f_touroku").value=v?.touroku||"";
   $("f_tokTgt").checked=v?v.tokTarget:true;
   $("f_tokLast").value=v?.tokLast||"";
   $("f_tokInt").value=v?.tokInt||12;
+  $("f_capacity").value=v?.capacity||"";
+  $("f_haisha").value=v?.haisha||"";
+  $("f_haishaOk").value=v?.haishaOk||"";
+  $("f_keishin").checked=!!v?.keishin;
   $("f_shkTgt").checked=v?v.shkTarget:true;
   $("f_shkExp").value=v?.shkExp||"";
+  $("f_jibai").value=v?.jibai||"";
+  $("f_shakenGyo").value=v?.shakenGyo||"";
   $("f_memo").value=v?.memo||"";
   syncToggles();
   $("editOverlay").classList.add("on");
@@ -869,11 +900,20 @@ $("btnSave").onclick=()=>{
     name,
     maker,
     bangou:$("f_bangou").value.trim(),
+    hokan:$("f_hokan").value.trim(),
+    shutoku:$("f_shutoku").value,
+    touroku:$("f_touroku").value.trim(),
     tokTarget:$("f_tokTgt").checked,
     tokLast:$("f_tokLast").value,
     tokInt:Number($("f_tokInt").value),
+    capacity:$("f_capacity").value.trim(),
+    haisha:$("f_haisha").value,
+    haishaOk:$("f_haishaOk").value.trim(),
+    keishin:$("f_keishin").checked,
     shkTarget:$("f_shkTgt").checked,
     shkExp:$("f_shkExp").value,
+    jibai:$("f_jibai").value,
+    shakenGyo:$("f_shakenGyo").value.trim(),
     memo:$("f_memo").value.trim(),
     history:editId?(data.find(x=>x.id===editId)?.history||[]):[]
   };
@@ -1053,29 +1093,61 @@ function fallbackPrintDocs(v,imgs,pdfs){
   const w=window.open("","_blank");w.document.write(html);w.document.close();
 }
 
-function printLedger(){
-  if(!data.length){toast("車両が登録されていません");return;}
-  const list=data.slice().sort((a,b)=>urgency(a)-urgency(b));
+const ledgerFd=s=>s?fmt(toDate(s)):"—";
+function openLedgerPrint(title,colgroup,headRow,bodyRows,count){
+  const d=new Date();
+  const html=`<html><head><meta charset="utf-8"><title>${esc(title)}</title>
+    <style>@page{size:A4 portrait;margin:10mm}*{box-sizing:border-box}
+    body{font-family:"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;color:#111;margin:0}
+    h1{font-size:15px;margin:0 0 2px}.sub{font-size:10.5px;color:#555;margin:0 0 8px}
+    table{width:100%;border-collapse:collapse;font-size:9px;table-layout:fixed}
+    th,td{border:1px solid #999;padding:3px 4px;text-align:left;word-break:break-all;vertical-align:top;line-height:1.35}
+    th{background:#e8e8e8;font-weight:700}
+    td .sub2{color:#666;font-size:.9em}</style></head>
+    <body onload="window.focus();window.print()">
+    <h1>${esc(title)}</h1>
+    <div class="sub">株式会社豊岡組　${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日 現在（${count}台）</div>
+    <table>${colgroup}<thead><tr>${headRow}</tr></thead><tbody>${bodyRows}</tbody></table>
+    </body></html>`;
+  const w=window.open("","_blank");if(!w){toast("ポップアップを許可すると開きます");return;}
+  w.document.write(html);w.document.close();
+}
+function printLedgerVehicle(){
+  const list=data.filter(v=>v.shkTarget).sort((a,b)=>(a.kanri||"").localeCompare(b.kanri||"","ja",{numeric:true}));
+  if(!list.length){toast("車検対象の車両が登録されていません");return;}
+  const cg=`<colgroup><col style="width:8%"><col style="width:22%"><col style="width:14%"><col style="width:12%"><col style="width:9%"><col style="width:9%"><col style="width:9%"><col style="width:8%"><col style="width:9%"></colgroup>`;
+  const head=`<th>管理番号</th><th>メーカー・車両名</th><th>ナンバー</th><th>保管場所</th><th>取得日</th><th>車検満了日</th><th>自賠責満了日</th><th>登録承認</th><th>車検業者</th>`;
   const rows=list.map(v=>`<tr>
     <td>${esc(v.kanri)||"—"}</td>
+    <td>${esc(v.maker)||"—"}${v.name?`<br><span class="sub2">${esc(v.name)}</span>`:""}</td>
     <td>${esc(v.bangou)||"—"}</td>
-    <td>${esc(v.maker)||"—"}</td>
-    <td>${esc(v.name)||"—"}</td>
-    <td>${v.tokTarget?fmt(tokuteiNext(v)):"対象外"}</td>
-    <td>${v.shkTarget?fmt(shakenNext(v)):"対象外"}</td>
+    <td>${esc(v.hokan)||"—"}</td>
+    <td>${ledgerFd(v.shutoku)}</td>
+    <td>${ledgerFd(v.shkExp)}</td>
+    <td>${ledgerFd(v.jibai)}</td>
+    <td>${esc(v.touroku)||"—"}</td>
+    <td>${esc(v.shakenGyo)||"—"}</td>
   </tr>`).join("");
-  const d=new Date();
-  const html=`<html><head><meta charset="utf-8"><title>検査台帳</title>
-    <style>@page{margin:14mm}body{font-family:"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;color:#111}
-    h1{font-size:17px;margin:0 0 2px}.sub{font-size:12px;color:#555;margin-bottom:14px}
-    table{width:100%;border-collapse:collapse;font-size:12.5px}th,td{border:1px solid #999;padding:6px 8px;text-align:left}
-    th{background:#f0f0f0}tr:nth-child(even) td{background:#fafafa}</style></head>
-    <body onload="window.focus();window.print()">
-    <h1>特定自主検査・車検　管理台帳</h1>
-    <div class="sub">株式会社豊岡組　${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日 現在（全${data.length}台）</div>
-    <table><thead><tr><th>管理番号</th><th>ナンバー</th><th>メーカー・型式</th><th>車両名・機械名</th><th>特定自主検査 次回</th><th>車検満了日</th></tr></thead>
-    <tbody>${rows}</tbody></table></body></html>`;
-  const w=window.open("","_blank");w.document.write(html);w.document.close();
+  openLedgerPrint("車両一覧表",cg,head,rows,list.length);
+}
+function printLedgerMachine(){
+  const list=data.filter(v=>v.tokTarget).sort((a,b)=>(a.kanri||"").localeCompare(b.kanri||"","ja",{numeric:true}));
+  if(!list.length){toast("特自検査対象の重機が登録されていません");return;}
+  const cg=`<colgroup><col style="width:9%"><col style="width:16%"><col style="width:7%"><col style="width:12%"><col style="width:9%"><col style="width:10%"><col style="width:9%"><col style="width:9%"><col style="width:11%"><col style="width:8%"></colgroup>`;
+  const head=`<th>管理番号</th><th>車両名</th><th>容量㎥</th><th>保管場所</th><th>取得日</th><th>特自検査日</th><th>登録承認</th><th>廃車日</th><th>廃車承認</th><th>経審</th>`;
+  const rows=list.map(v=>`<tr>
+    <td>${esc(v.kanri)||"—"}</td>
+    <td>${esc(v.name)||esc(v.maker)||"—"}</td>
+    <td>${esc(v.capacity)||"—"}</td>
+    <td>${esc(v.hokan)||"—"}</td>
+    <td>${ledgerFd(v.shutoku)}</td>
+    <td>${ledgerFd(v.tokLast)}</td>
+    <td>${esc(v.touroku)||"—"}</td>
+    <td>${ledgerFd(v.haisha)}</td>
+    <td>${esc(v.haishaOk)||"—"}</td>
+    <td style="text-align:center;font-weight:700">${v.keishin?"○":""}</td>
+  </tr>`).join("");
+  openLedgerPrint("重機一覧表",cg,head,rows,list.length);
 }
 
 /* ---------- Data menu ---------- */
@@ -1141,7 +1213,8 @@ $("btnCancel").onclick=closeAll;
 $("recCancel").onclick=closeAll;
 $("detClose").onclick=closeAll;
 $("docClose").onclick=closeAll;
-$("printLedger").onclick=printLedger;
+$("printMachine").onclick=printLedgerMachine;
+$("printVehicle").onclick=printLedgerVehicle;
 $("docPrintAll").onclick=()=>{if(docCtx)printVehicleDocs(docCtx);};
 $("docFile").onchange=async e=>{
   const files=e.target.files;if(!files.length||!docCtx)return;
