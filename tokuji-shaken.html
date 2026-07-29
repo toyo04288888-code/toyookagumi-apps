@@ -416,6 +416,7 @@
           <div class="field"><label>自賠責保険 満了日</label><input type="date" id="f_jibai"></div>
           <div class="field"><label>車検業者</label><input id="f_shakenGyo" placeholder="例：○○モータース"></div>
         </div>
+        <div class="field"><label>運転者</label><input id="f_driver" placeholder="例：坂本"></div>
       </div>
     </div>
 
@@ -879,6 +880,7 @@ function openEdit(id){
   $("f_shkExp").value=v?.shkExp||"";
   $("f_jibai").value=v?.jibai||"";
   $("f_shakenGyo").value=v?.shakenGyo||"";
+  $("f_driver").value=v?.driver||"";
   $("f_memo").value=v?.memo||"";
   syncToggles();
   $("editOverlay").classList.add("on");
@@ -914,6 +916,7 @@ $("btnSave").onclick=()=>{
     shkExp:$("f_shkExp").value,
     jibai:$("f_jibai").value,
     shakenGyo:$("f_shakenGyo").value.trim(),
+    driver:$("f_driver").value.trim(),
     memo:$("f_memo").value.trim(),
     history:editId?(data.find(x=>x.id===editId)?.history||[]):[]
   };
@@ -1115,8 +1118,8 @@ function openLedgerPrint(title,colgroup,headRow,bodyRows,count){
 function printLedgerVehicle(){
   const list=data.filter(v=>v.shkTarget).sort((a,b)=>(a.kanri||"").localeCompare(b.kanri||"","ja",{numeric:true}));
   if(!list.length){toast("車検対象の車両が登録されていません");return;}
-  const cg=`<colgroup><col style="width:8%"><col style="width:22%"><col style="width:14%"><col style="width:12%"><col style="width:9%"><col style="width:9%"><col style="width:9%"><col style="width:8%"><col style="width:9%"></colgroup>`;
-  const head=`<th>管理番号</th><th>メーカー・車両名</th><th>ナンバー</th><th>保管場所</th><th>取得日</th><th>車検満了日</th><th>自賠責満了日</th><th>登録承認</th><th>車検業者</th>`;
+  const cg=`<colgroup><col style="width:9%"><col style="width:24%"><col style="width:15%"><col style="width:13%"><col style="width:10%"><col style="width:10%"><col style="width:10%"><col style="width:9%"></colgroup>`;
+  const head=`<th>管理番号</th><th>メーカー・車両名</th><th>ナンバー</th><th>保管場所</th><th>取得日</th><th>車検満了日</th><th>自賠責満了日</th><th>登録承認</th>`;
   const rows=list.map(v=>`<tr>
     <td>${esc(v.kanri)||"—"}</td>
     <td>${esc(v.maker)||"—"}${v.name?`<br><span class="sub2">${esc(v.name)}</span>`:""}</td>
@@ -1126,7 +1129,6 @@ function printLedgerVehicle(){
     <td>${ledgerFd(v.shkExp)}</td>
     <td>${ledgerFd(v.jibai)}</td>
     <td>${esc(v.touroku)||"—"}</td>
-    <td>${esc(v.shakenGyo)||"—"}</td>
   </tr>`).join("");
   openLedgerPrint("車両一覧表",cg,head,rows,list.length);
 }
