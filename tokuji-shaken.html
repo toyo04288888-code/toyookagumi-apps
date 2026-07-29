@@ -1097,16 +1097,20 @@ function fallbackPrintDocs(v,imgs,pdfs){
 }
 
 const ledgerFd=s=>s?fmt(toDate(s)):"—";
-function openLedgerPrint(title,colgroup,headRow,bodyRows,count){
+function openLedgerPrint(title,colgroup,headRow,bodyRows,count,fontPx){
   const d=new Date();
+  const fs=fontPx||11;
   const html=`<html><head><meta charset="utf-8"><title>${esc(title)}</title>
-    <style>@page{size:A4 portrait;margin:10mm}*{box-sizing:border-box}
+    <style>@page{size:A4 portrait;margin:8mm}*{box-sizing:border-box}
+    html,body{height:100%}
     body{font-family:"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;color:#111;margin:0}
-    h1{font-size:15px;margin:0 0 2px}.sub{font-size:10.5px;color:#555;margin:0 0 8px}
-    table{width:100%;border-collapse:collapse;font-size:9px;table-layout:fixed}
-    th,td{border:1px solid #999;padding:3px 4px;text-align:left;word-break:break-all;vertical-align:top;line-height:1.35}
-    th{background:#e8e8e8;font-weight:700}
-    td .sub2{color:#666;font-size:.9em}</style></head>
+    h1{font-size:20px;margin:0 0 3px}.sub{font-size:12px;color:#555;margin:0 0 10px}
+    table{width:100%;border-collapse:collapse;font-size:${fs}px}
+    th,td{border:1px solid #888;padding:6px 7px;text-align:left;overflow-wrap:anywhere;vertical-align:middle;line-height:1.4}
+    th{background:#e6e6e6;font-weight:700;font-size:${fs}px}
+    td.nw,th.nw{white-space:nowrap;overflow-wrap:normal}
+    tbody tr:nth-child(even) td{background:#f6f6f6}
+    td .sub2{color:#555;font-size:.88em}</style></head>
     <body onload="window.focus();window.print()">
     <h1>${esc(title)}</h1>
     <div class="sub">株式会社豊岡組　${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日 現在（${count}台）</div>
@@ -1118,38 +1122,36 @@ function openLedgerPrint(title,colgroup,headRow,bodyRows,count){
 function printLedgerVehicle(){
   const list=data.filter(v=>v.shkTarget).sort((a,b)=>(a.kanri||"").localeCompare(b.kanri||"","ja",{numeric:true}));
   if(!list.length){toast("車検対象の車両が登録されていません");return;}
-  const cg=`<colgroup><col style="width:9%"><col style="width:24%"><col style="width:15%"><col style="width:13%"><col style="width:10%"><col style="width:10%"><col style="width:10%"><col style="width:9%"></colgroup>`;
-  const head=`<th>管理番号</th><th>メーカー・車両名</th><th>ナンバー</th><th>保管場所</th><th>取得日</th><th>車検満了日</th><th>自賠責満了日</th><th>登録承認</th>`;
+  const head=`<th class="nw">管理番号</th><th>メーカー・車両名</th><th>ナンバー</th><th>保管場所</th><th>取得日</th><th>車検満了日</th><th>自賠責満了日</th><th>登録承認</th>`;
   const rows=list.map(v=>`<tr>
-    <td>${esc(v.kanri)||"—"}</td>
+    <td class="nw">${esc(v.kanri)||"—"}</td>
     <td>${esc(v.maker)||"—"}${v.name?`<br><span class="sub2">${esc(v.name)}</span>`:""}</td>
     <td>${esc(v.bangou)||"—"}</td>
     <td>${esc(v.hokan)||"—"}</td>
-    <td>${ledgerFd(v.shutoku)}</td>
-    <td>${ledgerFd(v.shkExp)}</td>
-    <td>${ledgerFd(v.jibai)}</td>
+    <td class="nw">${ledgerFd(v.shutoku)}</td>
+    <td class="nw">${ledgerFd(v.shkExp)}</td>
+    <td class="nw">${ledgerFd(v.jibai)}</td>
     <td>${esc(v.touroku)||"—"}</td>
   </tr>`).join("");
-  openLedgerPrint("車両一覧表",cg,head,rows,list.length);
+  openLedgerPrint("車両一覧表","",head,rows,list.length,13);
 }
 function printLedgerMachine(){
   const list=data.filter(v=>v.tokTarget).sort((a,b)=>(a.kanri||"").localeCompare(b.kanri||"","ja",{numeric:true}));
   if(!list.length){toast("特自検査対象の重機が登録されていません");return;}
-  const cg=`<colgroup><col style="width:9%"><col style="width:16%"><col style="width:7%"><col style="width:12%"><col style="width:9%"><col style="width:10%"><col style="width:9%"><col style="width:9%"><col style="width:11%"><col style="width:8%"></colgroup>`;
-  const head=`<th>管理番号</th><th>車両名</th><th>容量㎥</th><th>保管場所</th><th>取得日</th><th>特自検査日</th><th>登録承認</th><th>廃車日</th><th>廃車承認</th><th>経審</th>`;
+  const head=`<th class="nw">管理番号</th><th>車両名</th><th class="nw">容量㎥</th><th>保管場所</th><th>取得日</th><th>特自検査日</th><th>登録承認</th><th>廃車日</th><th>廃車承認</th><th class="nw">経審</th>`;
   const rows=list.map(v=>`<tr>
-    <td>${esc(v.kanri)||"—"}</td>
+    <td class="nw">${esc(v.kanri)||"—"}</td>
     <td>${esc(v.name)||esc(v.maker)||"—"}</td>
-    <td>${esc(v.capacity)||"—"}</td>
+    <td class="nw">${esc(v.capacity)||"—"}</td>
     <td>${esc(v.hokan)||"—"}</td>
-    <td>${ledgerFd(v.shutoku)}</td>
-    <td>${ledgerFd(v.tokLast)}</td>
+    <td class="nw">${ledgerFd(v.shutoku)}</td>
+    <td class="nw">${ledgerFd(v.tokLast)}</td>
     <td>${esc(v.touroku)||"—"}</td>
-    <td>${ledgerFd(v.haisha)}</td>
+    <td class="nw">${ledgerFd(v.haisha)}</td>
     <td>${esc(v.haishaOk)||"—"}</td>
-    <td style="text-align:center;font-weight:700">${v.keishin?"○":""}</td>
+    <td class="nw" style="text-align:center;font-weight:700">${v.keishin?"○":""}</td>
   </tr>`).join("");
-  openLedgerPrint("重機一覧表",cg,head,rows,list.length);
+  openLedgerPrint("重機一覧表","",head,rows,list.length,11);
 }
 
 /* ---------- Data menu ---------- */
