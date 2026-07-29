@@ -65,11 +65,13 @@ function buildICS(vehicles) {
     if (v.shkTarget && v.shkExp) items.push(["車検満了", parseD(v.shkExp)]);
     for (const [label, dt] of items) {
       if (!dt) continue;
-      const info = `${v.type || ""}${v.kanri ? " / " + v.kanri : ""}${v.bangou ? " / " + v.bangou : ""}`;
-      ev(L, `${v.id}-${label}-r-${ymd(dt)}@toyooka`, addMonths(dt, -1),
-        `🔔【1か月前】${label}：${v.name}`, `${label}の期限は ${fmtJ(dt)} です。（${info}）`);
+      const lead = label.includes("車検") ? 3 : 1;
+      const nm = v.name || v.maker || "";
+      const info = `${v.maker || ""}${v.kanri ? " / " + v.kanri : ""}${v.bangou ? " / " + v.bangou : ""}`;
+      ev(L, `${v.id}-${label}-r-${ymd(dt)}@toyooka`, addMonths(dt, -lead),
+        `🔔【${lead}か月前】${label}：${nm}`, `${label}の期限は ${fmtJ(dt)} です。（${info}）`);
       ev(L, `${v.id}-${label}-d-${ymd(dt)}@toyooka`, dt,
-        `⚠️【${label}期限】${v.name}`, `本日が ${label} の期限です。（${info}）`);
+        `⚠️【${label}期限】${nm}`, `本日が ${label} の期限です。（${info}）`);
     }
   }
   L.push("END:VCALENDAR");

@@ -139,12 +139,12 @@
   }
   .card:hover{border-color:var(--muted-2);transform:translateY(-2px)}
   .card-head{display:flex;align-items:flex-start;gap:10px}
-  .veh-type{
-    font-size:11px;font-weight:700;color:var(--amber-soft);letter-spacing:.05em;
-    background:rgba(245,166,35,.1);padding:3px 8px;border-radius:6px;display:inline-block;
-  }
-  .veh-name{font-size:16.5px;font-weight:700;margin-top:5px;line-height:1.3}
-  .veh-meta{font-size:11.5px;color:var(--muted-2);margin-top:2px;font-family:var(--mono)}
+  .veh-maker{font-size:17px;font-weight:700;line-height:1.3;color:var(--text)}
+  .veh-name{font-size:12.5px;font-weight:600;color:var(--muted);margin-top:3px;line-height:1.3}
+  .veh-ids{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+  .idpair{display:inline-flex;align-items:center;gap:5px;background:var(--navy-900);border:1px solid var(--line);border-radius:7px;padding:3px 8px}
+  .idk{font-size:9.5px;font-weight:700;color:var(--muted-2);letter-spacing:.03em}
+  .idv{font-size:12.5px;font-weight:700;color:var(--text);font-family:var(--mono);font-variant-numeric:tabular-nums}
   .card-head .edit{margin-left:auto;flex:none;color:var(--muted-2);padding:4px;border-radius:8px}
   .card-head .edit:hover{color:var(--text);background:var(--navy-700)}
   .card-head .edit svg{width:16px;height:16px;display:block}
@@ -152,9 +152,11 @@
   .insp-row{display:flex;gap:12px}
   .insp{
     flex:1;background:var(--navy-900);border:1px solid var(--line);border-radius:12px;
-    padding:12px;display:flex;gap:12px;align-items:center;position:relative;min-width:0;
+    padding:12px;display:flex;flex-direction:column;gap:8px;min-width:0;
   }
-  .insp.off{opacity:.45}
+  .insp.off{opacity:.45;justify-content:center}
+  .insp-top{display:flex;justify-content:flex-end;min-height:19px}
+  .insp-main{display:flex;gap:12px;align-items:center;min-width:0}
   .insp-label{font-size:11px;color:var(--muted);font-weight:600}
   .insp-date{font-size:12.5px;color:var(--text);font-family:var(--mono);margin-top:3px;font-variant-numeric:tabular-nums}
   .insp-sub{font-size:10.5px;color:var(--muted-2);margin-top:1px}
@@ -170,8 +172,8 @@
   .gauge .days em{font-size:8.5px;color:var(--muted);font-style:normal;margin-top:1px}
 
   .badge{
-    font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:20px;letter-spacing:.03em;
-    position:absolute;top:9px;right:9px;
+    font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;letter-spacing:.03em;
+    flex:none;white-space:nowrap;
   }
   .b-red{background:rgba(244,85,63,.16);color:var(--red)}
   .b-org{background:rgba(245,166,35,.16);color:var(--orange)}
@@ -215,6 +217,8 @@
     border-radius:10px;padding:11px 12px;outline:none;transition:.12s;
   }
   .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--amber)}
+  .field input[type=date]{color-scheme:dark;cursor:pointer}
+  .field input[type=date]::-webkit-calendar-picker-indicator{opacity:.85;cursor:pointer;padding-left:4px}
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
   .toggle-sec{
     border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:14px;background:var(--navy-900);
@@ -339,7 +343,7 @@
     <div class="controls">
       <div class="search">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>
-        <input id="search" placeholder="車両名・管理番号・種類で検索">
+        <input id="search" placeholder="メーカー・型式・管理番号・ナンバーで検索">
       </div>
       <div class="tabs" id="tabs">
         <button class="tab on" data-f="all">すべて</button>
@@ -365,27 +369,10 @@
     <p class="hint">法定検査の対象になる建設機械・車両を登録します。</p>
     <div class="grid2">
       <div class="field"><label>管理番号</label><input id="f_kanri" placeholder="例：D-03"></div>
-      <div class="field"><label>種類</label>
-        <select id="f_type">
-          <option>ダンプトラック</option>
-          <option>バックホウ（油圧ショベル）</option>
-          <option>ホイールローダー</option>
-          <option>ブルドーザー</option>
-          <option>フォークリフト</option>
-          <option>高所作業車</option>
-          <option>ローラー（転圧機械）</option>
-          <option>移動式クレーン</option>
-          <option>不整地運搬車</option>
-          <option>乗用車・軽トラック</option>
-          <option>その他</option>
-        </select>
-      </div>
+      <div class="field"><label>ナンバー / 車台番号</label><input id="f_bangou" placeholder="例：福井 800 あ 12-34"></div>
     </div>
-    <div class="field"><label>車両名 / 機械名</label><input id="f_name" placeholder="例：コマツ PC30 3号機"></div>
-    <div class="grid2">
-      <div class="field"><label>メーカー・型式</label><input id="f_maker" placeholder="例：コマツ PC30MR-5"></div>
-      <div class="field"><label>車両番号 / 車台番号</label><input id="f_bangou" placeholder="例：福井 800 あ 12-34"></div>
-    </div>
+    <div class="field"><label>メーカー・型式</label><input id="f_maker" placeholder="例：コマツ PC30MR-5"></div>
+    <div class="field"><label>車両名 / 機械名（任意）</label><input id="f_name" placeholder="例：3号機・○○現場ダンプ"></div>
 
     <div class="toggle-sec">
       <div class="toggle-head">
@@ -714,11 +701,13 @@ function buildICS(){
     if(v.tokTarget&&tokuteiNext(v))items.push(["特定自主検査",tokuteiNext(v)]);
     if(v.shkTarget&&shakenNext(v))items.push(["車検満了",shakenNext(v)]);
     items.forEach(([label,dt])=>{
-      const info=`${v.type}${v.kanri?" / "+v.kanri:""}${v.bangou?" / "+v.bangou:""}`;
-      pushEv(L,stamp,`${v.id}-${label}-r-${icsDate(dt)}@toyooka`,addMonths(dt,-1),
-        `🔔【1か月前】${label}：${v.name}`,`${label}の期限は ${fmt(dt)} です。（${info}）`);
+      const lead=label.includes("車検")?3:1;
+      const nm=v.name||v.maker||"";
+      const info=`${v.maker||""}${v.kanri?" / "+v.kanri:""}${v.bangou?" / "+v.bangou:""}`;
+      pushEv(L,stamp,`${v.id}-${label}-r-${icsDate(dt)}@toyooka`,addMonths(dt,-lead),
+        `🔔【${lead}か月前】${label}：${nm}`,`${label}の期限は ${fmt(dt)} です。（${info}）`);
       pushEv(L,stamp,`${v.id}-${label}-d-${icsDate(dt)}@toyooka`,dt,
-        `⚠️【${label}期限】${v.name}`,`本日が ${label} の期限です。（${info}）`);
+        `⚠️【${label}期限】${nm}`,`本日が ${label} の期限です。（${info}）`);
       n++;
     });
   });
@@ -746,7 +735,7 @@ function render(){
   // filter
   let list=data.slice();
   const q=search.trim().toLowerCase();
-  if(q)list=list.filter(v=>[v.name,v.kanri,v.type,v.maker,v.bangou].join(" ").toLowerCase().includes(q));
+  if(q)list=list.filter(v=>[v.name,v.kanri,v.maker,v.bangou].join(" ").toLowerCase().includes(q));
   if(filter==="tokutei")list=list.filter(v=>v.tokTarget);
   if(filter==="shaken")list=list.filter(v=>v.shkTarget);
   if(filter==="due")list=list.filter(v=>urgency(v)<=30);
@@ -799,12 +788,14 @@ function inspBlock(v,type){
     ? (v.tokLast?`前回 ${fmt(toDate(v.tokLast))}`:"前回未入力")
     : (v.shkExp?"満了日":"未入力");
   return `<div class="insp">
-    <span class="badge b-${st.k}">${st.t}</span>
-    ${gaugeSVG(days)}
-    <div style="flex:1;min-width:0">
-      <div class="insp-label">${label}</div>
-      <div class="insp-date">${fmt(nd)}</div>
-      <div class="insp-sub">${sub}</div>
+    <div class="insp-top"><span class="badge b-${st.k}">${st.t}</span></div>
+    <div class="insp-main">
+      ${gaugeSVG(days)}
+      <div style="flex:1;min-width:0">
+        <div class="insp-label">${label}</div>
+        <div class="insp-date">${fmt(nd)}</div>
+        <div class="insp-sub">${sub}</div>
+      </div>
     </div>
   </div>`;
 }
@@ -813,9 +804,12 @@ function card(v){
   return `<div class="card">
     <div class="card-head">
       <div style="flex:1;min-width:0">
-        <span class="veh-type">${v.type||"車両"}</span>
-        <div class="veh-name">${esc(v.name)||"（名称未設定）"}</div>
-        <div class="veh-meta">${[v.kanri,v.bangou].filter(Boolean).map(esc).join("　/　")||"&nbsp;"}</div>
+        <div class="veh-maker">${esc(v.maker)||esc(v.name)||"（未登録）"}</div>
+        ${(v.maker&&v.name)?`<div class="veh-name">${esc(v.name)}</div>`:""}
+        <div class="veh-ids">
+          <span class="idpair"><span class="idk">管理番号</span><span class="idv">${esc(v.kanri)||"—"}</span></span>
+          <span class="idpair"><span class="idk">ナンバー</span><span class="idv">${esc(v.bangou)||"—"}</span></span>
+        </div>
       </div>
       <button class="edit" onclick="openEdit('${v.id}')" title="編集">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
@@ -846,7 +840,6 @@ function openEdit(id){
   $("editTitle").textContent=id?"車両・機械を編集":"車両・機械を追加";
   $("btnDelete").style.display=id?"block":"none";
   $("f_kanri").value=v?.kanri||"";
-  $("f_type").value=v?.type||"ダンプトラック";
   $("f_name").value=v?.name||"";
   $("f_maker").value=v?.maker||"";
   $("f_bangou").value=v?.bangou||"";
@@ -867,14 +860,14 @@ $("f_tokTgt").onchange=syncToggles;
 $("f_shkTgt").onchange=syncToggles;
 
 $("btnSave").onclick=()=>{
+  const maker=$("f_maker").value.trim();
   const name=$("f_name").value.trim();
-  if(!name){toast("車両名を入力してください");return;}
+  if(!maker){toast("メーカー・型式を入力してください");return;}
   const rec={
     id:editId||uid(),
     kanri:$("f_kanri").value.trim(),
-    type:$("f_type").value,
     name,
-    maker:$("f_maker").value.trim(),
+    maker,
     bangou:$("f_bangou").value.trim(),
     tokTarget:$("f_tokTgt").checked,
     tokLast:$("f_tokLast").value,
@@ -904,7 +897,7 @@ function openRec(id,type){
   const v=data.find(x=>x.id===id);
   const isTok=type==="tok";
   $("recTitle").textContent=isTok?"特定自主検査を記録":"車検を記録";
-  $("recHint").textContent=`${v.name}（${v.type}）`;
+  $("recHint").textContent=`${v.maker||""}${v.name?"　"+v.name:""}`;
   $("recDateLabel").textContent=isTok?"検査を実施した日":"新しい車検満了日";
   $("rec_date").value=isTok?fmtInput(today()):"";
   $("rec_by").value="";$("rec_note").value="";
@@ -944,8 +937,8 @@ $("recSave").onclick=()=>{
 /* ---------- Detail / history ---------- */
 function openDetail(id){
   const v=data.find(x=>x.id===id);
-  $("detTitle").textContent=v.name;
-  $("detSub").textContent=`${v.type}　${[v.kanri,v.bangou].filter(Boolean).join("　/　")}${v.memo?"　／　"+v.memo:""}`;
+  $("detTitle").textContent=v.maker||v.name||"（未登録）";
+  $("detSub").textContent=`${v.name&&v.maker?v.name+"　":""}${[v.kanri,v.bangou].filter(Boolean).join("　/　")}${v.memo?"　／　"+v.memo:""}`;
   const h=(v.history||[]);
   $("detHist").innerHTML=h.length
     ? h.map(x=>`<li><span class="hd">${fmt(toDate(x.date))}</span><span class="ht">${x.type}</span><span class="hn">${esc(x.by)||"—"}${x.note?"　"+esc(x.note):""}</span></li>`).join("")
@@ -1004,29 +997,6 @@ async function printDoc(id){
 }
 function askDelDoc(vid,did){if(confirm("この書類を削除しますか？")){removeDoc(vid,did).then(()=>{renderDocs();render();toast("削除しました");});}}
 function dataUrlToBytes(u){const b64=u.split(",")[1]||"";const bin=atob(b64);const a=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)a[i]=bin.charCodeAt(i);return a;}
-async function buildCoverPng(v,imgN,pdfN){
-  const tokN=v.tokTarget?fmt(tokuteiNext(v)):"対象外";
-  const shkN=v.shkTarget?fmt(shakenNext(v)):"対象外";
-  const d=new Date();
-  const row=(k,val)=>`<tr><th style="border:1px solid #999;padding:11px 13px;background:#f0f0f0;text-align:left;width:36%">${k}</th><td style="border:1px solid #999;padding:11px 13px;text-align:left">${val}</td></tr>`;
-  const el=document.createElement("div");
-  el.style.cssText="position:fixed;left:-99999px;top:0;width:794px;padding:52px;background:#fff;color:#111;font-family:'Hiragino Kaku Gothic ProN','Yu Gothic',Meiryo,sans-serif;box-sizing:border-box";
-  el.innerHTML=`<div style="font-size:27px;font-weight:700;margin-bottom:6px">検査書類　${esc(v.name)}</div>
-    <div style="font-size:15px;color:#555;margin-bottom:30px">株式会社豊岡組　${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日 出力</div>
-    <table style="width:100%;border-collapse:collapse;font-size:17px">
-      ${row("管理番号",esc(v.kanri)||"—")}
-      ${row("種類",esc(v.type)||"—")}
-      ${row("メーカー・型式",esc(v.maker)||"—")}
-      ${row("車両番号・車台番号",esc(v.bangou)||"—")}
-      ${row("特定自主検査 次回",tokN+(v.tokLast?`（前回 ${fmt(toDate(v.tokLast))}）`:""))}
-      ${row("車検満了日",shkN)}
-      ${row("添付書類",`写真 ${imgN} 件 ／ PDF ${pdfN} 件`)}
-    </table>`;
-  document.body.appendChild(el);
-  const canvas=await html2canvas(el,{scale:2,backgroundColor:"#ffffff"});
-  document.body.removeChild(el);
-  return canvas.toDataURL("image/png");
-}
 function drawFit(page,img,pw,ph){
   const m=28,maxW=pw-m*2,maxH=ph-m*2;
   const s=Math.min(maxW/img.width,maxH/img.height);
@@ -1041,16 +1011,12 @@ async function printVehicleDocs(id){
   const recs=[];for(const d of docs){const r=await idbGet(d.id);if(r)recs.push({...d,dataUrl:r.dataUrl});}
   const imgs=recs.filter(r=>isImg(r.type));
   const pdfs=recs.filter(r=>!isImg(r.type));
+  if(!imgs.length&&!pdfs.length){toast("印刷できる書類がありません");return;}
   try{
     if(!window.PDFLib)throw new Error("no-pdflib");
     const {PDFDocument}=PDFLib;
     const out=await PDFDocument.create();
     const PW=595.28,PH=841.89;
-    try{
-      const cover=await buildCoverPng(v,imgs.length,pdfs.length);
-      const png=await out.embedPng(dataUrlToBytes(cover));
-      drawFit(out.addPage([PW,PH]),png,PW,PH);
-    }catch(e){}
     for(const im of imgs){
       try{
         const bytes=dataUrlToBytes(im.dataUrl);
@@ -1076,21 +1042,12 @@ async function printVehicleDocs(id){
   }
 }
 function fallbackPrintDocs(v,imgs,pdfs){
-  const tokN=v.tokTarget?fmt(tokuteiNext(v)):"対象外";
-  const shkN=v.shkTarget?fmt(shakenNext(v)):"対象外";
-  let html=`<html><head><meta charset="utf-8"><title>${esc(v.name)} 検査書類</title>
+  let html=`<html><head><meta charset="utf-8"><title>${esc(v.name||v.maker||"検査書類")} 検査書類</title>
     <style>@page{margin:14mm}*{box-sizing:border-box}body{font-family:"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;color:#111;margin:0}
-    .cover{page-break-after:always}h1{font-size:18px;margin:0 0 4px}.sub{color:#555;font-size:12px;margin-bottom:16px}
-    table{width:100%;border-collapse:collapse;font-size:13px}th,td{border:1px solid #999;padding:7px 9px;text-align:left}th{background:#f0f0f0;width:34%}
-    .note{font-size:11px;color:#666;margin-top:14px}
+    .note{font-size:11px;color:#666;margin:0 0 10px}
     .page{page-break-after:always;text-align:center}.cap{font-size:12px;color:#333;margin:0 0 8px;text-align:left}
-    .page img{max-width:100%;max-height:90vh}</style></head><body>
-    <div class="cover"><h1>検査書類　${esc(v.name)}</h1>
-    <div class="sub">株式会社豊岡組　${new Date().getFullYear()}年${new Date().getMonth()+1}月${new Date().getDate()}日 出力</div>
-    <table><tr><th>管理番号</th><td>${esc(v.kanri)||"—"}</td></tr><tr><th>種類</th><td>${esc(v.type)||"—"}</td></tr>
-      <tr><th>メーカー・型式</th><td>${esc(v.maker)||"—"}</td></tr><tr><th>車両番号・車台番号</th><td>${esc(v.bangou)||"—"}</td></tr>
-      <tr><th>特定自主検査 次回</th><td>${tokN}</td></tr><tr><th>車検満了日</th><td>${shkN}</td></tr></table>
-    ${pdfs.length?`<div class="note">※ 通信環境によりPDF結合ができませんでした。PDF書類は各ファイルの「印刷」から印刷してください。</div>`:""}</div>`;
+    .page img{max-width:100%;max-height:96vh}</style></head><body>
+    ${pdfs.length?`<div class="note">※ 通信環境によりPDF結合ができませんでした。PDF書類は各ファイルの「印刷」から印刷してください。</div>`:""}`;
   imgs.forEach(r=>{html+=`<div class="page"><div class="cap">${esc(r.cat)}／${esc(r.name)}</div><img src="${r.dataUrl}"></div>`;});
   html+=`<scr`+`ipt>window.onload=function(){window.focus();window.print();}</scr`+`ipt></body></html>`;
   const w=window.open("","_blank");w.document.write(html);w.document.close();
@@ -1101,8 +1058,9 @@ function printLedger(){
   const list=data.slice().sort((a,b)=>urgency(a)-urgency(b));
   const rows=list.map(v=>`<tr>
     <td>${esc(v.kanri)||"—"}</td>
-    <td>${esc(v.name)}</td>
-    <td>${esc(v.type)||"—"}</td>
+    <td>${esc(v.bangou)||"—"}</td>
+    <td>${esc(v.maker)||"—"}</td>
+    <td>${esc(v.name)||"—"}</td>
     <td>${v.tokTarget?fmt(tokuteiNext(v)):"対象外"}</td>
     <td>${v.shkTarget?fmt(shakenNext(v)):"対象外"}</td>
   </tr>`).join("");
@@ -1115,7 +1073,7 @@ function printLedger(){
     <body onload="window.focus();window.print()">
     <h1>特定自主検査・車検　管理台帳</h1>
     <div class="sub">株式会社豊岡組　${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日 現在（全${data.length}台）</div>
-    <table><thead><tr><th>管理番号</th><th>車両名・機械名</th><th>種類</th><th>特定自主検査 次回</th><th>車検満了日</th></tr></thead>
+    <table><thead><tr><th>管理番号</th><th>ナンバー</th><th>メーカー・型式</th><th>車両名・機械名</th><th>特定自主検査 次回</th><th>車検満了日</th></tr></thead>
     <tbody>${rows}</tbody></table></body></html>`;
   const w=window.open("","_blank");w.document.write(html);w.document.close();
 }
@@ -1142,8 +1100,8 @@ $("expJson").onclick=async ()=>{
   toast(`バックアップを保存しました（書類 ${files.length} 件を含む）`);
 };
 $("expCsv").onclick=()=>{
-  const head=["管理番号","車両名","種類","メーカー・型式","車両番号","特定自主検査_前回","特定自主検査_次回","車検満了日","メモ"];
-  const rows=data.map(v=>[v.kanri,v.name,v.type,v.maker,v.bangou,
+  const head=["管理番号","ナンバー","メーカー・型式","車両名","特定自主検査_前回","特定自主検査_次回","車検満了日","メモ"];
+  const rows=data.map(v=>[v.kanri,v.bangou,v.maker,v.name,
     v.tokTarget?(v.tokLast||""):"対象外",
     v.tokTarget?fmt(tokuteiNext(v)):"対象外",
     v.shkTarget?(v.shkExp||""):"対象外",v.memo]
@@ -1204,6 +1162,10 @@ $("tabs").onclick=e=>{
   b.classList.add("on");filter=b.dataset.f;render();
 };
 document.querySelectorAll(".overlay").forEach(o=>o.onclick=e=>{if(e.target===o)closeAll();});
+// 日付欄はどこをタップしてもカレンダーが開くように
+document.querySelectorAll('input[type=date]').forEach(el=>{
+  el.addEventListener("click",()=>{try{el.showPicker&&el.showPicker();}catch(e){}});
+});
 function closeAll(){document.querySelectorAll(".overlay").forEach(o=>o.classList.remove("on"));editId=null;recCtx=null;docCtx=null;}
 
 let toastT;
