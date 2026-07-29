@@ -1174,6 +1174,13 @@ function toast(msg){const t=$("toast");t.textContent=msg;t.classList.add("on");c
 window.openEdit=openEdit;window.openRec=openRec;window.openDetail=openDetail;
 window.openDocs=openDocs;window.viewDoc=viewDoc;window.printDoc=printDoc;window.askDelDoc=askDelDoc;
 
+/* ---------- Service Worker（アプリとしてインストール可能に＋オフライン起動） ---------- */
+if("serviceWorker" in navigator){
+  window.addEventListener("load",()=>{
+    navigator.serviceWorker.register("/sw.js",{scope:"/tokuji-shaken.html"}).catch(()=>{});
+  });
+}
+
 /* ---------- Init ---------- */
 async function init(){
   if(!sb){
