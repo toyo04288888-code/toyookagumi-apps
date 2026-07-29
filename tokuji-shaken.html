@@ -675,7 +675,7 @@ function renderAlert(){
         const dd=i.days<0?`${-i.days}日超過`:`あと${i.days}日`;
         return `<div class="alert-item">
           <span class="dot" style="background:${COLOR[st.k]}"></span>
-          <span class="nm">${esc(i.v.name)}</span>
+          <span class="nm">${esc(i.v.maker)||esc(i.v.name)||"（未登録）"}</span>
           <span class="tp">${i.label}</span>
           <span class="dd" style="color:${COLOR[st.k]}">${dd}</span>
           <button class="rec" onclick="openRec('${i.v.id}','${i.type}')">記録</button>
@@ -700,7 +700,7 @@ function maybeNotify(){
   if(!("Notification"in window)||Notification.permission!=="granted")return;
   const items=dueItems();if(!items.length)return;
   const over=items.filter(i=>i.days<0).length;
-  const body=items.slice(0,4).map(i=>`${i.v.name}／${i.label} ${i.days<0?(-i.days)+"日超過":"あと"+i.days+"日"}`).join("\n");
+  const body=items.slice(0,4).map(i=>`${i.v.maker||i.v.name||"（未登録）"}／${i.label} ${i.days<0?(-i.days)+"日超過":"あと"+i.days+"日"}`).join("\n");
   try{new Notification("検査期限のお知らせ",{body:(over?`期限切れ ${over}件を含む `:"")+`${items.length}件\n`+body});}catch(e){}
 }
 
