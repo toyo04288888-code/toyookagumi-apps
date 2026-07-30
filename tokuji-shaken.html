@@ -132,7 +132,16 @@
   }
 
   /* grid */
-  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:14px;padding-bottom:60px}
+  .grid{padding-bottom:60px}
+  .grid-inner{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:14px;margin-bottom:24px}
+  .group-head{display:flex;align-items:center;gap:9px;font-size:15.5px;font-weight:700;color:var(--text);margin:4px 2px 12px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+  .group-head .cnt{font-size:12px;font-weight:600;color:var(--muted-2);margin-left:auto}
+  .kind-tag{display:inline-block;font-size:10.5px;font-weight:700;padding:2px 9px;border-radius:6px;margin-bottom:6px;letter-spacing:.05em}
+  .kind-tag.kind-vehicle{background:rgba(88,166,255,.16);color:#6cb0ff}
+  .kind-tag.kind-machine{background:rgba(245,166,35,.16);color:var(--amber-soft)}
+  .kind-seg{display:flex;gap:8px;margin:4px 0 16px}
+  .kind-btn{flex:1;padding:13px 10px;border-radius:12px;border:1.5px solid var(--line);background:var(--navy-900);color:var(--muted);font-size:14px;font-weight:700;cursor:pointer;transition:.12s;font-family:inherit}
+  .kind-btn.on{border-color:var(--amber);background:rgba(245,166,35,.12);color:var(--amber-soft)}
   .card{
     background:var(--navy-800);border:1px solid var(--line);border-radius:16px;
     padding:16px;display:flex;flex-direction:column;gap:14px;transition:.15s;
@@ -303,7 +312,7 @@
 
   @media(max-width:620px){
     .summary{grid-template-columns:1fr 1fr}
-    .grid{grid-template-columns:1fr}
+    .grid-inner{grid-template-columns:1fr}
     .title span{display:none}
     .head-actions .btn span{display:none}
     .head-actions .btn{padding:9px 11px}
@@ -350,9 +359,9 @@
       </div>
       <div class="tabs" id="tabs">
         <button class="tab on" data-f="all">すべて</button>
+        <button class="tab" data-f="vehicle">🚚 車両</button>
+        <button class="tab" data-f="machine">🚜 機械</button>
         <button class="tab" data-f="due">要対応</button>
-        <button class="tab" data-f="tokutei">特定自主検査</button>
-        <button class="tab" data-f="shaken">車検</button>
       </div>
       <select class="sort" id="sort">
         <option value="urgent">期限が近い順</option>
@@ -368,10 +377,14 @@
 <!-- EDIT MODAL -->
 <div class="overlay" id="editOverlay">
   <div class="modal">
-    <h2 id="editTitle">車両・機械を追加</h2>
-    <p class="hint">法定検査の対象になる建設機械・車両を登録します。</p>
+    <h2 id="editTitle">追加</h2>
+    <p class="hint">まず「車両」か「機械」を選んでください。</p>
+    <div class="kind-seg">
+      <button type="button" class="kind-btn" data-kind="vehicle">🚚 車両（車検）</button>
+      <button type="button" class="kind-btn" data-kind="machine">🚜 機械（特定自主検査）</button>
+    </div>
     <div class="grid2">
-      <div class="field"><label>管理番号</label><input id="f_kanri" placeholder="例：D-03"></div>
+      <div class="field"><label>管理番号</label><input id="f_kanri" placeholder="例：C-01"></div>
       <div class="field"><label>ナンバー / 車台番号</label><input id="f_bangou" placeholder="例：福井 800 あ 12-34"></div>
     </div>
     <div class="field"><label>メーカー・型式</label><input id="f_maker" placeholder="例：コマツ PC30MR-5"></div>
@@ -382,13 +395,10 @@
     </div>
     <div class="field"><label>登録承認</label><input id="f_touroku" placeholder="例：承認者名や ○"></div>
 
-    <div class="toggle-sec">
-      <div class="toggle-head">
-        <b>特定自主検査</b>
-        <label class="switch"><input type="checkbox" id="f_tokTgt" checked><span class="slider"></span></label>
-      </div>
+    <div class="toggle-sec" id="tokSec">
+      <div class="toggle-head"><b>特定自主検査</b></div>
       <div class="info-line">労働安全衛生法に基づく年次検査。<b>1年以内ごとに1回</b>、有資格者または検査業者が実施。記録は3年間保存。</div>
-      <div class="sec-body" id="tokBody">
+      <div class="sec-body">
         <div class="grid2">
           <div class="field"><label>前回の検査日</label><input type="date" id="f_tokLast"></div>
           <div class="field"><label>次回までの間隔</label>
@@ -404,13 +414,10 @@
       </div>
     </div>
 
-    <div class="toggle-sec">
-      <div class="toggle-head">
-        <b>車検（継続検査）</b>
-        <label class="switch"><input type="checkbox" id="f_shkTgt" checked><span class="slider"></span></label>
-      </div>
+    <div class="toggle-sec" id="shkSec">
+      <div class="toggle-head"><b>車検（継続検査）</b></div>
       <div class="info-line">満了日の <b>1か月前から</b> 更新可能（満了日を引き継げます）。</div>
-      <div class="sec-body" id="shkBody">
+      <div class="sec-body">
         <div class="field"><label>車検満了日</label><input type="date" id="f_shkExp"></div>
         <div class="grid2">
           <div class="field"><label>自賠責保険 満了日</label><input type="date" id="f_jibai"></div>
@@ -759,25 +766,28 @@ function render(){
   let list=data.slice();
   const q=search.trim().toLowerCase();
   if(q)list=list.filter(v=>[v.name,v.kanri,v.maker,v.bangou].join(" ").toLowerCase().includes(q));
-  if(filter==="tokutei")list=list.filter(v=>v.tokTarget);
-  if(filter==="shaken")list=list.filter(v=>v.shkTarget);
+  if(filter==="vehicle")list=list.filter(v=>kindOf(v)==="vehicle");
+  if(filter==="machine")list=list.filter(v=>kindOf(v)==="machine");
   if(filter==="due")list=list.filter(v=>urgency(v)<=30);
 
   // sort
   if(sortBy==="urgent")list.sort((a,b)=>urgency(a)-urgency(b));
-  if(sortBy==="name")list.sort((a,b)=>(a.name||"").localeCompare(b.name||"","ja"));
+  if(sortBy==="name")list.sort((a,b)=>(a.maker||a.name||"").localeCompare(b.maker||b.name||"","ja"));
   if(sortBy==="kanri")list.sort((a,b)=>(a.kanri||"").localeCompare(b.kanri||"","ja",{numeric:true}));
 
   const grid=$("grid");
   if(!list.length){
     grid.innerHTML=`<div class="empty">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 13l2-5h14l2 5M5 13h14v5a1 1 0 01-1 1h-1a2 2 0 01-4 0H9a2 2 0 01-4 0H5a1 1 0 01-1-1v-5z"/><circle cx="7.5" cy="18.5" r="1.5"/><circle cx="16.5" cy="18.5" r="1.5"/></svg>
-      <h3>${data.length?"該当する車両がありません":"車両・機械が未登録です"}</h3>
+      <h3>${data.length?"該当する登録がありません":"車両・機械が未登録です"}</h3>
       <p>${data.length?"検索条件やフィルターを変えてみてください":"右上の「追加」から登録を始めましょう"}</p>
     </div>`;
     return;
   }
-  grid.innerHTML=list.map(v=>card(v)).join("");
+  const veh=list.filter(v=>kindOf(v)==="vehicle");
+  const mac=list.filter(v=>kindOf(v)==="machine");
+  const section=(title,arr)=>arr.length?`<div class="group-head">${title}<span class="cnt">${arr.length}台</span></div><div class="grid-inner">${arr.map(card).join("")}</div>`:"";
+  grid.innerHTML=section("🚚 車両（車検）",veh)+section("🚜 機械（特定自主検査）",mac);
 }
 
 function gaugeSVG(days){
@@ -824,14 +834,18 @@ function inspBlock(v,type){
 }
 
 function card(v){
+  const k=kindOf(v);
+  const isMac=k==="machine";
+  const kindLabel=isMac?"🚜 機械":"🚚 車両";
   return `<div class="card">
     <div class="card-head">
       <div style="flex:1;min-width:0">
+        <div class="kind-tag kind-${k}">${kindLabel}</div>
         <div class="veh-maker">${esc(v.maker)||esc(v.name)||"（未登録）"}</div>
         ${(v.maker&&v.name)?`<div class="veh-name">${esc(v.name)}</div>`:""}
         <div class="veh-ids">
           <span class="idpair"><span class="idk">管理番号</span><span class="idv">${esc(v.kanri)||"—"}</span></span>
-          <span class="idpair"><span class="idk">ナンバー</span><span class="idv">${esc(v.bangou)||"—"}</span></span>
+          ${isMac?"":`<span class="idpair"><span class="idk">ナンバー</span><span class="idv">${esc(v.bangou)||"—"}</span></span>`}
         </div>
       </div>
       <button class="edit" onclick="openEdit('${v.id}')" title="編集">
@@ -839,14 +853,12 @@ function card(v){
       </button>
     </div>
     <div class="insp-row">
-      ${inspBlock(v,"tok")}
-      ${inspBlock(v,"shk")}
+      ${inspBlock(v,isMac?"tok":"shk")}
     </div>
     <div class="card-actions">
-      ${(v.tokTarget||v.shkTarget)?`<div class="frow">
-        ${v.tokTarget?`<button class="mini acc" onclick="openRec('${v.id}','tok')">特定自主検査を記録</button>`:""}
-        ${v.shkTarget?`<button class="mini acc" onclick="openRec('${v.id}','shk')">車検を記録</button>`:""}
-      </div>`:""}
+      <div class="frow">
+        <button class="mini acc" onclick="openRec('${v.id}','${isMac?"tok":"shk"}')">${isMac?"特定自主検査を記録":"車検を記録"}</button>
+      </div>
       <div class="frow">
         <button class="mini" onclick="openDetail('${v.id}')">履歴</button>
         <button class="mini" onclick="openDocs('${v.id}')">📎 書類<span class="doc-count">${(v.docs||[]).length?" "+(v.docs||[]).length:""}</span></button>
@@ -857,10 +869,25 @@ function card(v){
 function esc(s){return(s==null?"":String(s)).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
 
 /* ---------- Edit ---------- */
+let editKind="vehicle";
+function kindOf(v){
+  if(v&&v.kind)return v.kind;
+  if(v&&v.tokTarget&&!v.shkTarget)return "machine";
+  if(v&&v.shkTarget&&!v.tokTarget)return "vehicle";
+  return (v&&v.tokTarget)?"machine":"vehicle";
+}
+function syncKind(){
+  document.querySelectorAll(".kind-btn").forEach(b=>b.classList.toggle("on",b.dataset.kind===editKind));
+  const isMac=editKind==="machine";
+  $("tokSec").style.display=isMac?"":"none";
+  $("shkSec").style.display=isMac?"none":"";
+  $("f_kanri").placeholder=isMac?"例：D-03":"例：C-01";
+  $("editTitle").textContent=(editId?"編集":"追加")+"（"+(isMac?"機械":"車両")+"）";
+}
 function openEdit(id){
   editId=id;
   const v=id?data.find(x=>x.id===id):null;
-  $("editTitle").textContent=id?"車両・機械を編集":"車両・機械を追加";
+  editKind=v?kindOf(v):"vehicle";
   $("btnDelete").style.display=id?"block":"none";
   $("f_kanri").value=v?.kanri||"";
   $("f_name").value=v?.name||"";
@@ -869,35 +896,30 @@ function openEdit(id){
   $("f_hokan").value=v?.hokan||"";
   $("f_shutoku").value=v?.shutoku||"";
   $("f_touroku").value=v?.touroku||"";
-  $("f_tokTgt").checked=v?v.tokTarget:true;
   $("f_tokLast").value=v?.tokLast||"";
   $("f_tokInt").value=v?.tokInt||12;
   $("f_capacity").value=v?.capacity||"";
   $("f_haisha").value=v?.haisha||"";
   $("f_haishaOk").value=v?.haishaOk||"";
   $("f_keishin").checked=!!v?.keishin;
-  $("f_shkTgt").checked=v?v.shkTarget:true;
   $("f_shkExp").value=v?.shkExp||"";
   $("f_jibai").value=v?.jibai||"";
   $("f_shakenGyo").value=v?.shakenGyo||"";
   $("f_driver").value=v?.driver||"";
   $("f_memo").value=v?.memo||"";
-  syncToggles();
+  syncKind();
   $("editOverlay").classList.add("on");
 }
-function syncToggles(){
-  $("tokBody").classList.toggle("hide",!$("f_tokTgt").checked);
-  $("shkBody").classList.toggle("hide",!$("f_shkTgt").checked);
-}
-$("f_tokTgt").onchange=syncToggles;
-$("f_shkTgt").onchange=syncToggles;
+document.querySelectorAll(".kind-btn").forEach(b=>b.onclick=()=>{editKind=b.dataset.kind;syncKind();});
 
 $("btnSave").onclick=()=>{
   const maker=$("f_maker").value.trim();
   const name=$("f_name").value.trim();
   if(!maker){toast("メーカー・型式を入力してください");return;}
+  const kind=editKind;
   const rec={
     id:editId||uid(),
+    kind,
     kanri:$("f_kanri").value.trim(),
     name,
     maker,
@@ -905,14 +927,14 @@ $("btnSave").onclick=()=>{
     hokan:$("f_hokan").value.trim(),
     shutoku:$("f_shutoku").value,
     touroku:$("f_touroku").value.trim(),
-    tokTarget:$("f_tokTgt").checked,
+    tokTarget:kind==="machine",
     tokLast:$("f_tokLast").value,
     tokInt:Number($("f_tokInt").value),
     capacity:$("f_capacity").value.trim(),
     haisha:$("f_haisha").value,
     haishaOk:$("f_haishaOk").value.trim(),
     keishin:$("f_keishin").checked,
-    shkTarget:$("f_shkTgt").checked,
+    shkTarget:kind==="vehicle",
     shkExp:$("f_shkExp").value,
     jibai:$("f_jibai").value,
     shakenGyo:$("f_shakenGyo").value.trim(),
