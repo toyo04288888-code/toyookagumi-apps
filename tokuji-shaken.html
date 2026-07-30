@@ -285,6 +285,10 @@
   .alert-item .dd{margin-left:auto;font-family:var(--mono);font-variant-numeric:tabular-nums;flex:none;font-weight:700}
   .alert-item .rec{flex:none;font-size:11px;font-weight:600;color:var(--amber-soft);border:1px solid var(--line);border-radius:7px;padding:4px 9px;background:var(--navy-700)}
   .alert-item .rec:hover{border-color:var(--amber)}
+  .alert-group{margin-top:12px}
+  .alert-group-head{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:700;color:var(--text);letter-spacing:.03em;margin:0 2px 6px}
+  .alert-group-head span{font-size:11px;font-weight:600;color:var(--muted-2)}
+  .alert-group .alert-list{margin-top:0}
   .bell-on{color:var(--amber)!important;border-color:rgba(245,166,35,.5)!important}
   .net-dot{width:9px;height:9px;border-radius:50%;background:var(--green);align-self:center;margin-right:2px;box-shadow:0 0 8px rgba(57,192,122,.5);flex:none}
   .net-dot.off{background:var(--muted-2);box-shadow:none}
@@ -673,25 +677,30 @@ function renderAlert(){
   const perm=("Notification"in window)?Notification.permission:"unsupported";
   const pushTxt=perm==="granted"?"端末通知オン":(perm==="denied"?"端末通知はブロック中":"ベルで通知を許可できます");
   bar.style.display="block";
+  const itemHtml=i=>{
+    const st=statusOf(i.days);
+    const dd=i.days<0?`${-i.days}日超過`:`あと${i.days}日`;
+    return `<div class="alert-item">
+      <span class="dot" style="background:${COLOR[st.k]}"></span>
+      <span class="nm">${esc(i.v.maker)||esc(i.v.name)||"（未登録）"}</span>
+      <span class="tp">${i.label}</span>
+      <span class="dd" style="color:${COLOR[st.k]}">${dd}</span>
+      <button class="rec" onclick="openRec('${i.v.id}','${i.type}')">記録</button>
+    </div>`;
+  };
+  const groups=[["vehicle","🚚 車両"],["machine","🚜 機械"],["paving","🛣 舗装機械"]];
+  const groupHtml=groups.map(([k,label])=>{
+    const gi=items.filter(i=>kindOf(i.v)===k);
+    if(!gi.length)return "";
+    return `<div class="alert-group"><div class="alert-group-head">${label}<span>${gi.length}件</span></div><div class="alert-list">${gi.map(itemHtml).join("")}</div></div>`;
+  }).join("");
   bar.innerHTML=`
     <div class="alert-top">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.3 3.9l-8 14A2 2 0 004 21h16a2 2 0 001.7-3l-8-14a2 2 0 00-3.4 0zM12 9v4M12 17h.01"/></svg>
       <b>期限が近い検査が ${items.length} 件あります</b>
       <span class="push">${pushTxt}</span>
     </div>
-    <div class="alert-list">
-      ${items.map(i=>{
-        const st=statusOf(i.days);
-        const dd=i.days<0?`${-i.days}日超過`:`あと${i.days}日`;
-        return `<div class="alert-item">
-          <span class="dot" style="background:${COLOR[st.k]}"></span>
-          <span class="nm">${esc(i.v.maker)||esc(i.v.name)||"（未登録）"}</span>
-          <span class="tp">${i.label}</span>
-          <span class="dd" style="color:${COLOR[st.k]}">${dd}</span>
-          <button class="rec" onclick="openRec('${i.v.id}','${i.type}')">記録</button>
-        </div>`;
-      }).join("")}
-    </div>`;
+    ${groupHtml}`;
 }
 function updateBell(){
   const b=$("btnBell");if(!b)return;
