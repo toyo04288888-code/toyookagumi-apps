@@ -139,6 +139,7 @@
   .kind-tag{display:inline-block;font-size:10.5px;font-weight:700;padding:2px 9px;border-radius:6px;margin-bottom:6px;letter-spacing:.05em}
   .kind-tag.kind-vehicle{background:rgba(88,166,255,.16);color:#6cb0ff}
   .kind-tag.kind-machine{background:rgba(245,166,35,.16);color:var(--amber-soft)}
+  .kind-tag.kind-paving{background:rgba(180,142,240,.18);color:#c3a6ff}
   .kind-seg{display:flex;gap:8px;margin:4px 0 16px}
   .kind-btn{flex:1;padding:13px 10px;border-radius:12px;border:1.5px solid var(--line);background:var(--navy-900);color:var(--muted);font-size:14px;font-weight:700;cursor:pointer;transition:.12s;font-family:inherit}
   .kind-btn.on{border-color:var(--amber);background:rgba(245,166,35,.12);color:var(--amber-soft)}
@@ -361,6 +362,7 @@
         <button class="tab on" data-f="all">すべて</button>
         <button class="tab" data-f="vehicle">🚚 車両</button>
         <button class="tab" data-f="machine">🚜 機械</button>
+        <button class="tab" data-f="paving">🛣 舗装機械</button>
         <button class="tab" data-f="due">要対応</button>
       </div>
       <select class="sort" id="sort">
@@ -380,8 +382,9 @@
     <h2 id="editTitle">追加</h2>
     <p class="hint">まず「車両」か「機械」を選んでください。</p>
     <div class="kind-seg">
-      <button type="button" class="kind-btn" data-kind="vehicle">🚚 車両（車検）</button>
-      <button type="button" class="kind-btn" data-kind="machine">🚜 機械（特定自主検査）</button>
+      <button type="button" class="kind-btn" data-kind="vehicle">🚚 車両</button>
+      <button type="button" class="kind-btn" data-kind="machine">🚜 機械</button>
+      <button type="button" class="kind-btn" data-kind="paving">🛣 舗装機械</button>
     </div>
     <div class="grid2">
       <div class="field"><label>管理番号</label><input id="f_kanri" placeholder="例：C-01"></div>
@@ -768,6 +771,7 @@ function render(){
   if(q)list=list.filter(v=>[v.name,v.kanri,v.maker,v.bangou].join(" ").toLowerCase().includes(q));
   if(filter==="vehicle")list=list.filter(v=>kindOf(v)==="vehicle");
   if(filter==="machine")list=list.filter(v=>kindOf(v)==="machine");
+  if(filter==="paving")list=list.filter(v=>kindOf(v)==="paving");
   if(filter==="due")list=list.filter(v=>urgency(v)<=30);
 
   // sort
@@ -786,8 +790,9 @@ function render(){
   }
   const veh=list.filter(v=>kindOf(v)==="vehicle");
   const mac=list.filter(v=>kindOf(v)==="machine");
+  const pav=list.filter(v=>kindOf(v)==="paving");
   const section=(title,arr)=>arr.length?`<div class="group-head">${title}<span class="cnt">${arr.length}台</span></div><div class="grid-inner">${arr.map(card).join("")}</div>`:"";
-  grid.innerHTML=section("🚚 車両（車検）",veh)+section("🚜 機械（特定自主検査）",mac);
+  grid.innerHTML=section("🚚 車両（車検）",veh)+section("🚜 機械（特定自主検査）",mac)+section("🛣 舗装機械（特定自主検査）",pav);
 }
 
 function gaugeSVG(days){
@@ -835,8 +840,8 @@ function inspBlock(v,type){
 
 function card(v){
   const k=kindOf(v);
-  const isMac=k==="machine";
-  const kindLabel=isMac?"🚜 機械":"🚚 車両";
+  const isVeh=k==="vehicle";
+  const kindLabel=KIND_TAG[k]||"🚚 車両";
   return `<div class="card">
     <div class="card-head">
       <div style="flex:1;min-width:0">
@@ -845,7 +850,7 @@ function card(v){
         ${(v.maker&&v.name)?`<div class="veh-name">${esc(v.name)}</div>`:""}
         <div class="veh-ids">
           <span class="idpair"><span class="idk">管理番号</span><span class="idv">${esc(v.kanri)||"—"}</span></span>
-          ${isMac?"":`<span class="idpair"><span class="idk">ナンバー</span><span class="idv">${esc(v.bangou)||"—"}</span></span>`}
+          ${isVeh?`<span class="idpair"><span class="idk">ナンバー</span><span class="idv">${esc(v.bangou)||"—"}</span></span>`:""}
         </div>
       </div>
       <button class="edit" onclick="openEdit('${v.id}')" title="編集">
@@ -853,11 +858,11 @@ function card(v){
       </button>
     </div>
     <div class="insp-row">
-      ${inspBlock(v,isMac?"tok":"shk")}
+      ${inspBlock(v,isVeh?"shk":"tok")}
     </div>
     <div class="card-actions">
       <div class="frow">
-        <button class="mini acc" onclick="openRec('${v.id}','${isMac?"tok":"shk"}')">${isMac?"特定自主検査を記録":"車検を記録"}</button>
+        <button class="mini acc" onclick="openRec('${v.id}','${isVeh?"shk":"tok"}')">${isVeh?"車検を記録":"特定自主検査を記録"}</button>
       </div>
       <div class="frow">
         <button class="mini" onclick="openDetail('${v.id}')">履歴</button>
@@ -876,13 +881,15 @@ function kindOf(v){
   if(v&&v.shkTarget&&!v.tokTarget)return "vehicle";
   return (v&&v.tokTarget)?"machine":"vehicle";
 }
+const KIND_JA={vehicle:"車両",machine:"機械",paving:"舗装機械"};
+const KIND_TAG={vehicle:"🚚 車両",machine:"🚜 機械",paving:"🛣 舗装機械"};
 function syncKind(){
   document.querySelectorAll(".kind-btn").forEach(b=>b.classList.toggle("on",b.dataset.kind===editKind));
-  const isMac=editKind==="machine";
-  $("tokSec").style.display=isMac?"":"none";
-  $("shkSec").style.display=isMac?"none":"";
-  $("f_kanri").placeholder=isMac?"例：D-03":"例：C-01";
-  $("editTitle").textContent=(editId?"編集":"追加")+"（"+(isMac?"機械":"車両")+"）";
+  const isVeh=editKind==="vehicle";
+  $("tokSec").style.display=isVeh?"none":"";
+  $("shkSec").style.display=isVeh?"":"none";
+  $("f_kanri").placeholder=isVeh?"例：C-01":(editKind==="paving"?"例：P-01":"例：D-03");
+  $("editTitle").textContent=(editId?"編集":"追加")+"（"+(KIND_JA[editKind]||"車両")+"）";
 }
 function openEdit(id){
   editId=id;
@@ -927,7 +934,7 @@ $("btnSave").onclick=()=>{
     hokan:$("f_hokan").value.trim(),
     shutoku:$("f_shutoku").value,
     touroku:$("f_touroku").value.trim(),
-    tokTarget:kind==="machine",
+    tokTarget:kind!=="vehicle",
     tokLast:$("f_tokLast").value,
     tokInt:Number($("f_tokInt").value),
     capacity:$("f_capacity").value.trim(),
