@@ -1174,7 +1174,12 @@ function printLedgerVehicle(){
   openLedgerPrint("車両一覧表","",head,rows,list.length,13);
 }
 function printLedgerMachine(){
-  const list=data.filter(v=>v.tokTarget).sort((a,b)=>(a.kanri||"").localeCompare(b.kanri||"","ja",{numeric:true}));
+  // 機械一覧表からの除外：舗装機械すべて＋コマツ WA100-5
+  const norm=s=>(s||"").normalize("NFKC").toLowerCase().replace(/[^a-z0-9]/g,"");
+  const EXCLUDE_MODEL=norm("WA100-5");
+  const list=data.filter(v=>v.tokTarget && kindOf(v)!=="paving"
+      && !norm((v.maker||"")+(v.name||"")).includes(EXCLUDE_MODEL))
+    .sort((a,b)=>(a.kanri||"").localeCompare(b.kanri||"","ja",{numeric:true}));
   if(!list.length){toast("特自検査対象の重機が登録されていません");return;}
   const head=`<th class="nw">管理番号</th><th>車両名</th><th class="nw">容量㎥</th><th>保管場所</th><th>取得日</th><th>特自検査日</th><th>登録承認</th><th>廃車日</th><th>廃車承認</th><th class="nw">経審</th>`;
   const rows=list.map(v=>`<tr>
