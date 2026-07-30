@@ -1181,10 +1181,10 @@ function printLedgerMachine(){
       && !norm((v.maker||"")+(v.name||"")).includes(EXCLUDE_MODEL))
     .sort((a,b)=>(a.kanri||"").localeCompare(b.kanri||"","ja",{numeric:true}));
   if(!list.length){toast("特自検査対象の重機が登録されていません");return;}
-  const head=`<th class="nw">管理番号</th><th>車両名</th><th class="nw">容量㎥</th><th>保管場所</th><th>取得日</th><th>特自検査日</th><th>登録承認</th><th>廃車日</th><th>廃車承認</th><th class="nw">経審</th>`;
+  const head=`<th class="nw">管理番号</th><th>メーカー・型式／車両名</th><th class="nw">容量㎥</th><th>保管場所</th><th>取得日</th><th>特自検査日</th><th>登録承認</th><th>廃車日</th><th>廃車承認</th><th class="nw">経審</th>`;
   const rows=list.map(v=>`<tr>
     <td class="nw">${esc(v.kanri)||"—"}</td>
-    <td>${esc(v.name)||esc(v.maker)||"—"}</td>
+    <td>${esc(v.maker)||"—"}${v.name?`<br><span class="sub2">${esc(v.name)}</span>`:""}</td>
     <td class="nw">${esc(v.capacity)||"—"}</td>
     <td>${esc(v.hokan)||"—"}</td>
     <td class="nw">${ledgerFd(v.shutoku)}</td>
