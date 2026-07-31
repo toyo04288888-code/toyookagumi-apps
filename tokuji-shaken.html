@@ -367,6 +367,7 @@
         <button class="tab" data-f="vehicle">🚚 車両</button>
         <button class="tab" data-f="machine">🚜 機械</button>
         <button class="tab" data-f="paving">🛣 舗装機械</button>
+        <button class="tab" data-f="keishin">🧾 経審</button>
         <button class="tab" data-f="due">要対応</button>
       </div>
       <select class="sort" id="sort">
@@ -401,6 +402,7 @@
       <div class="field"><label>取得日</label><input type="date" id="f_shutoku"></div>
     </div>
     <div class="field"><label>登録承認</label><input id="f_touroku" placeholder="例：承認者名や ○"></div>
+    <label class="check-row"><input type="checkbox" id="f_keishin"><span>経審に提出する</span></label>
 
     <div class="toggle-sec" id="tokSec">
       <div class="toggle-head"><b>特定自主検査</b></div>
@@ -417,7 +419,6 @@
           <div class="field"><label>廃車日</label><input type="date" id="f_haisha"></div>
         </div>
         <div class="field"><label>廃車承認</label><input id="f_haishaOk" placeholder="例：承認者名や ○"></div>
-        <label class="check-row"><input type="checkbox" id="f_keishin"><span>経審に提出する（重機一覧表に○表示）</span></label>
       </div>
     </div>
 
@@ -781,6 +782,7 @@ function render(){
   if(filter==="vehicle")list=list.filter(v=>kindOf(v)==="vehicle");
   if(filter==="machine")list=list.filter(v=>kindOf(v)==="machine");
   if(filter==="paving")list=list.filter(v=>kindOf(v)==="paving");
+  if(filter==="keishin")list=list.filter(v=>v.keishin);
   if(filter==="due")list=list.filter(v=>urgency(v)<=30);
 
   // sort
@@ -1181,7 +1183,7 @@ function printLedgerMachine(){
       && !norm((v.maker||"")+(v.name||"")).includes(EXCLUDE_MODEL))
     .sort((a,b)=>(a.kanri||"").localeCompare(b.kanri||"","ja",{numeric:true}));
   if(!list.length){toast("特自検査対象の重機が登録されていません");return;}
-  const head=`<th class="nw">管理番号</th><th>メーカー・型式／車両名</th><th class="nw">容量㎥</th><th>保管場所</th><th>取得日</th><th>特自検査日</th><th>登録承認</th><th>廃車日</th><th>廃車承認</th><th class="nw">経審</th>`;
+  const head=`<th class="nw">管理番号</th><th>メーカー・型式／車両名</th><th class="nw">容量㎥</th><th>保管場所</th><th>取得日</th><th>特自検査日</th><th>登録承認</th><th>廃車日</th><th>廃車承認</th>`;
   const rows=list.map(v=>`<tr>
     <td class="nw">${esc(v.kanri)||"—"}</td>
     <td>${esc(v.maker)||"—"}${v.name?`<br><span class="sub2">${esc(v.name)}</span>`:""}</td>
@@ -1192,7 +1194,6 @@ function printLedgerMachine(){
     <td>${esc(v.touroku)||"—"}</td>
     <td class="nw">${ledgerFd(v.haisha)}</td>
     <td>${esc(v.haishaOk)||"—"}</td>
-    <td class="nw" style="text-align:center;font-weight:700">${v.keishin?"○":""}</td>
   </tr>`).join("");
   openLedgerPrint("重機一覧表","",head,rows,list.length,11);
 }
