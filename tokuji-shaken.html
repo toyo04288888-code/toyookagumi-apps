@@ -402,7 +402,7 @@
       <div class="field"><label>取得日</label><input type="date" id="f_shutoku"></div>
     </div>
     <div class="field"><label>登録承認</label><input id="f_touroku" placeholder="例：承認者名や ○"></div>
-    <label class="check-row"><input type="checkbox" id="f_keishin"><span>経審に提出する</span></label>
+    <label class="check-row" id="keishinRow"><input type="checkbox" id="f_keishin"><span>経審に提出する</span></label>
 
     <div class="toggle-sec" id="tokSec">
       <div class="toggle-head"><b>特定自主検査</b></div>
@@ -899,6 +899,8 @@ function syncKind(){
   const isVeh=editKind==="vehicle";
   $("tokSec").style.display=isVeh?"none":"";
   $("shkSec").style.display=isVeh?"":"none";
+  $("keishinRow").style.display=isVeh?"none":"";
+  if(isVeh)$("f_keishin").checked=false;
   $("f_kanri").placeholder=isVeh?"例：C-01":(editKind==="paving"?"例：P-01":"例：D-03");
   $("editTitle").textContent=(editId?"編集":"追加")+"（"+(KIND_JA[editKind]||"車両")+"）";
 }
@@ -951,7 +953,7 @@ $("btnSave").onclick=()=>{
     capacity:$("f_capacity").value.trim(),
     haisha:$("f_haisha").value,
     haishaOk:$("f_haishaOk").value.trim(),
-    keishin:$("f_keishin").checked,
+    keishin:kind!=="vehicle" && $("f_keishin").checked,
     shkTarget:kind==="vehicle",
     shkExp:$("f_shkExp").value,
     jibai:$("f_jibai").value,
