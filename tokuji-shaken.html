@@ -3,26 +3,26 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#0d1826">
+<meta name="theme-color" content="#ffffff">
 <title>特自・車検管理</title>
 <link rel="manifest" href="/tokuji.webmanifest">
 <link rel="apple-touch-icon" href="/icon-192.png">
 <style>
   :root{
-    --navy-900:#0b1521;
-    --navy-800:#0f1b2c;
-    --navy-700:#16263b;
-    --navy-600:#1d3252;
-    --line:#2a3f5c;
+    --navy-900:#eef3f9;   /* 内側パネル・入力欄などの薄い面 */
+    --navy-800:#ffffff;   /* カード・モーダルなどの面（白） */
+    --navy-700:#eef1f6;   /* ボタン等の少し立った面 */
+    --navy-600:#e2e8f1;   /* トーストなど */
+    --line:#dbe2ec;       /* 罫線 */
     --amber:#f5a623;
-    --amber-soft:#fbbf24;
-    --text:#e9eef6;
-    --muted:#8ea3c0;
-    --muted-2:#61748f;
-    --red:#f4553f;
-    --orange:#f5a623;
-    --yellow:#e0c341;
-    --green:#39c07a;
+    --amber-soft:#b7791f; /* 白地で読める濃いアンバー（文字用） */
+    --text:#14212f;       /* 本文（濃紺の黒に近い色） */
+    --muted:#586a82;
+    --muted-2:#8593a8;
+    --red:#dc4636;
+    --orange:#e0891a;
+    --yellow:#c99a06;
+    --green:#1f9d5b;
     --mono:ui-monospace,"SF Mono",Menlo,Consolas,"Roboto Mono",monospace;
     --jp:"Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic",Meiryo,system-ui,sans-serif;
   }
@@ -31,9 +31,9 @@
   body{
     font-family:var(--jp);
     background:
-      radial-gradient(1200px 600px at 80% -10%,rgba(245,166,35,.07),transparent 60%),
-      radial-gradient(900px 500px at -10% 20%,rgba(29,50,82,.5),transparent 55%),
-      var(--navy-900);
+      radial-gradient(1200px 600px at 80% -10%,rgba(245,166,35,.06),transparent 60%),
+      radial-gradient(900px 500px at -10% 20%,rgba(120,160,220,.10),transparent 55%),
+      #ffffff;
     color:var(--text);
     line-height:1.6;
     -webkit-font-smoothing:antialiased;
@@ -74,7 +74,7 @@
   .wrap{max-width:1180px;margin:0 auto;padding:0 16px}
   header.app{
     position:sticky;top:0;z-index:30;
-    background:linear-gradient(var(--navy-900),rgba(11,21,33,.86));
+    background:linear-gradient(#ffffff,rgba(255,255,255,.82));
     backdrop-filter:blur(10px);
     border-bottom:1px solid var(--line);
   }
@@ -137,9 +137,9 @@
   .group-head{display:flex;align-items:center;gap:9px;font-size:15.5px;font-weight:700;color:var(--text);margin:4px 2px 12px;padding-bottom:8px;border-bottom:1px solid var(--line)}
   .group-head .cnt{font-size:12px;font-weight:600;color:var(--muted-2);margin-left:auto}
   .kind-tag{display:inline-block;font-size:10.5px;font-weight:700;padding:2px 9px;border-radius:6px;margin-bottom:6px;letter-spacing:.05em}
-  .kind-tag.kind-vehicle{background:rgba(88,166,255,.16);color:#6cb0ff}
+  .kind-tag.kind-vehicle{background:rgba(88,166,255,.16);color:#2f6fd0}
   .kind-tag.kind-machine{background:rgba(245,166,35,.16);color:var(--amber-soft)}
-  .kind-tag.kind-paving{background:rgba(180,142,240,.18);color:#c3a6ff}
+  .kind-tag.kind-paving{background:rgba(180,142,240,.18);color:#7c4dcf}
   .kind-seg{display:flex;gap:8px;margin:4px 0 16px}
   .kind-btn{flex:1;padding:13px 10px;border-radius:12px;border:1.5px solid var(--line);background:var(--navy-900);color:var(--muted);font-size:14px;font-weight:700;cursor:pointer;transition:.12s;font-family:inherit}
   .kind-btn.on{border-color:var(--amber);background:rgba(245,166,35,.12);color:var(--amber-soft)}
@@ -209,7 +209,7 @@
 
   /* ---------- Modal ---------- */
   .overlay{
-    position:fixed;inset:0;z-index:60;background:rgba(6,12,20,.7);
+    position:fixed;inset:0;z-index:60;background:rgba(20,33,47,.45);
     display:none;align-items:flex-start;justify-content:center;padding:24px 14px;overflow-y:auto;
     backdrop-filter:blur(3px);
   }
@@ -227,7 +227,7 @@
     border-radius:10px;padding:11px 12px;outline:none;transition:.12s;
   }
   .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--amber)}
-  .field input[type=date]{color-scheme:dark;cursor:pointer}
+  .field input[type=date]{color-scheme:light;cursor:pointer}
   .field input[type=date]::-webkit-calendar-picker-indicator{opacity:.85;cursor:pointer;padding-left:4px}
   .check-row{display:flex;align-items:center;gap:9px;margin-top:6px;cursor:pointer;font-size:13.5px;color:var(--text)}
   .check-row input{width:18px;height:18px;flex:none;accent-color:var(--amber);cursor:pointer}
