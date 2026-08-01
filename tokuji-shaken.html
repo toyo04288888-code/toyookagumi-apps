@@ -403,6 +403,7 @@
     </div>
     <div class="field"><label>登録承認</label><input id="f_touroku" placeholder="例：承認者名や ○"></div>
     <label class="check-row" id="keishinRow"><input type="checkbox" id="f_keishin"><span>経審に提出する</span></label>
+    <label class="check-row" id="shkAlsoRow"><input type="checkbox" id="f_shkAlso"><span>車検も管理する（この機械は車検の対象）</span></label>
 
     <div class="toggle-sec" id="tokSec">
       <div class="toggle-head"><b>特定自主検査</b></div>
@@ -861,7 +862,7 @@ function card(v){
         ${(v.maker&&v.name)?`<div class="veh-name">${esc(v.name)}</div>`:""}
         <div class="veh-ids">
           <span class="idpair"><span class="idk">管理番号</span><span class="idv">${esc(v.kanri)||"—"}</span></span>
-          ${isVeh?`<span class="idpair"><span class="idk">ナンバー</span><span class="idv">${esc(v.bangou)||"—"}</span></span>`:""}
+          ${(isVeh||v.shkTarget)?`<span class="idpair"><span class="idk">ナンバー</span><span class="idv">${esc(v.bangou)||"—"}</span></span>`:""}
         </div>
       </div>
       <button class="edit" onclick="openEdit('${v.id}')" title="編集">
@@ -869,11 +870,15 @@ function card(v){
       </button>
     </div>
     <div class="insp-row">
-      ${inspBlock(v,isVeh?"shk":"tok")}
+      ${v.tokTarget?inspBlock(v,"tok"):""}
+      ${v.shkTarget?inspBlock(v,"shk"):""}
+      ${(!v.tokTarget&&!v.shkTarget)?inspBlock(v,isVeh?"shk":"tok"):""}
     </div>
     <div class="card-actions">
       <div class="frow">
-        <button class="mini acc" onclick="openRec('${v.id}','${isVeh?"shk":"tok"}')">${isVeh?"車検を記録":"特定自主検査を記録"}</button>
+        ${v.tokTarget?`<button class="mini acc" onclick="openRec('${v.id}','tok')">特定自主検査を記録</button>`:""}
+        ${v.shkTarget?`<button class="mini acc" onclick="openRec('${v.id}','shk')">車検を記録</button>`:""}
+        ${(!v.tokTarget&&!v.shkTarget)?`<button class="mini acc" onclick="openRec('${v.id}','${isVeh?"shk":"tok"}')">${isVeh?"車検を記録":"特定自主検査を記録"}</button>`:""}
       </div>
       <div class="frow">
         <button class="mini" onclick="openDetail('${v.id}')">履歴</button>
@@ -898,8 +903,10 @@ function syncKind(){
   document.querySelectorAll(".kind-btn").forEach(b=>b.classList.toggle("on",b.dataset.kind===editKind));
   const isVeh=editKind==="vehicle";
   $("tokSec").style.display=isVeh?"none":"";
-  $("shkSec").style.display=isVeh?"":"none";
   $("keishinRow").style.display=isVeh?"none":"";
+  $("shkAlsoRow").style.display=isVeh?"none":"";
+  // 車検セクション：車両は常に表示、機械は「車検も管理する」にチェック時のみ表示
+  $("shkSec").style.display=(isVeh||$("f_shkAlso").checked)?"":"none";
   if(isVeh)$("f_keishin").checked=false;
   $("f_kanri").placeholder=isVeh?"例：C-01":(editKind==="paving"?"例：P-01":"例：D-03");
   $("editTitle").textContent=(editId?"編集":"追加")+"（"+(KIND_JA[editKind]||"車両")+"）";
@@ -922,6 +929,7 @@ function openEdit(id){
   $("f_haisha").value=v?.haisha||"";
   $("f_haishaOk").value=v?.haishaOk||"";
   $("f_keishin").checked=!!v?.keishin;
+  $("f_shkAlso").checked=!!(v&&v.shkTarget&&kindOf(v)!=="vehicle");
   $("f_shkExp").value=v?.shkExp||"";
   $("f_jibai").value=v?.jibai||"";
   $("f_shakenGyo").value=v?.shakenGyo||"";
@@ -931,6 +939,7 @@ function openEdit(id){
   $("editOverlay").classList.add("on");
 }
 document.querySelectorAll(".kind-btn").forEach(b=>b.onclick=()=>{editKind=b.dataset.kind;syncKind();});
+$("f_shkAlso").onchange=syncKind;
 
 $("btnSave").onclick=()=>{
   const maker=$("f_maker").value.trim();
@@ -954,7 +963,7 @@ $("btnSave").onclick=()=>{
     haisha:$("f_haisha").value,
     haishaOk:$("f_haishaOk").value.trim(),
     keishin:kind!=="vehicle" && $("f_keishin").checked,
-    shkTarget:kind==="vehicle",
+    shkTarget:kind==="vehicle" || (kind!=="vehicle" && $("f_shkAlso").checked),
     shkExp:$("f_shkExp").value,
     jibai:$("f_jibai").value,
     shakenGyo:$("f_shakenGyo").value.trim(),
