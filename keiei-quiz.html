@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="経営問題集">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#4263eb">
+<link rel="manifest" href='data:application/json,{"id":"/keiei-quiz.html","name":"豊岡組 経営問題集","short_name":"経営問題集","start_url":"/keiei-quiz.html","scope":"/keiei-quiz.html","display":"standalone","background_color":"#f5f6fa","theme_color":"#4263eb","icons":[{"src":"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjIyIiBmaWxsPSIjNDI2M2ViIi8+PHBhdGggZD0iTTI4IDI2aDMwYTggOCAwIDAgMSA4IDh2NDRhNiA2IDAgMCAwLTYtNkgyOHoiIGZpbGw9IiNmZmZmZmYiIG9wYWNpdHk9Ii45MiIvPjxwYXRoIGQ9Ik03MiAyNkg0MmE4IDggMCAwIDAtOCA4djQ0YTYgNiAwIDAgMSA2LTZoMzJ6IiBmaWxsPSIjZmZmZmZmIi8+PHJlY3QgeD0iNDYiIHk9IjQwIiB3aWR0aD0iMTQiIGhlaWdodD0iNCIgcng9IjIiIGZpbGw9IiM0MjYzZWIiLz48cmVjdCB4PSI0NiIgeT0iNTAiIHdpZHRoPSIxNCIgaGVpZ2h0PSI0IiByeD0iMiIgZmlsbD0iIzQyNjNlYiIvPjwvc3ZnPg=="}]}'>
+<link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjIyIiBmaWxsPSIjNDI2M2ViIi8+PHBhdGggZD0iTTI4IDI2aDMwYTggOCAwIDAgMSA4IDh2NDRhNiA2IDAgMCAwLTYtNkgyOHoiIGZpbGw9IiNmZmZmZmYiIG9wYWNpdHk9Ii45MiIvPjxwYXRoIGQ9Ik03MiAyNkg0MmE4IDggMCAwIDAtOCA4djQ0YTYgNiAwIDAgMSA2LTZoMzJ6IiBmaWxsPSIjZmZmZmZmIi8+PHJlY3QgeD0iNDYiIHk9IjQwIiB3aWR0aD0iMTQiIGhlaWdodD0iNCIgcng9IjIiIGZpbGw9IiM0MjYzZWIiLz48cmVjdCB4PSI0NiIgeT0iNTAiIHdpZHRoPSIxNCIgaGVpZ2h0PSI0IiByeD0iMiIgZmlsbD0iIzQyNjNlYiIvPjwvc3ZnPg==">
+<title>経営問題集</title>
+<style>
+  :root{
+    --bg:#f5f6fa;
+    --panel:#ffffff;
+    --ink:#1a1d29;
+    --ink-soft:#6b7280;
+    --line:#e6e8ef;
+    --accent:#4263eb;
+    --accent-dark:#3050d8;
+    --accent-soft:#eef1fe;
+    --ok:#2f9e44;
+    --ok-bg:#e6f6ea;
+    --ng:#e03131;
+    --ng-bg:#fdeaea;
+    --shadow:0 1px 2px rgba(26,29,41,.06),0 6px 18px rgba(26,29,41,.06);
+    --radius:18px;
+    font-size:17px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic UI","Yu Gothic",Meiryo,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    line-height:1.55;
+    min-height:100vh;
+    padding-bottom:40px;
+  }
+  .wrap{max-width:600px;margin:0 auto;padding:0 16px;}
+
+  header{
+    padding:20px 16px 8px;
+  }
+  header .wrap{padding:0;}
+  .title-row{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+  h1{font-size:1.4rem;margin:0;letter-spacing:.02em;font-weight:800;display:flex;align-items:center;gap:9px;}
+  h1 .logo{width:30px;height:30px;border-radius:9px;flex:0 0 auto;}
+  .sub{font-size:.82rem;color:var(--ink-soft);margin-top:4px;}
+
+  .card{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    padding:16px;
+    margin-top:14px;
+  }
+
+  /* 全体スタッツ */
+  .stats-row{display:flex;gap:10px;margin-top:14px;}
+  .stat{
+    flex:1;background:var(--panel);border:1px solid var(--line);border-radius:14px;
+    padding:12px 10px;text-align:center;box-shadow:var(--shadow);
+  }
+  .stat .num{font-size:1.5rem;font-weight:800;line-height:1.1;}
+  .stat .lbl{font-size:.72rem;color:var(--ink-soft);margin-top:2px;}
+  .stat .num.acc{color:var(--accent);}
+
+  .section-title{font-size:.9rem;font-weight:800;color:var(--ink-soft);margin:22px 4px 2px;letter-spacing:.03em;}
+
+  /* カテゴリカード */
+  .cat-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-top:12px;}
+  .cat{
+    background:var(--panel);border:1px solid var(--line);border-radius:16px;
+    padding:14px;box-shadow:var(--shadow);cursor:pointer;text-align:left;
+    display:flex;flex-direction:column;gap:6px;transition:transform .08s,border-color .12s;
+    font-family:inherit;color:inherit;
+  }
+  .cat:active{transform:scale(.97);}
+  .cat .emoji{font-size:1.5rem;}
+  .cat .name{font-weight:800;font-size:.98rem;}
+  .cat .meta{font-size:.72rem;color:var(--ink-soft);}
+  .cat .bar{height:6px;border-radius:4px;background:var(--line);overflow:hidden;margin-top:2px;}
+  .cat .bar>span{display:block;height:100%;background:var(--accent);border-radius:4px;width:0;}
+
+  .cat.all{grid-column:1 / -1;background:linear-gradient(135deg,var(--accent),#5b7bff);color:#fff;border:none;}
+  .cat.all .meta{color:rgba(255,255,255,.85);}
+  .cat.all .bar{background:rgba(255,255,255,.3);}
+  .cat.all .bar>span{background:#fff;}
+
+  /* ボタン */
+  .btn{
+    display:block;width:100%;border:none;border-radius:14px;
+    background:var(--accent);color:#fff;font-weight:800;font-size:1.02rem;
+    padding:15px;cursor:pointer;font-family:inherit;box-shadow:var(--shadow);
+    transition:transform .08s,background .12s;
+  }
+  .btn:active{transform:scale(.98);}
+  .btn.ghost{background:var(--panel);color:var(--ink);border:1px solid var(--line);box-shadow:none;}
+  .btn.sm{padding:11px;font-size:.92rem;}
+  .btn:disabled{opacity:.45;}
+
+  .row2{display:flex;gap:10px;}
+  .row2>*{flex:1;}
+
+  /* クイズ画面 */
+  .quiz-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:6px;}
+  .quiz-top .close{background:none;border:none;font-size:1.5rem;color:var(--ink-soft);cursor:pointer;padding:4px 8px;line-height:1;}
+  .progress{flex:1;height:8px;background:var(--line);border-radius:5px;overflow:hidden;}
+  .progress>span{display:block;height:100%;background:var(--accent);border-radius:5px;transition:width .25s;}
+  .qcount{font-size:.82rem;font-weight:700;color:var(--ink-soft);white-space:nowrap;}
+
+  .qtags{display:flex;gap:7px;margin-top:16px;flex-wrap:wrap;}
+  .tag{font-size:.72rem;font-weight:700;padding:4px 10px;border-radius:999px;background:var(--accent-soft);color:var(--accent-dark);}
+  .tag.diff{background:#fff4e0;color:#b5730b;}
+  .tag.diff.d2{background:#ffe9e0;color:#c1440e;}
+  .tag.diff.d3{background:#fde8ef;color:#c2185b;}
+
+  .qtext{font-size:1.16rem;font-weight:700;line-height:1.6;margin:14px 2px 4px;}
+
+  .choices{display:flex;flex-direction:column;gap:10px;margin-top:18px;}
+  .choice{
+    display:flex;align-items:flex-start;gap:11px;text-align:left;
+    background:var(--panel);border:1.5px solid var(--line);border-radius:14px;
+    padding:14px;cursor:pointer;font-family:inherit;font-size:1rem;color:inherit;
+    box-shadow:var(--shadow);transition:border-color .12s,background .12s,transform .06s;
+    line-height:1.45;
+  }
+  .choice:active{transform:scale(.99);}
+  .choice .mark{
+    flex:0 0 auto;width:26px;height:26px;border-radius:50%;border:2px solid var(--line);
+    display:flex;align-items:center;justify-content:center;font-size:.85rem;font-weight:800;color:var(--ink-soft);
+  }
+  .choice.correct{border-color:var(--ok);background:var(--ok-bg);}
+  .choice.correct .mark{background:var(--ok);border-color:var(--ok);color:#fff;}
+  .choice.wrong{border-color:var(--ng);background:var(--ng-bg);}
+  .choice.wrong .mark{background:var(--ng);border-color:var(--ng);color:#fff;}
+  .choice.disabled{cursor:default;}
+  .choice.dim{opacity:.5;}
+
+  .explain{
+    margin-top:18px;border-radius:14px;padding:15px;border:1px solid var(--line);
+    background:var(--accent-soft);animation:fade .2s ease;
+  }
+  .explain .head{font-weight:800;font-size:.9rem;margin-bottom:5px;display:flex;align-items:center;gap:6px;}
+  .explain.ok .head{color:var(--ok);}
+  .explain.ng .head{color:var(--ng);}
+  .explain .body{font-size:.94rem;line-height:1.6;}
+  @keyframes fade{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+
+  .sticky-btn{position:sticky;bottom:0;padding:14px 0 18px;background:linear-gradient(180deg,rgba(245,246,250,0),var(--bg) 30%);margin-top:18px;}
+
+  /* 結果画面 */
+  .result-hero{text-align:center;padding:22px 10px 8px;}
+  .result-hero .big{font-size:3.2rem;font-weight:800;line-height:1;}
+  .result-hero .msg{font-size:1.05rem;font-weight:700;margin-top:10px;}
+  .result-hero .detail{font-size:.85rem;color:var(--ink-soft);margin-top:4px;}
+  .ring{width:150px;height:150px;margin:6px auto 0;position:relative;}
+  .ring svg{transform:rotate(-90deg);}
+  .ring .pct{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+  .ring .pct b{font-size:2.1rem;font-weight:800;}
+  .ring .pct small{font-size:.72rem;color:var(--ink-soft);}
+
+  .review-item{border-top:1px solid var(--line);padding:13px 2px;}
+  .review-item:first-child{border-top:none;}
+  .review-item .rq{font-weight:700;font-size:.95rem;line-height:1.5;}
+  .review-item .ra{font-size:.85rem;margin-top:5px;}
+  .review-item .ra .you{color:var(--ng);}
+  .review-item .ra .ans{color:var(--ok);font-weight:700;}
+  .review-item .re{font-size:.82rem;color:var(--ink-soft);margin-top:5px;line-height:1.5;}
+
+  .hidden{display:none !important;}
+  .muted{color:var(--ink-soft);font-size:.82rem;}
+  .center{text-align:center;}
+  footer{text-align:center;color:var(--ink-soft);font-size:.72rem;padding:26px 0 10px;}
+</style>
+</head>
+<body>
+
+<!-- ============ ホーム ============ -->
+<div id="home">
+  <header><div class="wrap">
+    <div class="title-row">
+      <h1><img class="logo" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjIyIiBmaWxsPSIjNDI2M2ViIi8+PHBhdGggZD0iTTI4IDI2aDMwYTggOCAwIDAgMSA4IDh2NDRhNiA2IDAgMCAwLTYtNkgyOHoiIGZpbGw9IiNmZmZmZmYiIG9wYWNpdHk9Ii45MiIvPjxwYXRoIGQ9Ik03MiAyNkg0MmE4IDggMCAwIDAtOCA4djQ0YTYgNiAwIDAgMSA2LTZoMzJ6IiBmaWxsPSIjZmZmZmZmIi8+PHJlY3QgeD0iNDYiIHk9IjQwIiB3aWR0aD0iMTQiIGhlaWdodD0iNCIgcng9IjIiIGZpbGw9IiM0MjYzZWIiLz48cmVjdCB4PSI0NiIgeT0iNTAiIHdpZHRoPSIxNCIgaGVpZ2h0PSI0IiByeD0iMiIgZmlsbD0iIzQyNjNlYiIvPjwvc3ZnPg==" alt="">経営問題集</h1>
+    </div>
+    <div class="sub">隙間時間に1問ずつ。財務・税務・法律・建設業の知識を貯める。</div>
+  </div></header>
+
+  <div class="wrap">
+    <div class="stats-row">
+      <div class="stat"><div class="num" id="stTotal">0</div><div class="lbl">解いた問題</div></div>
+      <div class="stat"><div class="num acc" id="stAcc">–</div><div class="lbl">正答率</div></div>
+      <div class="stat"><div class="num" id="stStreak">0</div><div class="lbl">連続日数</div></div>
+    </div>
+
+    <div class="section-title">出題ジャンルを選ぶ</div>
+    <div class="cat-grid" id="catGrid"></div>
+
+    <div style="margin-top:18px">
+      <button class="btn ghost sm" id="wrongBtn">❗ 間違えた問題だけ復習する</button>
+    </div>
+    <div class="row2" style="margin-top:10px">
+      <button class="btn ghost sm" id="resetBtn">記録をリセット</button>
+    </div>
+    <footer>豊岡組 経営問題集 ／ 全<span id="footTotal">0</span>問収録</footer>
+  </div>
+</div>
+
+<!-- ============ クイズ ============ -->
+<div id="quiz" class="hidden"><div class="wrap">
+  <div class="quiz-top" style="margin-top:16px">
+    <button class="close" id="quitBtn">✕</button>
+    <div class="progress"><span id="prog"></span></div>
+    <div class="qcount" id="qcount">1 / 10</div>
+  </div>
+
+  <div class="qtags" id="qtags"></div>
+  <div class="qtext" id="qtext"></div>
+  <div class="choices" id="choices"></div>
+  <div id="explainWrap"></div>
+
+  <div class="sticky-btn">
+    <button class="btn hidden" id="nextBtn">次の問題へ →</button>
+  </div>
+</div></div>
+
+<!-- ============ 結果 ============ -->
+<div id="result" class="hidden"><div class="wrap">
+  <div class="result-hero">
+    <div class="ring" id="ring"></div>
+    <div class="msg" id="resMsg"></div>
+    <div class="detail" id="resDetail"></div>
+  </div>
+
+  <div class="row2" style="margin-top:20px">
+    <button class="btn" id="againBtn">もう1セット</button>
+    <button class="btn ghost" id="homeBtn">ホームへ</button>
+  </div>
+
+  <div class="section-title" id="reviewTitle">見直し</div>
+  <div class="card" id="reviewList"></div>
+</div></div>
+
+<script>
+/* =========================================================
+   問題データ
+   c: カテゴリID / d: 難易度(1易 2中 3難)
+   q: 問題文 / a: 選択肢 / k: 正解index / e: 解説
+   ========================================================= */
+const CATS = [
+  {id:"zaimu",  name:"財務・会計",   emoji:"📊"},
+  {id:"zeimu",  name:"節税・税務",   emoji:"🧾"},
+  {id:"hou",    name:"法律・契約",   emoji:"⚖️"},
+  {id:"kensetsu",name:"建設業の基礎",emoji:"🏗️"},
+  {id:"nyusatsu",name:"入札",        emoji:"📮"},
+  {id:"keishin",name:"経営事項審査", emoji:"📈"},
+  {id:"sekisan",name:"積算",         emoji:"📐"},
+  {id:"biz",    name:"ビジネス用語", emoji:"💼"},
+];
+
+const Q = [
+/* ---------- 財務・会計 ---------- */
+{c:"zaimu",d:1,q:"「売上総利益（粗利）」の計算式はどれ？",a:["売上高 − 売上原価","売上高 − 販管費","売上高 − 経費すべて","売上高 − 税金"],k:0,e:"売上総利益（粗利益）＝売上高−売上原価。ここから販管費を引くと営業利益になります。"},
+{c:"zaimu",d:1,q:"本業のもうけを表す利益はどれ？",a:["営業利益","経常利益","当期純利益","売上総利益"],k:0,e:"営業利益＝売上総利益−販売費及び一般管理費。本業でどれだけ稼いだかを示します。"},
+{c:"zaimu",d:2,q:"「経常利益」に含まれるが「営業利益」に含まれないものは？",a:["受取利息・支払利息など営業外の損益","売上原価","人件費","減価償却費"],k:0,e:"経常利益＝営業利益＋営業外収益−営業外費用。利息や為替差損益など本業以外の経常的な損益を反映します。"},
+{c:"zaimu",d:1,q:"会社の一時点の財産状況（資産・負債・純資産）を表す表は？",a:["貸借対照表（B/S）","損益計算書（P/L）","キャッシュフロー計算書","製造原価報告書"],k:0,e:"貸借対照表（バランスシート／B/S）は決算日など「ある時点」の財政状態を示します。P/Lは「一定期間」の成績です。"},
+{c:"zaimu",d:1,q:"一定期間の売上・費用・利益を示す表は？",a:["損益計算書（P/L）","貸借対照表（B/S）","総勘定元帳","仕訳帳"],k:0,e:"損益計算書（P/L）は1年間などの期間の経営成績（もうけ）を表します。"},
+{c:"zaimu",d:2,q:"「自己資本比率」が高いと一般に何が言える？",a:["財務の安全性が高い（借金依存が低い）","売上が伸びている","利益率が高い","現金が多い"],k:0,e:"自己資本比率＝自己資本÷総資本。返済不要の自前資金の割合で、高いほど倒産しにくい安全な会社とされます。"},
+{c:"zaimu",d:2,q:"短期の支払い能力を見る「流動比率」の計算式は？",a:["流動資産 ÷ 流動負債 ×100","固定資産 ÷ 固定負債 ×100","自己資本 ÷ 総資本 ×100","純利益 ÷ 売上 ×100"],k:0,e:"流動比率＝流動資産÷流動負債×100。1年以内に現金化できる資産で1年以内の負債を返せるか。一般に120%以上、できれば200%が目安。"},
+{c:"zaimu",d:3,q:"より厳しく短期支払能力を見るとき、流動資産から何を除いた「当座比率」を使う？",a:["棚卸資産（在庫）","現金","売掛金","有価証券"],k:0,e:"当座比率は流動資産から換金性の低い棚卸資産を除いて計算します。より確実な支払能力を見られます。"},
+{c:"zaimu",d:2,q:"固定費が900万円、限界利益率（＝1−変動費率）が30%のとき、損益分岐点売上高は？",a:["3,000万円","2,700万円","1,200万円","270万円"],k:0,e:"損益分岐点売上高＝固定費÷限界利益率＝900万÷0.3＝3,000万円。これを超えると黒字です。"},
+{c:"zaimu",d:2,q:"ROA（総資産利益率）が測っているものは？",a:["持っている資産全体でどれだけ利益を生んだか","自己資本に対する利益","売上に対する利益","借入金の返済能力"],k:0,e:"ROA＝利益÷総資産。会社の全資産をどれだけ効率よく使って稼いだかを示す収益性の指標です。"},
+{c:"zaimu",d:3,q:"建設業会計で「売上高」にあたる勘定科目は？",a:["完成工事高","未成工事支出金","完成工事未収入金","工事未払金"],k:0,e:"建設業では売上高を『完成工事高』、売上原価を『完成工事原価』と呼びます。独特の勘定科目が使われます。"},
+{c:"zaimu",d:3,q:"建設業会計で、まだ完成していない工事にかかった費用を計上する資産科目は？",a:["未成工事支出金","完成工事原価","未成工事受入金","完成工事高"],k:0,e:"未成工事支出金は、進行中の工事にかかった材料費・労務費などを一時的にためておく棚卸資産です。完成時に原価へ振り替えます。"},
+{c:"zaimu",d:2,q:"「減価償却」とは何をする手続き？",a:["高額な固定資産の取得費を使用年数に分けて費用にする","在庫の価値を毎年見直す","借金を毎年少しずつ返す","利益を積み立てる"],k:0,e:"建物や重機など長く使う資産は、買った年に全額費用にせず、耐用年数にわたって分割して費用（減価償却費）にします。"},
+{c:"zaimu",d:2,q:"減価償却費が「非資金費用」と呼ばれる理由は？",a:["費用計上しても実際の現金支出を伴わないから","税金がかからないから","毎年金額が変わるから","現金が増えるから"],k:0,e:"減価償却費は帳簿上の費用で、その年に現金が出ていくわけではありません。だから利益に減価償却費を足し戻すと手元資金の目安になります。"},
+{c:"zaimu",d:1,q:"「売掛金」とはどんなお金？",a:["商品やサービスを提供済みで、まだ受け取っていない代金","前もって受け取ったお金","銀行からの借入金","仕入先に払うお金"],k:0,e:"売掛金は掛け（後払い）で売った代金の未回収分。回収して初めて現金になります。回収遅れは資金繰りを悪化させます。"},
+{c:"zaimu",d:2,q:"利益は出ているのに現金が足りなくなる「黒字倒産」の主な原因は？",a:["売掛金の回収より支払いが先行し、資金が回らない","税金の払いすぎ","減価償却のしすぎ","自己資本が多すぎる"],k:0,e:"帳簿上は黒字でも、入金前に材料費や外注費の支払いが来ると現金が枯渇します。資金繰り（キャッシュフロー）管理が重要です。"},
+{c:"zaimu",d:1,q:"キャッシュフロー計算書が示すものは？",a:["一定期間の現金の増減","会社の資産と負債","売上と利益","従業員数の推移"],k:0,e:"キャッシュフロー計算書は営業・投資・財務の3区分で、実際の現金の出入りを表します。"},
+{c:"zaimu",d:3,q:"「運転資金」の一般的な考え方に近いのは？",a:["売上債権＋棚卸資産−仕入債務","現金＋預金","固定資産−負債","売上−費用"],k:0,e:"運転資金＝売掛金・在庫（お金が寝ている部分）から買掛金（支払いを待ってもらえる部分）を引いた、事業を回すのに必要な立替金です。"},
+{c:"zaimu",d:2,q:"粉飾でよく問題になる「架空売上」は財務上どう表れやすい？",a:["売上に対して売掛金が異常に増える","現金が急増する","負債が減る","減価償却が増える"],k:0,e:"実体のない売上を立てると入金がないため売掛金だけが膨らみます。売掛金の回転期間の悪化は危険サインです。"},
+{c:"zaimu",d:1,q:"「粗利率（売上総利益率）」が高い工事とは？",a:["原価の割に利益を多く取れている工事","売上金額が大きい工事","工期が長い工事","下請けが多い工事"],k:0,e:"粗利率＝売上総利益÷売上高。金額の大小ではなく、原価に対してどれだけ利益を確保できたかを示します。"},
+
+/* ---------- 節税・税務 ---------- */
+{c:"zeimu",d:1,q:"会社の利益（所得）にかかる国税は？",a:["法人税","消費税","固定資産税","登録免許税"],k:0,e:"法人税は会社の所得に対して課される国税。ほかに法人住民税・法人事業税（地方税）もかかります。"},
+{c:"zeimu",d:2,q:"中小法人で、年800万円以下の所得部分に適用される軽減された法人税率は？",a:["15%","23.2%","30%","10%"],k:0,e:"資本金1億円以下などの中小法人は、年800万円以下の所得に軽減税率15%（本則19%の特例）、超える部分は23.2%です。"},
+{c:"zeimu",d:1,q:"標準的な消費税率は？",a:["10%","8%","5%","15%"],k:0,e:"消費税の標準税率は10%（うち地方消費税2.2%）。飲食料品などは軽減税率8%です。"},
+{c:"zeimu",d:2,q:"2023年10月に始まった、仕入税額控除に適格請求書が必要となる制度は？",a:["インボイス制度","マイナンバー制度","電子帳簿保存法","ふるさと納税"],k:0,e:"インボイス制度（適格請求書等保存方式）。登録した課税事業者が発行する適格請求書がないと、支払った消費税を控除しにくくなります。"},
+{c:"zeimu",d:2,q:"インボイスを発行できる「適格請求書発行事業者」になるには？",a:["税務署に登録申請し登録番号を受ける","開業届を出すだけでよい","売上1,000万円を超えれば自動でなる","何もしなくてよい"],k:0,e:"登録申請して『T＋13桁』の登録番号を受けた課税事業者だけがインボイスを発行できます。免税事業者は登録＝課税事業者化を要します。"},
+{c:"zeimu",d:2,q:"中小企業者等の少額減価償却資産の特例。1個いくら未満なら取得年に全額経費にできる？",a:["30万円未満","10万円未満","20万円未満","50万円未満"],k:0,e:"青色申告の中小企業者等は取得価額30万円未満の資産を年間合計300万円まで即時に経費計上できます（通常は資産計上して減価償却）。"},
+{c:"zeimu",d:1,q:"金額に関わらず、取得価額いくら未満なら消耗品費などで全額経費にできる（原則）？",a:["10万円未満","30万円未満","20万円未満","5万円未満"],k:0,e:"取得価額10万円未満は原則その年の費用にできます。10万〜20万は一括償却資産（3年均等）、中小は30万未満まで特例も使えます。"},
+{c:"zeimu",d:2,q:"中小法人の交際費。年800万円までは原則どう扱える？",a:["全額を損金（経費）にできる","半額しか経費にできない","一切経費にできない","経費にすると税金がかかる"],k:0,e:"中小法人は交際費を年800万円まで全額損金算入できます（または接待飲食費の50%を選択）。上限を超えた分は損金不算入です。"},
+{c:"zeimu",d:2,q:"赤字（欠損金）を将来の黒字と相殺できる青色申告の制度で、繰り越せる期間は？",a:["10年","3年","5年","無期限"],k:0,e:"青色申告法人の欠損金の繰越控除は最大10年（平成30年4月以後開始事業年度）。過去の赤字で将来の利益にかかる税を軽減できます。"},
+{c:"zeimu",d:1,q:"税務上の「損金」に最も近い意味は？",a:["税金計算で利益から差し引ける費用","現金の支出すべて","会社の借金","支払った税金"],k:0,e:"損金は法人税の計算上、益金（収益）から差し引ける費用のこと。会計上の費用でも損金にならないもの（損金不算入）があります。"},
+{c:"zeimu",d:3,q:"決算対策として一般に「節税＋将来の備え」になりやすいのは？",a:["経営セーフティ共済（倒産防止共済）への加入","役員賞与を期末に急に増やす","架空経費の計上","税金を払わないこと"],k:0,e:"倒産防止共済の掛金は損金算入でき、解約手当金も受け取れるため節税と積立を兼ねられます。架空経費は脱税で違法です。"},
+{c:"zeimu",d:2,q:"消費税の納税額の基本的な考え方は？",a:["受け取った消費税 − 支払った消費税","売上 ×10%","利益 ×10%","経費 ×10%"],k:0,e:"納付する消費税＝預かった消費税（売上分）−支払った消費税（仕入・経費分）。この差額を国に納めます（原則課税）。"},
+{c:"zeimu",d:2,q:"消費税で、小規模事業者が仕入税額控除の計算を簡便にできる制度は？",a:["簡易課税制度","本則課税","確定申告","源泉徴収"],k:0,e:"基準期間の課税売上5,000万円以下なら簡易課税を選べます。業種ごとのみなし仕入率で計算でき事務負担が軽くなります。建設業は原則みなし仕入率70%（第3種）。"},
+{c:"zeimu",d:1,q:"従業員の給料から会社が天引きして預かり、国に納める所得税の仕組みは？",a:["源泉徴収","確定申告","年末調整のみ","予定納税"],k:0,e:"源泉徴収は給与等の支払時に所得税をあらかじめ差し引いて会社が納付する制度。年末調整で過不足を精算します。"},
+{c:"zeimu",d:3,q:"役員報酬を損金にするための代表的なルールは？",a:["原則、期首から3か月以内に決め毎月同額（定期同額給与）","いつでも自由に増減できる","賞与として毎月払う","売上に応じて変える"],k:0,e:"役員報酬は恣意的な利益操作を防ぐため『定期同額給与』などの要件を満たさないと損金になりません。期中の勝手な増額分は損金不算入です。"},
+
+/* ---------- 法律・契約 ---------- */
+{c:"hou",d:1,q:"建設業の許可が必要になるのは、原則いくら以上の工事を請け負う場合？（建築一式以外）",a:["1件500万円以上","1件100万円以上","1件1,000万円以上","金額に関係なく常に必要"],k:0,e:"請負代金500万円未満の『軽微な建設工事』は許可不要。それ以上を請け負うには建設業許可が必要です。"},
+{c:"hou",d:2,q:"「建築一式工事」で許可が不要な軽微な工事の基準は？",a:["1,500万円未満、または延べ面積150㎡未満の木造住宅","500万円未満","3,000万円未満","面積のみで判断"],k:0,e:"建築一式工事は特例で、1件1,500万円未満、または延べ面積150㎡未満の木造住宅工事なら許可不要です。"},
+{c:"hou",d:2,q:"「一般建設業」と「特定建設業」の許可を分ける基準は？",a:["元請として下請に出す金額の合計","会社の資本金","従業員数","工事の種類"],k:0,e:"元請が下請に出す金額の合計が一定額以上になると特定建設業許可が必要です。自社施工や下請専門なら金額に関係なく一般でOK。"},
+{c:"hou",d:3,q:"特定建設業許可が必要となる、元請が下請に出す金額の合計（建築一式以外）は？",a:["4,500万円以上","3,000万円以上","1,500万円以上","7,000万円以上"],k:0,e:"1件の工事で下請に出す総額が4,500万円以上（建築一式は7,000万円以上）になると特定建設業許可が必要です（2023年1月改正後の金額）。"},
+{c:"hou",d:2,q:"建設業許可の有効期間は？",a:["5年ごとに更新","3年ごとに更新","無期限","10年ごとに更新"],k:0,e:"建設業許可は5年ごとの更新制。期限切れの前に更新申請しないと失効し、軽微な工事しかできなくなります。"},
+{c:"hou",d:2,q:"複数の都道府県に営業所を設ける場合の建設業許可は？",a:["国土交通大臣許可","知事許可","市長許可","許可不要"],k:0,e:"2つ以上の都道府県に営業所があると大臣許可、1つの都道府県内なら知事許可です。施工できる地域とは関係ありません。"},
+{c:"hou",d:2,q:"工事現場に必ず置かなければならない技術者は？（一般建設業の下請など）",a:["主任技術者","監理技術者","宅地建物取引士","社会保険労務士"],k:0,e:"すべての建設工事の現場には主任技術者を配置します。下請金額が大きい特定建設業の元請現場では、より上位の監理技術者が必要です。"},
+{c:"hou",d:3,q:"元請の現場で「監理技術者」の配置が必要になるのは？",a:["下請への発注総額が4,500万円以上（建築一式7,000万円以上）","工期が1年以上","現場が10か所以上","従業員100人以上"],k:0,e:"特定建設業の元請が下請に4,500万円以上（建築一式7,000万円以上）出す現場では、主任技術者に代えて監理技術者を置きます。"},
+{c:"hou",d:1,q:"工事の請負契約で、建設業法上どうすべきとされている？",a:["原則、書面（契約書）で契約する","口頭でよい","メールは不可","着工後に作る"],k:0,e:"建設業法は工事着工前に契約書面（または電子契約）で必要事項を明示することを求めています。トラブル防止のため書面化が原則です。"},
+{c:"hou",d:2,q:"下請代金の支払いなどを守らせ、下請を保護する法律は？",a:["下請代金支払遅延等防止法（下請法）ほか建設業法の規定","独占禁止法のみ","労働基準法","会社法"],k:0,e:"元請の一方的な代金減額・支払遅延などは下請法や建設業法で規制されています。建設工事は建設業法の元請下請ルールも重要です。"},
+{c:"hou",d:2,q:"労働基準法で、原則1日の法定労働時間は？",a:["8時間","10時間","6時間","12時間"],k:0,e:"法定労働時間は1日8時間・週40時間。これを超えて働かせるには36協定の締結・届出と割増賃金が必要です。"},
+{c:"hou",d:2,q:"時間外労働（残業）に必要な、労使で結ぶ協定の通称は？",a:["36（サブロク）協定","労働協約","就業規則","雇用契約"],k:0,e:"労基法36条に基づく労使協定なので『36協定』。締結・届出なしに法定時間を超えて働かせると違法です。"},
+{c:"hou",d:2,q:"2024年4月から建設業にも適用された、残業時間の上限規制は原則いくら？",a:["月45時間・年360時間（原則）","上限なし","月100時間","年720時間まで無制限"],k:0,e:"建設業も時間外労働の上限規制の対象になりました。原則は月45時間・年360時間、特別条項でも年720時間などの上限があります。"},
+{c:"hou",d:1,q:"事業主が原則加入させる、労災・雇用・健康・厚生年金などをまとめた呼び方は？",a:["社会保険（労働保険を含む広義）","任意保険","生命保険","火災保険"],k:0,e:"建設業では社会保険（健康保険・厚生年金・雇用保険・労災）の加入が元請・公共工事で厳しくチェックされます。未加入は受注に不利です。"},
+{c:"hou",d:3,q:"建設業で技能者の資格・就業履歴を業界統一で蓄積する仕組みは？",a:["建設キャリアアップシステム（CCUS）","マイナンバー","e-Tax","電子入札"],k:0,e:"CCUSは技能者一人ひとりの資格や現場経験をカード＋データで記録する制度。適正な評価・処遇改善や現場管理に活用されます。"},
+
+/* ---------- 建設業の基礎 ---------- */
+{c:"kensetsu",d:1,q:"「元請」と「下請」の関係で、発注者から直接受注する側は？",a:["元請","下請","孫請","一次下請"],k:0,e:"発注者から直接工事を請け負うのが元請（元請負人）。元請から一部を請け負うのが下請です。"},
+{c:"kensetsu",d:2,q:"建設業の許可業種は全部で何業種？",a:["29業種","20業種","15業種","40業種"],k:0,e:"建設業許可は土木一式・建築一式に加え27の専門工事で計29業種。2016年に解体工事業が追加されました。"},
+{c:"kensetsu",d:1,q:"「土工（どこう）」が主に扱う作業は？",a:["掘削・盛土など土を動かす作業","電気配線","塗装","内装仕上げ"],k:0,e:"土工事は掘削・埋戻し・盛土・締固めなど、土を扱う基礎的な工事。土木工事の中心的な作業です。"},
+{c:"kensetsu",d:2,q:"「施工管理」で一般に『QCDSE』と言うときのQは？",a:["Quality（品質）","Quantity（数量）","Question（質問）","Quick（速さ）"],k:0,e:"施工管理の基本はQ品質・Cコスト・D工程（納期）・S安全・E環境。バランスよく管理するのが現場監督の役割です。"},
+{c:"kensetsu",d:1,q:"工程管理でよく使われる、作業ごとの期間を横棒で表す表は？",a:["ガントチャート（工程表）","貸借対照表","見積書","出面表"],k:0,e:"ガントチャート（バーチャート工程表）は各作業の開始・終了を横棒で示し、進捗を一目で把握できます。"},
+{c:"kensetsu",d:2,q:"「歩掛（ぶがかり）」とは何を表す？",a:["ある作業の単位あたりに必要な手間・材料・機械の量","1日の日当","会社の利益率","工事の総額"],k:0,e:"歩掛は例えば『コンクリート1㎥打設に人工が何人・機械が何時間必要か』という標準的な所要量。積算の基礎データです。"},
+{c:"kensetsu",d:1,q:"建設現場で働いた人数を日ごとに記録する表を何という？",a:["出面（でづら）表","仕訳帳","見積書","工程表"],k:0,e:"出面表は誰が何日現場に出たかを記録するもの。労務費の計算や日報管理の基礎になります。"},
+{c:"kensetsu",d:2,q:"「一人工（いちにんく）」の意味は？",a:["作業員1人が1日働く労働量","1つの現場","1時間の作業","1つの機械"],k:0,e:"人工（にんく）は労働量の単位で、一人工＝1人が1日働く量。歩掛や労務費の見積りで使われます。"},
+{c:"kensetsu",d:2,q:"公共工事で完成後に発注者が行い、品質や出来形を確認する手続きは？",a:["検査（完成検査）","入札","積算","経審"],k:0,e:"工事完成後、発注者が設計図書どおりに施工されたかを確認する検査があります。合格して初めて引渡し・支払いに進みます。"},
+{c:"kensetsu",d:3,q:"「安全書類（グリーンファイル）」の主な目的は？",a:["現場に入る作業員・会社の安全衛生や労務を管理する","見積りを作る","税金を計算する","入札に参加する"],k:0,e:"作業員名簿・施工体制台帳・再下請負通知書などをまとめた書類で、誰がどんな体制で現場に入るかを管理し、労災防止や責任明確化に使います。"},
+{c:"kensetsu",d:2,q:"元請が下請の状況を把握するため、一定規模以上の現場で作成する体制表は？",a:["施工体制台帳・施工体系図","見積書","出面表","工程表"],k:0,e:"下請の階層が深い現場では施工体制台帳と施工体系図の作成が義務付けられ、どの会社がどの工事を担当するかを明確にします。"},
+{c:"kensetsu",d:1,q:"「工期」とは何を指す？",a:["工事の着手から完成・引渡しまでの期間","作業員の勤務時間","保証期間","支払期日"],k:0,e:"工期は契約で定めた工事の期間。天候や設計変更で延びることもあり、工期延長の協議も重要な管理項目です。"},
+{c:"kensetsu",d:2,q:"「一式工事（土木一式・建築一式）」の許可があれば？",a:["総合的な企画・指導・調整を伴う元請工事ができる（専門工事を無条件に全部できるわけではない）","すべての専門工事を単独で請けられる","許可はいらない","500万円未満専用"],k:0,e:"一式工事は複数の専門工事を組み合わせて総合的にマネジメントする工事。単独の専門工事を500万円以上請けるには別途その業種の許可が必要です。"},
+{c:"kensetsu",d:3,q:"建設業で長年課題の「重層下請構造」の主なデメリットは？",a:["中間マージンで末端の利益が薄くなり責任も不明確になりやすい","工期が必ず短くなる","品質が必ず上がる","許可が不要になる"],k:0,e:"下請が何層にも重なると、各層のマージンで末端に十分な費用が届かず、労働条件悪化や責任所在の曖昧化を招きやすいと指摘されます。"},
+
+/* ---------- 入札 ---------- */
+{c:"nyusatsu",d:1,q:"公共工事の発注方式で、条件を満たせば誰でも参加できるのは？",a:["一般競争入札","指名競争入札","随意契約","特命発注"],k:0,e:"一般競争入札は公告して広く参加者を募る方式。競争性・公平性が高く、公共工事の原則的な方式です。"},
+{c:"nyusatsu",d:2,q:"発注者が業者を選んで入札に呼ぶ方式は？",a:["指名競争入札","一般競争入札","公募型プロポーザル","随意契約"],k:0,e:"指名競争入札は発注者が信頼できる複数業者を指名して競争させる方式。実績等で選ばれるため参加には日頃の評価が重要です。"},
+{c:"nyusatsu",d:2,q:"競争入札によらず特定の相手と直接契約する方式は？",a:["随意契約","一般競争入札","指名競争入札","総合評価落札方式"],k:0,e:"随意契約は少額・緊急・特殊な場合などに、競争させず相手を選んで契約する方式。適用には法令上の要件があります。"},
+{c:"nyusatsu",d:1,q:"入札で発注者があらかじめ定める、契約金額の上限の目安は？",a:["予定価格","最低制限価格","落札価格","予算残高"],k:0,e:"予定価格は発注者が積算した金額で、原則これを超える札は落札できません（上限）。"},
+{c:"nyusatsu",d:2,q:"著しく安い札を排除するために設ける下限価格は？",a:["最低制限価格","予定価格","希望価格","上限価格"],k:0,e:"最低制限価格を下回る札は、いくら安くても失格（ダンピング防止）。品質確保のため一定の下限が設けられます。"},
+{c:"nyusatsu",d:3,q:"最低制限価格ではなく、安い札でも調査のうえ契約可否を判断する制度は？",a:["低入札価格調査制度","総合評価落札方式","くじ引き","事前公表制度"],k:0,e:"低入札価格調査制度は基準を下回る札について、履行可能か調査して契約するか判断します。大型工事で採られることがあります。"},
+{c:"nyusatsu",d:2,q:"価格だけでなく技術提案なども点数化して落札者を決める方式は？",a:["総合評価落札方式","最低価格自動落札方式","指名競争入札","随意契約"],k:0,e:"総合評価落札方式は価格と品質（技術力・施工計画・地域貢献等）を総合評価。安ければ勝ちではなく、技術点も重要になります。"},
+{c:"nyusatsu",d:1,q:"入札に参加するために、事前に発注者へ登録しておく手続きは？",a:["入札参加資格審査（指名願い）","経審のみ","確定申告","建設業許可の取得だけ"],k:0,e:"各発注機関に入札参加資格の申請（いわゆる指名願い）をして名簿に登録されないと入札に参加できません。多くは経審の結果も必要です。"},
+{c:"nyusatsu",d:2,q:"入札参加資格でランク分け（等級格付け）される主な目的は？",a:["工事規模に応じて参加できる業者を分けるため","税金を決めるため","許可を出すため","従業員を数えるため"],k:0,e:"発注者は経審の点数などで業者をA・B・Cなどに格付けし、工事の規模ごとに参加できる等級を定めます。会社の点数で狙える工事が変わります。"},
+{c:"nyusatsu",d:3,q:"複数業者が話し合って落札者や価格を決める行為は？",a:["談合（独占禁止法違反）","総合評価","JV","低入札調査"],k:0,e:"談合は競争を装いながら裏で受注者や価格を調整する行為で、独占禁止法・刑法で禁止された犯罪。指名停止や課徴金の対象です。"},
+{c:"nyusatsu",d:2,q:"大規模工事などで複数の建設会社が共同で受注する方式は？",a:["共同企業体（JV）","下請契約","随意契約","分離発注"],k:0,e:"JV（ジョイントベンチャー）は複数社が共同で1つの工事を受注・施工する仕組み。技術力の結集やリスク分散、地元企業育成に使われます。"},
+{c:"nyusatsu",d:1,q:"多くの自治体が導入している、インターネットで入札する仕組みは？",a:["電子入札","郵便入札のみ","口頭入札","現金入札"],k:0,e:"電子入札システムにより、役所に出向かずネット上で入札できます。ICカードなどの事前準備が必要です。"},
+{c:"nyusatsu",d:3,q:"入札が同額で並んだ場合、一般的にどう決める？",a:["くじ引き","再度全社で協議","先に出した順","発注者が指名"],k:0,e:"最低価格の札が複数同額で並んだときは、公平性の観点からくじ引きで落札者を決めるのが一般的です。"},
+
+/* ---------- 経営事項審査 ---------- */
+{c:"keishin",d:1,q:"「経営事項審査（経審）」を受ける必要があるのはどんな業者？",a:["公共工事を発注者から直接請け負おうとする建設業者","すべての会社","個人商店","下請専門業者のみ"],k:0,e:"公共工事を元請として直接受注するには経審が必須。民間工事だけなら受ける義務はありません。"},
+{c:"keishin",d:2,q:"経審の結果として算出される、会社の総合的な点数を何という？",a:["総合評定値（P点）","純資産額","完成工事高","許可番号"],k:0,e:"経審の各項目を合成した総合評定値がP点。入札参加資格の等級（ランク）付けの基礎になります。"},
+{c:"keishin",d:3,q:"総合評定値Pのうち、最もウェイトが大きい項目の組み合わせは？",a:["完成工事高(X1)と技術力(Z) がともに25%","社会性(W)が最大","経営状況(Y)が最大","すべて同じ割合"],k:0,e:"P＝0.25X1＋0.15X2＋0.20Y＋0.25Z＋0.15W。完成工事高X1と技術力Zがそれぞれ25%で最も重い項目です。"},
+{c:"keishin",d:3,q:"経審の評価項目「X1」が表すものは？",a:["完成工事高（工事の売上規模）","自己資本額","技術者の数","社会性"],k:0,e:"X1は完成工事高（業種別の工事売上）。会社の事業規模を示し、Pの25%を占めます。"},
+{c:"keishin",d:3,q:"経審の「Y（経営状況）」は主に何を評価する？",a:["負債・収益性など財務の健全性","技術者の人数","工事の種類","社会保険加入"],k:0,e:"Yは経営状況分析で、自己資本比率や負債回転期間、利益率など8指標から財務の健全性を点数化します。"},
+{c:"keishin",d:3,q:"経審の「Z」が主に評価するものは？",a:["技術職員数や元請完成工事高などの技術力","交際費","広告費","社長の年齢"],k:0,e:"Zは技術力の評価。有資格の技術職員数と業種別の元請完成工事高から算出され、PではX1と並ぶ最重要項目です。"},
+{c:"keishin",d:3,q:"経審の「W（社会性等）」で加点される代表例は？",a:["社会保険加入・退職金制度・建設業経理士の配置など","現金保有額","事務所の広さ","社長の学歴"],k:0,e:"Wは社会性・その他。社会保険や法定外労災、退職一時金制度、若年者雇用、建設業経理士の在籍、防災協定などが加点対象です。"},
+{c:"keishin",d:2,q:"経審の有効期間と、公共工事を切れ目なく受注するための実務は？",a:["審査基準日から1年7か月。毎年決算ごとに受け直す","有効期間5年","一度受ければ永久","更新不要"],k:0,e:"経審の有効期間は審査基準日（決算日）から1年7か月。空白を作らないよう、毎期決算後に速やかに受審し続ける必要があります。"},
+{c:"keishin",d:2,q:"経審を受ける前提として、先に受けておく必要がある分析は？",a:["経営状況分析（登録分析機関によるYの算定）","税務調査","入札","労働基準監督署の検査"],k:0,e:"まず登録経営状況分析機関に決算書を提出してY点の分析を受け、その結果を添えて行政庁の経営規模等評価（X・Z・W）を申請します。"},
+{c:"keishin",d:3,q:"経審のP点を上げる取り組みとして正しいものは？",a:["技術者の資格取得や社会保険整備など地道な体制強化","粉飾決算をする","交際費を増やす","現金を貯めるだけ"],k:0,e:"有資格技術者を増やす、社会保険・退職金制度を整える、自己資本を厚くするなどが正攻法。虚偽申請は指名停止など重い処分の対象です。"},
+{c:"keishin",d:2,q:"経審における「完成工事高」を評価する際、よく用いられる工夫は？",a:["2年または3年の平均を選べる","必ず単年で見る","予定額で見る","下請分だけで見る"],k:0,e:"完成工事高は直前2年または3年の平均から有利な方を選択できます。年ごとの変動をならして評価できるようになっています。"},
+{c:"keishin",d:3,q:"建設業の決算書を作成・調製する専門知識を認定する、W点に関係する資格は？",a:["建設業経理士（建設業経理事務士）","宅地建物取引士","中小企業診断士","行政書士"],k:0,e:"建設業経理士（1・2級）が在籍すると経審のW点（社会性）で加点されます。建設業特有の会計を担う専門資格です。"},
+
+/* ---------- 積算 ---------- */
+{c:"sekisan",d:1,q:"「積算」とは何をする作業？",a:["工事に必要な費用を数量と単価から計算すること","工事の進捗を管理すること","人を採用すること","入札に申し込むこと"],k:0,e:"積算は設計図書をもとに材料・労務・機械などの数量を拾い、単価を掛けて工事費を算出する作業。見積りの土台になります。"},
+{c:"sekisan",d:2,q:"工事費の構成で「直接工事費」に含まれるものは？",a:["材料費・労務費・直接経費（その工事に直接かかる費用）","本社の役員報酬","会社全体の広告費","銀行への利息"],k:0,e:"直接工事費はその工事に直接かかる材料費・労務費・直接経費。これに共通仮設費や現場管理費などの間接費、一般管理費が乗ります。"},
+{c:"sekisan",d:2,q:"「共通仮設費」の例として適切なのは？",a:["仮囲い・現場事務所・安全設備など複数作業に共通の仮設","コンクリート材料費","鉄筋工の日当","本社の家賃"],k:0,e:"共通仮設費は特定の作業ではなく現場全体に共通してかかる仮設費用（仮設事務所・電力・安全対策など）。間接工事費の一部です。"},
+{c:"sekisan",d:2,q:"工事原価に、本社経費などの「一般管理費」を加えたものは？",a:["請負工事費（見積総額の基礎）","直接工事費","純工事費","材料費"],k:0,e:"請負金額の構成は、直接工事費＋間接工事費＝工事原価、これに一般管理費等を加えて請負工事費（＋消費税）になります。"},
+{c:"sekisan",d:3,q:"積算で「数量を拾う」とはどういう意味？",a:["図面から必要な材料や作業の数量を読み取り集計する","現場でゴミを拾う","端数を切り捨てる","単価を調べる"],k:0,e:"『数量拾い』は設計図から鉄筋の重量やコンクリート体積、面積などを算出する作業。積算精度を左右する重要な工程です。"},
+{c:"sekisan",d:2,q:"「複合単価」とは？",a:["材料費・労務費・機械経費などをまとめた1単位あたりの単価","材料だけの単価","消費税込みの単価","値引き後の単価"],k:0,e:"複合単価は、ある作業1単位あたりに必要な材料・手間・機械などを合成した単価。歩掛をもとに作られ、見積り作成を効率化します。"},
+{c:"sekisan",d:1,q:"「単価 × 数量」で求められるものは？",a:["その項目の金額","利益率","工期","人数"],k:0,e:"積算の基本は数量×単価＝金額。各項目の金額を積み上げて工事全体の費用を算出します。"},
+{c:"sekisan",d:3,q:"公共工事の積算で発注者が用いる、標準的な単価をまとめた資料は？",a:["公共工事設計労務単価・積算基準（標準歩掛など）","会社独自の値引き表","銀行の金利表","税率表"],k:0,e:"国や自治体は毎年『公共工事設計労務単価』や標準歩掛・積算基準を定めており、これに沿って予定価格が積算されます。"},
+{c:"sekisan",d:2,q:"「諸経費」とおおまかに呼ばれるのは、費用のどの部分？",a:["現場管理費や一般管理費など間接的な費用","材料費","労務費","機械のレンタル代のみ"],k:0,e:"現場で直接目に見えにくい管理関係の費用（現場管理費＋一般管理費など）をまとめて諸経費と呼ぶことが多いです。"},
+{c:"sekisan",d:2,q:"見積りで「実行予算」とは何を指す？",a:["受注後、実際にいくらで施工するかを社内で計画した予算","発注者に出す見積書","予定価格","入札額"],k:0,e:"実行予算は受注金額の範囲で利益を確保するために、社内で立てる原価計画。これを管理して原価が超過しないようにします。"},
+{c:"sekisan",d:3,q:"積算で歩掛が『0.1人工/㎡』のとき、100㎡の作業に必要な人工は？",a:["10人工","1人工","100人工","0.1人工"],k:0,e:"必要人工＝歩掛×数量＝0.1×100＝10人工。これに労務単価を掛けると労務費が求まります。"},
+{c:"sekisan",d:1,q:"見積書で最終的に金額に上乗せする税は？",a:["消費税","法人税","固定資産税","相続税"],k:0,e:"工事の請負代金には消費税（標準10%）が加わります。見積書では税抜金額と消費税、税込総額を明示します。"},
+
+/* ---------- ビジネス用語 ---------- */
+{c:"biz",d:1,q:"「キャッシュフロー」とは？",a:["お金（現金）の出入り・流れ","会社の利益","従業員数","売上の合計"],k:0,e:"キャッシュフローは現金の流入・流出の流れ。利益が出ていても現金が回らなければ倒産します（黒字倒産）。"},
+{c:"biz",d:1,q:"「ランニングコスト」の意味は？",a:["設備などを使い続けるためにかかる継続的な費用","最初に払う初期費用","1回だけの費用","利益"],k:0,e:"ランニングコストは維持・運用にかかり続ける費用（燃料・保守・人件費など）。対して導入時の費用はイニシャルコストです。"},
+{c:"biz",d:2,q:"「損益分岐点」とは？",a:["利益がゼロになる（黒字と赤字の境目の）売上高","最大の売上","最小の費用","目標利益"],k:0,e:"損益分岐点は売上＝総費用で利益がちょうどゼロになる点。ここを超えると黒字、下回ると赤字です。"},
+{c:"biz",d:1,q:"「コンプライアンス」とは？",a:["法令や社会的ルールを守ること","売上を伸ばすこと","コストを下げること","顧客対応"],k:0,e:"コンプライアンス＝法令遵守。建設業では談合防止・安全・労務管理など、守るべきルールが多く重要です。"},
+{c:"biz",d:2,q:"「PDCAサイクル」の順番として正しいのは？",a:["計画→実行→評価→改善","実行→計画→改善→評価","評価→実行→計画→改善","改善→計画→実行→評価"],k:0,e:"Plan(計画)→Do(実行)→Check(評価)→Act(改善)を繰り返して業務を良くする手法。現場や経営の改善に使われます。"},
+{c:"biz",d:2,q:"「粗利」と同じ意味の言葉は？",a:["売上総利益","営業利益","経常利益","純利益"],k:0,e:"粗利＝売上総利益＝売上高−売上原価。現場ごとのもうけを見るとき『この工事の粗利は？』とよく使います。"},
+{c:"biz",d:1,q:"「キャパシティ（キャパ）」が指すのは？",a:["対応できる容量・能力の限界","値段","品質","スピード"],k:0,e:"キャパシティは受け入れられる仕事量や能力の上限。『今月はもうキャパオーバー』のように使います。"},
+{c:"biz",d:2,q:"「リスクヘッジ」とは？",a:["損失やリスクに備えて対策を打っておくこと","リスクを無視すること","利益を最大化すること","値引きすること"],k:0,e:"リスクヘッジは危険に備える手立て（保険加入、契約条件の明確化、複数取引先の確保など）を講じておくことです。"},
+{c:"biz",d:2,q:"「B/S（ビーエス）」は何の略称？",a:["Balance Sheet（貸借対照表）","Business Standard","Best Sale","Basic Service"],k:0,e:"B/SはBalance Sheet＝貸借対照表。会社の資産・負債・純資産の一覧です。P/LはProfit and Loss statement（損益計算書）。"},
+{c:"biz",d:1,q:"「アウトソーシング」とは？",a:["業務を外部に委託すること","社内で全部やること","社員を増やすこと","値段を下げること"],k:0,e:"アウトソーシングは自社業務の一部を外部の専門会社などに委託すること。建設業の外注・下請発注もこの一種です。"},
+{c:"biz",d:3,q:"「与信」とは？",a:["取引相手にどれだけ信用（後払い等）を与えられるか判断すること","銀行からお金を借りること","値引きすること","広告を出すこと"],k:0,e:"与信は取引先の支払能力を見極め、掛け取引の限度額などを決めること。回収不能（貸倒れ）を防ぐための重要な管理です。"},
+{c:"biz",d:2,q:"「イニシャルコスト」とは？",a:["導入・開始時に最初にかかる費用","毎月かかる費用","撤去費用","人件費"],k:0,e:"イニシャルコストは初期投資（機械の購入費など）。運用し続ける費用のランニングコストと対で考えます。"},
+{c:"biz",d:3,q:"「粗利益率」が同じでも金額が違う場合、経営上まず見るべきは？",a:["粗利益の『金額』と原価回収・資金繰りへの影響","従業員の満足度だけ","会社の知名度","事務所の場所"],k:0,e:"率が同じでも受注金額が大きいほど粗利益の絶対額は増えます。ただし立替えや工期も伸びがちなので、資金繰りとセットで判断します。"},
+{c:"biz",d:1,q:"「見積り」と「請求」の違いとして正しいのは？",a:["見積りは事前の金額提示、請求は実施後の代金請求","同じ意味","請求が先","見積りは契約書"],k:0,e:"見積りは工事前に『いくらでやります』と示す書類、請求は工事後（または出来高に応じて）代金を請求する書類です。"},
+{c:"biz",d:2,q:"「BCP」とは何の計画？",a:["事業継続計画（災害時などに事業を続ける・早く復旧する計画）","販売促進計画","建設計画","予算計画"],k:0,e:"BCP（Business Continuity Plan）は地震・水害などの緊急時に、重要業務を止めない・早く復旧するための計画。建設業は防災の担い手として重視されます。"},
+];
+
+/* =========================================================
+   ロジック
+   ========================================================= */
+const LS_KEY = "keiei_quiz_v1";
+const SESSION_SIZE = 10;
+let state = load();
+let session = null; // {list, idx, answers:[], answered:false}
+
+function load(){
+  try{
+    const s = JSON.parse(localStorage.getItem(LS_KEY));
+    if(s && s.perCat) return s;
+  }catch(e){}
+  return {total:0, correct:0, perCat:{}, wrongIds:[], lastDay:null, streak:0};
+}
+function save(){ localStorage.setItem(LS_KEY, JSON.stringify(state)); }
+
+function qId(q){ return Q.indexOf(q); }
+
+function catStats(id){
+  const c = state.perCat[id] || {t:0,c:0};
+  return c;
+}
+function catQ(id){ return Q.filter(q=>q.c===id); }
+
+/* ---- ホーム描画 ---- */
+function renderHome(){
+  document.getElementById("stTotal").textContent = state.total;
+  document.getElementById("stAcc").textContent = state.total? Math.round(state.correct/state.total*100)+"%" : "–";
+  document.getElementById("stStreak").textContent = state.streak||0;
+  document.getElementById("footTotal").textContent = Q.length;
+
+  const grid = document.getElementById("catGrid");
+  grid.innerHTML = "";
+
+  // 全部からランダム
+  const allBtn = document.createElement("button");
+  allBtn.className = "cat all";
+  allBtn.innerHTML = `<div class="emoji">🎲</div><div class="name">全ジャンルからランダム10問</div>
+    <div class="meta">${Q.length}問からおまかせ出題</div>
+    <div class="bar"><span style="width:${state.total?Math.min(100,Math.round(state.total/Q.length*100)):0}%"></span></div>`;
+  allBtn.onclick = ()=> startSession(pickRandom(Q, SESSION_SIZE));
+  grid.appendChild(allBtn);
+
+  CATS.forEach(cat=>{
+    const list = catQ(cat.id);
+    const cs = catStats(cat.id);
+    const acc = cs.t? Math.round(cs.c/cs.t*100) : 0;
+    const b = document.createElement("button");
+    b.className = "cat";
+    b.innerHTML = `<div class="emoji">${cat.emoji}</div>
+      <div class="name">${cat.name}</div>
+      <div class="meta">全${list.length}問 ・ 正答率 ${cs.t?acc+"%":"–"}</div>
+      <div class="bar"><span style="width:${acc}%"></span></div>`;
+    b.onclick = ()=> startSession(pickRandom(list, Math.min(SESSION_SIZE, list.length)));
+    grid.appendChild(b);
+  });
+
+  const wrongBtn = document.getElementById("wrongBtn");
+  const wc = (state.wrongIds||[]).length;
+  wrongBtn.textContent = `❗ 間違えた問題だけ復習する（${wc}問）`;
+  wrongBtn.disabled = wc===0;
+}
+
+function pickRandom(arr, n){
+  const a = arr.slice();
+  for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+  return a.slice(0, n);
+}
+
+/* ---- セッション開始 ---- */
+function startSession(list){
+  if(!list.length) return;
+  // 各問題の選択肢をシャッフルして正解indexを追従
+  const prepared = list.map(q=>{
+    const idxs = q.a.map((_,i)=>i);
+    for(let i=idxs.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [idxs[i],idxs[j]]=[idxs[j],idxs[i]]; }
+    return { q, order: idxs, correctPos: idxs.indexOf(q.k) };
+  });
+  session = { list:prepared, idx:0, answers:[], answered:false };
+  show("quiz");
+  renderQuestion();
+}
+
+function show(id){
+  ["home","quiz","result"].forEach(x=>document.getElementById(x).classList.toggle("hidden", x!==id));
+  window.scrollTo(0,0);
+}
+
+/* ---- 問題描画 ---- */
+function renderQuestion(){
+  const item = session.list[session.idx];
+  const q = item.q;
+  session.answered = false;
+
+  document.getElementById("qcount").textContent = `${session.idx+1} / ${session.list.length}`;
+  document.getElementById("prog").style.width = (session.idx/session.list.length*100)+"%";
+
+  const cat = CATS.find(c=>c.id===q.c);
+  const diffLabel = {1:"やさしい",2:"ふつう",3:"むずかしい"}[q.d];
+  document.getElementById("qtags").innerHTML =
+    `<span class="tag">${cat.emoji} ${cat.name}</span>`+
+    `<span class="tag diff d${q.d}">${diffLabel}</span>`;
+
+  document.getElementById("qtext").textContent = q.q;
+
+  const wrap = document.getElementById("choices");
+  wrap.innerHTML = "";
+  const letters = ["A","B","C","D","E"];
+  item.order.forEach((origIdx, pos)=>{
+    const btn = document.createElement("button");
+    btn.className = "choice";
+    btn.innerHTML = `<span class="mark">${letters[pos]}</span><span>${q.a[origIdx]}</span>`;
+    btn.onclick = ()=> answer(pos, btn);
+    wrap.appendChild(btn);
+  });
+
+  document.getElementById("explainWrap").innerHTML = "";
+  document.getElementById("nextBtn").classList.add("hidden");
+}
+
+/* ---- 回答 ---- */
+function answer(pos, btn){
+  if(session.answered) return;
+  session.answered = true;
+  const item = session.list[session.idx];
+  const q = item.q;
+  const correct = pos === item.correctPos;
+
+  const nodes = document.querySelectorAll("#choices .choice");
+  nodes.forEach((n,i)=>{
+    n.classList.add("disabled");
+    n.onclick = null;
+    if(i===item.correctPos) n.classList.add("correct");
+    else if(i===pos) n.classList.add("wrong");
+    else n.classList.add("dim");
+  });
+
+  // 記録
+  session.answers.push({ item, pos, correct });
+  state.total++;
+  const cs = state.perCat[q.c] || {t:0,c:0};
+  cs.t++;
+  if(correct){ state.correct++; cs.c++; }
+  state.perCat[q.c] = cs;
+
+  const id = qId(q);
+  state.wrongIds = state.wrongIds || [];
+  if(correct){ state.wrongIds = state.wrongIds.filter(x=>x!==id); }
+  else if(!state.wrongIds.includes(id)){ state.wrongIds.push(id); }
+
+  updateStreak();
+  save();
+
+  const ex = document.getElementById("explainWrap");
+  ex.innerHTML = `<div class="explain ${correct?'ok':'ng'}">
+      <div class="head">${correct?'⭕ 正解':'❌ 不正解'}</div>
+      <div class="body">${q.e}</div>
+    </div>`;
+
+  document.getElementById("prog").style.width = ((session.idx+1)/session.list.length*100)+"%";
+  const nb = document.getElementById("nextBtn");
+  nb.textContent = session.idx+1 < session.list.length ? "次の問題へ →" : "結果を見る";
+  nb.classList.remove("hidden");
+}
+
+function updateStreak(){
+  const today = new Date().toISOString().slice(0,10);
+  if(state.lastDay === today) return;
+  const yst = new Date(Date.now()-86400000).toISOString().slice(0,10);
+  state.streak = (state.lastDay===yst) ? (state.streak||0)+1 : 1;
+  state.lastDay = today;
+}
+
+document.getElementById("nextBtn").onclick = ()=>{
+  if(session.idx+1 < session.list.length){ session.idx++; renderQuestion(); window.scrollTo(0,0); }
+  else showResult();
+};
+
+document.getElementById("quitBtn").onclick = ()=>{
+  if(session.answers.length===0){ goHome(); return; }
+  if(confirm("クイズを中断してホームに戻りますか？（ここまでの記録は保存されます）")) goHome();
+};
+
+/* ---- 結果 ---- */
+function showResult(){
+  const total = session.answers.length;
+  const correct = session.answers.filter(a=>a.correct).length;
+  const pct = Math.round(correct/total*100);
+  show("result");
+
+  // リング
+  const r=64, C=2*Math.PI*r, off=C*(1-pct/100);
+  document.getElementById("ring").innerHTML =
+    `<svg width="150" height="150" viewBox="0 0 150 150">
+       <circle cx="75" cy="75" r="${r}" fill="none" stroke="#e6e8ef" stroke-width="12"/>
+       <circle cx="75" cy="75" r="${r}" fill="none" stroke="${pct>=70?'#2f9e44':pct>=40?'#f0a500':'#e03131'}"
+         stroke-width="12" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${off}"/>
+     </svg>
+     <div class="pct"><b>${pct}%</b><small>${correct} / ${total} 問正解</small></div>`;
+
+  const msg = pct===100?"満点！すばらしい 🎉": pct>=80?"よくできました！":pct>=50?"いい調子。もう一歩！":"復習でどんどん伸びます 💪";
+  document.getElementById("resMsg").textContent = msg;
+  document.getElementById("resDetail").textContent = `累計 ${state.total}問 ／ 通算正答率 ${Math.round(state.correct/state.total*100)}%`;
+
+  // 見直し（間違えたもの優先、全部表示）
+  const list = document.getElementById("reviewList");
+  const wrongs = session.answers.filter(a=>!a.correct);
+  document.getElementById("reviewTitle").textContent = wrongs.length? `見直し（間違えた ${wrongs.length}問）` : "見直し（全問正解！）";
+  const target = wrongs.length? wrongs : session.answers;
+  list.innerHTML = "";
+  target.forEach(a=>{
+    const q = a.item.q;
+    const yourText = q.a[a.item.order[a.pos]];
+    const ansText = q.a[q.k];
+    const div = document.createElement("div");
+    div.className = "review-item";
+    div.innerHTML = `<div class="rq">${q.q}</div>
+      ${a.correct?"":`<div class="ra"><span class="you">あなた: ${yourText}</span></div>`}
+      <div class="ra"><span class="ans">正解: ${ansText}</span></div>
+      <div class="re">${q.e}</div>`;
+    list.appendChild(div);
+  });
+}
+
+document.getElementById("againBtn").onclick = ()=>{
+  // 直前と同じ範囲から再出題（カテゴリを引き継ぐ）
+  const cats = [...new Set(session.list.map(i=>i.q.c))];
+  const pool = cats.length===CATS.length ? Q : Q.filter(q=>cats.includes(q.c));
+  startSession(pickRandom(pool, Math.min(SESSION_SIZE, pool.length)));
+};
+document.getElementById("homeBtn").onclick = goHome;
+
+function goHome(){ session=null; renderHome(); show("home"); }
+
+document.getElementById("wrongBtn").onclick = ()=>{
+  const ids = state.wrongIds||[];
+  const list = ids.map(i=>Q[i]).filter(Boolean);
+  if(list.length) startSession(pickRandom(list, Math.min(SESSION_SIZE, list.length)));
+};
+
+document.getElementById("resetBtn").onclick = ()=>{
+  if(confirm("これまでの成績・記録をすべて消しますか？（元に戻せません）")){
+    state = {total:0, correct:0, perCat:{}, wrongIds:[], lastDay:null, streak:0};
+    save(); renderHome();
+  }
+};
+
+renderHome();
+</script>
+</body>
+</html>
