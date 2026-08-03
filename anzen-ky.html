@@ -1327,27 +1327,28 @@ async function tenkenBuildSingleSheetFile(base64, sheetName, days, inspector, ye
   zip.file(keep.path,xml);
   // 他の8シートを削除する
   const others=sheets.filter(s=>s.rId!==keep.rId);
-  // workbook.xml: 他シートの<sheet>を削除、印刷範囲(definedNames)は対象分だけlocalSheetId=0で残す
+  // workbook.xml: 他シートの<sheet>と定義名(印刷範囲など)を削除。activeTabを0に。
   let wb=await zip.file('xl/workbook.xml').async('string');
-  let keepPrint=null;
-  const dnBlockM=wb.match(/<definedNames>[\s\S]*?<\/definedNames>/);
-  if(dnBlockM){
-    const dnRe=/<definedName\b[^>]*name="_xlnm.Print_Area"[^>]*>([\s\S]*?)<\/definedName>/g;let dm;
-    while((dm=dnRe.exec(dnBlockM[0]))){if(dm[1].indexOf(keep.name)>=0||dm[1].indexOf(keep.nameRaw)>=0){keepPrint=dm[1];break;}}
-  }
   others.forEach(o=>{wb=wb.replace(new RegExp(`<sheet\\b[^>]*r:id="${o.rId}"[^>]*/>`),'');});
   wb=wb.replace(/<definedNames>[\s\S]*?<\/definedNames>/,'');
-  if(keepPrint)wb=wb.replace('</sheets>',`</sheets><definedNames><definedName name="_xlnm.Print_Area" localSheetId="0">${keepPrint}</definedName></definedNames>`);
   wb=wb.replace(/activeTab="\d+"/,'activeTab="0"');
   zip.file('xl/workbook.xml',wb);
-  // workbook.xml.rels: 他シートの関係を削除
+  // workbook.xml.rels: 他シートの関係と calcChain の関係を削除
   let rels=await zip.file('xl/_rels/workbook.xml.rels').async('string');
   others.forEach(o=>{rels=rels.replace(new RegExp(`<Relationship[^>]*Id="${o.rId}"[^>]*/>`),'');});
+  rels=rels.replace(/<Relationship[^>]*Target="calcChain\.xml"[^>]*\/>/,'');
   zip.file('xl/_rels/workbook.xml.rels',rels);
-  // [Content_Types].xml: 他シートのOverrideを削除
+  // [Content_Types].xml: 他シートと calcChain の Override を削除
   let ct=await zip.file('[Content_Types].xml').async('string');
   others.forEach(o=>{ct=ct.replace(new RegExp(`<Override[^>]*PartName="${tenkenReEsc('/'+o.path)}"[^>]*/>`),'');});
+  ct=ct.replace(/<Override[^>]*PartName="\/xl\/calcChain\.xml"[^>]*\/>/,'');
   zip.file('[Content_Types].xml',ct);
+  // calcChain.xml を削除（残すと削除シートのセルを参照して「問題が見つかりました」修復が出る）
+  if(zip.file('xl/calcChain.xml'))zip.remove('xl/calcChain.xml');
+  // docProps/app.xml をシート1枚分に整合させる（枚数・シート名の不一致による修復を防ぐ）
+  const appXml='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\r\n'+
+    '<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes"><Application>Microsoft Excel</Application><DocSecurity>0</DocSecurity><ScaleCrop>false</ScaleCrop><HeadingPairs><vt:vector size="2" baseType="variant"><vt:variant><vt:lpstr>ワークシート</vt:lpstr></vt:variant><vt:variant><vt:i4>1</vt:i4></vt:variant></vt:vector></HeadingPairs><TitlesOfParts><vt:vector size="1" baseType="lpstr"><vt:lpstr>'+keep.nameRaw+'</vt:lpstr></vt:vector></TitlesOfParts><LinksUpToDate>false</LinksUpToDate><SharedDoc>false</SharedDoc><HyperlinksChanged>false</HyperlinksChanged><AppVersion>16.0300</AppVersion></Properties>';
+  if(zip.file('docProps/app.xml'))zip.file('docProps/app.xml',appXml);
   // ワークシート本体ファイルとその関係ファイルを削除
   others.forEach(o=>{zip.remove(o.path);const rp='xl/worksheets/_rels/'+o.path.split('/').pop()+'.rels';if(zip.file(rp))zip.remove(rp);});
   return zip.generateAsync({type:'blob'});
