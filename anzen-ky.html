@@ -3,12 +3,13 @@
 <html lang="ja"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>安全巡視・KY活動日報</title>
+<title>KY日報</title>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="KY日報">
 <meta name="theme-color" content="#1f3a5f">
-<link rel="manifest" href='data:application/json,{"id":"/anzen-ky.html","name":"安全巡視・KY活動日報","short_name":"安全KY日報","start_url":"/anzen-ky.html","scope":"/anzen-ky.html","display":"standalone","background_color":"#f4f5f7","theme_color":"#1f3a5f","icons":[{"src":"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjIyIiBmaWxsPSIjMWYzYTVmIi8+PHJlY3QgeD0iMjQiIHk9IjI0IiB3aWR0aD0iMjIiIGhlaWdodD0iMjIiIHJ4PSI1IiBmaWxsPSIjZTg3MzJiIi8+PHJlY3QgeD0iNTQiIHk9IjI0IiB3aWR0aD0iMjIiIGhlaWdodD0iMjIiIHJ4PSI1IiBmaWxsPSIjZjRmMWVhIi8+PHJlY3QgeD0iMjQiIHk9IjU0IiB3aWR0aD0iMjIiIGhlaWdodD0iMjIiIHJ4PSI1IiBmaWxsPSIjZjRmMWVhIi8+PHJlY3QgeD0iNTQiIHk9IjU0IiB3aWR0aD0iMjIiIGhlaWdodD0iMjIiIHJ4PSI1IiBmaWxsPSIjZTg3MzJiIi8+PC9zdmc+","sizes":"any","type":"image/svg+xml"}]}'>
-<link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjIyIiBmaWxsPSIjMWYzYTVmIi8+PHJlY3QgeD0iMjQiIHk9IjI0IiB3aWR0aD0iMjIiIGhlaWdodD0iMjIiIHJ4PSI1IiBmaWxsPSIjZTg3MzJiIi8+PHJlY3QgeD0iNTQiIHk9IjI0IiB3aWR0aD0iMjIiIGhlaWdodD0iMjIiIHJ4PSI1IiBmaWxsPSIjZjRmMWVhIi8+PHJlY3QgeD0iMjQiIHk9IjU0IiB3aWR0aD0iMjIiIGhlaWdodD0iMjIiIHJ4PSI1IiBmaWxsPSIjZjRmMWVhIi8+PHJlY3QgeD0iNTQiIHk9IjU0IiB3aWR0aD0iMjIiIGhlaWdodD0iMjIiIHJ4PSI1IiBmaWxsPSIjZTg3MzJiIi8+PC9zdmc+">
+<link rel="manifest" href="/anzen-ky.webmanifest">
+<link rel="apple-touch-icon" href="/icon-192.png">
 <style>
   :root{
     --bg:#f4f5f7; --card:#fff; --border:#e0e2e6; --border-strong:#c7cad0;
@@ -75,7 +76,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
 </head>
 <body>
 
-<header><h1>安全巡視・KY活動日報</h1></header>
+<header><h1>KY日報 <span style="font-weight:400;font-size:12px;color:var(--text-sub)">安全巡視・KY活動日報</span></h1></header>
 <div class="tabs">
   <button class="tab-btn active" data-tab="editor">日報を書く</button>
   <button class="tab-btn" data-tab="list">日報一覧</button>
@@ -1570,6 +1571,13 @@ async function exportToExcel(){
   renderAll();
   renderList();
 })();
+
+/* ---------- Service Worker（アプリとしてインストール可能に＋オフライン起動） ---------- */
+if("serviceWorker" in navigator){
+  window.addEventListener("load",()=>{
+    navigator.serviceWorker.register("/anzen-ky-sw.js",{scope:"/anzen-ky"}).catch(()=>{});
+  });
+}
 </script>
 
 

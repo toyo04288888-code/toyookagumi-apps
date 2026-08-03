@@ -1,0 +1,14 @@
+{
+  "id": "/anzen-ky",
+  "name": "KY日報",
+  "short_name": "KY日報",
+  "start_url": "/anzen-ky",
+  "scope": "/anzen-ky",
+  "display": "standalone",
+  "background_color": "#f4f5f7",
+  "theme_color": "#1f3a5f",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}
