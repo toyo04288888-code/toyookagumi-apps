@@ -88,6 +88,10 @@ https://github.com/nodeca/pako/blob/main/LICENSE
 
   <div class="card">
     <h2><span class="bar"></span>基本情報</h2>
+    <div style="margin-bottom:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <button class="btn ghost small" id="importKantokuBtn">工事日報から取り込む</button>
+      <span class="muted" style="flex:1 1 240px">年月日を入れてから押すと、その日の工事日報から〔工事名・場所・天気・工種・使用機械・作業員〕を取り込みます（クラウド共有時）。</span>
+    </div>
     <div class="row">
       <div class="fld" style="flex:2 1 320px"><label>工事名</label><select id="f_kojiname"><option value="">選択…</option><option value="3号工事">3号工事</option></select></div>
       <div class="fld" style="flex:1 1 200px"><label>工事場所</label><select id="f_place"><option value="">選択…</option><option value="春江町">春江町</option></select></div>
@@ -845,6 +849,47 @@ function bindBasic(){
   $('f_shanai_patrol').oninput=e=>state.r.shanai_patrol=e.target.value;
 }
 
+/* ===== 工事日報から取り込む（同じ日付の工事日報の内容を流用） ===== */
+async function importFromKantoku(){
+  if(!(state.mode==='cloud'&&state.sb)){
+    alert('工事日報の取り込みは「クラウドで共有」モードで使えます。設定タブでクラウドに切り替えてください。');return;
+  }
+  const date=state.r.report_date;
+  if(!date){alert('先に「年月日」を入力してください。その日の工事日報を取り込みます。');return;}
+  let rows;
+  try{
+    const {data,error}=await state.sb.from('kantoku_nippou').select('*').eq('report_date',date);
+    if(error){alert('工事日報の取り込みに失敗しました：'+(error.message||error.hint||JSON.stringify(error)));return;}
+    rows=data||[];
+  }catch(e){alert('工事日報の取り込みに失敗しました：'+(e.message||e));return;}
+  if(!rows.length){alert(date+' の工事日報が見つかりませんでした。工事日報アプリでその日の日報が保存されているか確認してください。');return;}
+
+  let chosen=rows[0];
+  if(rows.length>1){
+    const list=rows.map((r,i)=>`${i+1}: ${(r.koji_name||(r.data&&r.data.koji_name)||'(工事名なし)')}`).join('\n');
+    const ans=prompt('同じ日に複数の工事日報があります。取り込む番号を入力してください：\n'+list,'1');
+    if(ans==null)return;
+    const idx=parseInt(ans,10)-1;
+    if(isNaN(idx)||idx<0||idx>=rows.length){alert('番号が正しくありません。');return;}
+    chosen=rows[idx];
+  }
+  const d=chosen.data||chosen; // 工事日報の中身（jsonb）
+  if(!confirm('工事日報の内容で〔工事名・場所・天気・工種・使用機械・作業員〕を上書きします。よろしいですか？（KY活動・巡視などKY日報だけの項目はそのまま残ります）'))return;
+
+  if(d.koji_name!=null)state.r.koji_name=d.koji_name;
+  if(d.place!=null)state.r.place=d.place;
+  if(d.weather!=null)state.r.weather=d.weather;
+  if(Array.isArray(d.works)&&d.works.length)state.r.works=d.works.map(w=>({kind:(w&&w.kind)||'',content:(w&&w.content)||''}));
+  if(Array.isArray(d.machines))state.r.machines=d.machines.map(m=>(m&&m.machine)?m.machine:(typeof m==='string'?m:'')).filter(Boolean);
+  if(Array.isArray(d.workers)&&d.workers.length){
+    const names=d.workers.map(w=>(w&&w.name)?w.name:'').filter(Boolean);
+    if(names.length)state.r.workers=[{company:'',kind:'',shokucho:'',names}];
+  }
+  renderAll();
+  toast('工事日報から取り込みました');
+}
+$('importKantokuBtn').onclick=()=>importFromKantoku();
+
 function loadBasicToForm(){
   renderKojiNameSelect();
   renderPlaceSelect();
@@ -852,7 +897,10 @@ function loadBasicToForm(){
   renderPatrolPersonSelect();
   $('f_date').value=state.r.report_date||'';
   updateYoubi();
-  $('f_weather').value=state.r.weather||'';
+  // 天気：選択肢に無い値（工事日報から取り込んだ「雨のち晴」等）も表示できるよう補う
+  const wsel=$('f_weather'), wv=state.r.weather||'';
+  if(wv && ![...wsel.options].some(o=>o.value===wv)) wsel.add(new Option(wv,wv));
+  wsel.value=wv;
   $('f_tbm').value=state.r.tbm||'';
   $('f_zesei_nashi').checked=state.r.zesei_ari!=='ari';
   $('f_zesei_ari').checked=state.r.zesei_ari==='ari';
