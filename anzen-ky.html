@@ -431,13 +431,16 @@ const Store={
   },
   async saveReport(r){
     if(state.mode==='cloud'&&state.sb){
-      try{await state.sb.from('az_reports').upsert({id:r.id,report_date:r.report_date,value:r});}
-      catch(e){alert('クラウド保存に失敗しました：'+(e.message||e));return false;}
-    }else{
-      const idx=state.reports.findIndex(x=>x.id===r.id);
-      if(idx>=0)state.reports[idx]=r;else state.reports.unshift(r);
-      localStorage.setItem(LS.list,JSON.stringify(state.reports));
+      try{
+        const {error}=await state.sb.from('az_reports').upsert({id:r.id,report_date:r.report_date,value:r});
+        if(error){alert('クラウド保存に失敗しました：'+(error.message||error.hint||JSON.stringify(error)));return false;}
+      }catch(e){alert('クラウド保存に失敗しました：'+(e.message||e));return false;}
     }
+    // 画面の一覧にも即反映する（クラウド／ローカル共通）。保存したデータのコピーを保持する
+    const saved=JSON.parse(JSON.stringify(r));
+    const idx=state.reports.findIndex(x=>x.id===r.id);
+    if(idx>=0)state.reports[idx]=saved;else state.reports.unshift(saved);
+    if(!(state.mode==='cloud'&&state.sb))localStorage.setItem(LS.list,JSON.stringify(state.reports));
     return true;
   },
   async deleteReport(id){
@@ -1536,7 +1539,7 @@ async function exportToExcel(){
   xml=setCellTextInXml(xml,'G40', '掘削箇所の明示をすること。');
   xml=setCellTextInXml(xml,'G41', '工事終了時は、鉄板で開口部を養生すること。');
   xml=setCellTextInXml(xml,'G42', '通行車両の安全を第一に作業すること。');
-  xml=setCellTextInXml(xml,'F44', r.zesei_ari==='nashi'?'☑無し':'□無し');
+  xml=setCellTextInXml(xml,'F44', r.zesei_ari==='nashi'?'☑':'□');
   xml=setCellTextInXml(xml,'M44', r.zesei_ari==='ari'?'☑あり':'□あり');
   xml=setCellTextInXml(xml,'G44', r.zesei_ari==='ari'?(r.zesei_text||''):'なし');
 
