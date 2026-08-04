@@ -454,6 +454,16 @@ const Store={
   }
 };
 
+// az_config への保存を1か所にまとめ、Supabaseが返すエラーも検知して表示する。
+// （supabase-jsは失敗時に例外を投げず {error} を返すため、従来は失敗が素通りしていた）
+async function azUpsertConfig(id, value, extraHint){
+  try{
+    const {error}=await state.sb.from('az_config').upsert({id, value});
+    if(error){alert('クラウド保存に失敗しました：'+(error.message||error.hint||JSON.stringify(error))+(extraHint?('\n'+extraHint):''));return false;}
+    return true;
+  }catch(e){alert('クラウド保存に失敗しました：'+(e.message||e));return false;}
+}
+
 /* ===== 工事名マスタ ===== */
 function localKojiNames(){const raw=localStorage.getItem(LS.kojinames);if(raw){try{const p=JSON.parse(raw);if(Array.isArray(p))return p;}catch(e){}}return [];}
 function getKojiNames(){return (state.mode==='cloud'&&state.sb)?(state.cloudKojiNames||[]):localKojiNames();}
@@ -461,7 +471,7 @@ async function saveKojiNames(arr){
   arr=[...new Set(arr.filter(Boolean))];
   if(state.mode==='cloud'&&state.sb){
     state.cloudKojiNames=arr;
-    try{await state.sb.from('az_config').upsert({id:'kojinames',value:arr});}catch(e){alert('クラウド保存に失敗しました。az_configテーブルが作成済みか確認してください。');}
+    await azUpsertConfig('kojinames', arr, 'az_configテーブルが作成済みか確認してください。');
   }else{localStorage.setItem(LS.kojinames,JSON.stringify(arr));}
 }
 
@@ -472,7 +482,7 @@ async function savePlaces(arr){
   arr=[...new Set(arr.filter(Boolean))];
   if(state.mode==='cloud'&&state.sb){
     state.cloudPlaces=arr;
-    try{await state.sb.from('az_config').upsert({id:'places',value:arr});}catch(e){alert('クラウド保存に失敗しました。az_configテーブルが作成済みか確認してください。');}
+    await azUpsertConfig('places', arr, 'az_configテーブルが作成済みか確認してください。');
   }else{localStorage.setItem(LS.places,JSON.stringify(arr));}
 }
 
@@ -483,7 +493,7 @@ async function saveWorkerMaster(arr){
   arr=arr.filter(w=>w.company||w.shokucho||w.names);
   if(state.mode==='cloud'&&state.sb){
     state.cloudWorkerMaster=arr;
-    try{await state.sb.from('az_config').upsert({id:'workermaster',value:arr});}catch(e){alert('クラウド保存に失敗しました。az_configテーブルが作成済みか確認してください。');}
+    await azUpsertConfig('workermaster', arr, 'az_configテーブルが作成済みか確認してください。');
   }else{localStorage.setItem(LS.workermaster,JSON.stringify(arr));}
 }
 
@@ -503,7 +513,7 @@ function getTemplate(){return (state.mode==='cloud'&&state.sb)?(state.cloudTempl
 async function saveTemplate(obj){
   if(state.mode==='cloud'&&state.sb){
     state.cloudTemplate=obj;
-    try{await state.sb.from('az_config').upsert({id:'template',value:obj});}catch(e){alert('クラウド保存に失敗しました。ファイルサイズが大きすぎる可能性があります。');}
+    await azUpsertConfig('template', obj, 'ファイルサイズが大きすぎる可能性があります。');
   }else{
     try{localStorage.setItem(LS.template,JSON.stringify(obj));}
     catch(e){alert('この端末への保存に失敗しました。ファイルサイズが大きい可能性があります。');}
@@ -638,7 +648,7 @@ async function saveCompaniesList(arr){
   arr=[...new Set(arr.filter(Boolean))];
   if(state.mode==='cloud'&&state.sb){
     state.cloudCompanies=arr;
-    try{await state.sb.from('az_config').upsert({id:'companies',value:arr});}catch(e){alert('クラウド保存に失敗しました。');}
+    await azUpsertConfig('companies', arr);
   }else{localStorage.setItem(LS.companies,JSON.stringify(arr));}
 }
 
@@ -649,7 +659,7 @@ async function saveShokuchosList(arr){
   arr=[...new Set(arr.filter(Boolean))];
   if(state.mode==='cloud'&&state.sb){
     state.cloudShokuchos=arr;
-    try{await state.sb.from('az_config').upsert({id:'shokuchos',value:arr});}catch(e){alert('クラウド保存に失敗しました。');}
+    await azUpsertConfig('shokuchos', arr);
   }else{localStorage.setItem(LS.shokuchos,JSON.stringify(arr));}
 }
 
@@ -660,7 +670,7 @@ async function saveWorkerNamesList(arr){
   arr=[...new Set(arr.filter(Boolean))];
   if(state.mode==='cloud'&&state.sb){
     state.cloudWorkerNames=arr;
-    try{await state.sb.from('az_config').upsert({id:'workernames',value:arr});}catch(e){alert('クラウド保存に失敗しました。');}
+    await azUpsertConfig('workernames', arr);
   }else{localStorage.setItem(LS.workernames,JSON.stringify(arr));}
 }
 
@@ -674,8 +684,8 @@ async function saveGenbaShuninList(genbaArr,shuninArr){
   shuninArr=[...new Set(shuninArr.filter(Boolean))];
   if(state.mode==='cloud'&&state.sb){
     state.cloudGenbas=genbaArr;state.cloudShunins=shuninArr;
-    try{await state.sb.from('az_config').upsert({id:'genbas',value:genbaArr});}catch(e){alert('クラウド保存に失敗しました。');}
-    try{await state.sb.from('az_config').upsert({id:'shunins',value:shuninArr});}catch(e){alert('クラウド保存に失敗しました。');}
+    await azUpsertConfig('genbas', genbaArr);
+    await azUpsertConfig('shunins', shuninArr);
   }else{
     localStorage.setItem(LS.genbas,JSON.stringify(genbaArr));
     localStorage.setItem(LS.shunins,JSON.stringify(shuninArr));
@@ -689,7 +699,7 @@ async function savePatrolPersonsList(arr){
   arr=[...new Set(arr.filter(Boolean))];
   if(state.mode==='cloud'&&state.sb){
     state.cloudPatrolPersons=arr;
-    try{await state.sb.from('az_config').upsert({id:'patrolpersons',value:arr});}catch(e){alert('クラウド保存に失敗しました。');}
+    await azUpsertConfig('patrolpersons', arr);
   }else{localStorage.setItem(LS.patrolpersons,JSON.stringify(arr));}
 }
 
@@ -700,7 +710,7 @@ async function saveMachinesList(arr){
   arr=[...new Set(arr.filter(Boolean))];
   if(state.mode==='cloud'&&state.sb){
     state.cloudMachines=arr;
-    try{await state.sb.from('az_config').upsert({id:'machines',value:arr});}catch(e){alert('クラウド保存に失敗しました。');}
+    await azUpsertConfig('machines', arr);
   }else{localStorage.setItem(LS.machines,JSON.stringify(arr));}
 }
 
@@ -710,7 +720,7 @@ function getTenkenTemplate(){return (state.mode==='cloud'&&state.sb)?(state.clou
 async function saveTenkenTemplate(obj){
   if(state.mode==='cloud'&&state.sb){
     state.cloudTenkenTemplate=obj;
-    try{await state.sb.from('az_config').upsert({id:'tenken_template',value:obj});}catch(e){alert('クラウド保存に失敗しました。ファイルサイズが大きすぎる可能性があります。');}
+    await azUpsertConfig('tenken_template', obj, 'ファイルサイズが大きすぎる可能性があります。');
   }else{localStorage.setItem(LS.tenkenTemplate,JSON.stringify(obj));}
 }
 
