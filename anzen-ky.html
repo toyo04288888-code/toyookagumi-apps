@@ -209,7 +209,6 @@ https://github.com/nodeca/pako/blob/main/LICENSE
 
   <div class="card" style="display:flex;gap:10px;flex-wrap:wrap">
     <button class="btn" id="saveReportBtn">この日報を保存</button>
-    <button class="btn ghost" id="exportExcelBtn">Excelで出力</button>
     <button class="btn ghost" id="clearReportBtn">新規作成にリセット</button>
     <span class="muted" id="editFlag" style="align-self:center"></span>
   </div>
@@ -309,18 +308,10 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   </div>
 
   <div class="card">
-    <h2><span class="bar"></span>現場代理人・主任技術者の管理</h2>
+    <h2><span class="bar"></span>現場代理人の管理</h2>
     <div class="fld"><label>現場代理人の一覧（1行に1件）</label><textarea id="set_genbas" rows="3"></textarea></div>
-    <div class="fld" style="margin-top:10px"><label>主任技術者の一覧（1行に1件）</label><textarea id="set_shunins" rows="3"></textarea></div>
     <button class="btn" id="saveGenbaShunin" style="margin-top:10px">保存</button>
-    <div class="muted" style="margin-top:8px" id="genbaShuninNote"></div>
-  </div>
-
-  <div class="card">
-    <h2><span class="bar"></span>安全巡視員の管理</h2>
-    <div class="fld"><label>安全巡視員の一覧（1行に1件）</label><textarea id="set_patrolpersons" rows="4"></textarea></div>
-    <button class="btn" id="savePatrolPersons" style="margin-top:10px">安全巡視員を保存</button>
-    <div class="muted" style="margin-top:8px" id="patrolPersonsNote"></div>
+    <div class="muted" style="margin-top:8px" id="genbaShuninNote">※ 主任技術者・安全巡視員は、日報で現場代理人を選ぶと自動で同じ人が入ります。</div>
   </div>
 
   <div class="card">
@@ -854,21 +845,13 @@ $('saveWorkerNames').onclick=async()=>{
 };
 function refreshGenbaShuninSettings(){
   $('set_genbas').value=getGenbas().join('\n');
-  $('set_shunins').value=getShunins().join('\n');
-  $('genbaShuninNote').textContent=(state.mode==='cloud'&&state.sb)?'※ クラウド共有中です。':'※ この端末のみに保存されます。';
+  const cloud=(state.mode==='cloud'&&state.sb);
+  $('genbaShuninNote').textContent='※ 主任技術者・安全巡視員は、日報で現場代理人を選ぶと自動で同じ人が入ります。'+(cloud?'（クラウド共有中）':'（この端末のみ）');
 }
 $('saveGenbaShunin').onclick=async()=>{
   const g=$('set_genbas').value.split(/[\n,、，]/).map(s=>s.trim()).filter(Boolean);
-  const s=$('set_shunins').value.split(/[\n,、，]/).map(x=>x.trim()).filter(Boolean);
-  await saveGenbaShuninList(g,s);renderGenbaShuninSelect();toast('保存しました');
-};
-function refreshPatrolPersonsSettings(){
-  $('set_patrolpersons').value=getPatrolPersons().join('\n');
-  $('patrolPersonsNote').textContent=(state.mode==='cloud'&&state.sb)?'※ クラウド共有中です。':'※ この端末のみに保存されます。';
-}
-$('savePatrolPersons').onclick=async()=>{
-  const a=$('set_patrolpersons').value.split(/[\n,、，]/).map(s=>s.trim()).filter(Boolean);
-  await savePatrolPersonsList(a);renderPatrolPersonSelect();toast('保存しました');
+  await saveGenbaShuninList(g, g); // 主任技術者・安全巡視員は現場代理人と同じ人を使う
+  renderGenbaShuninSelect();renderPatrolPersonSelect();toast('保存しました');
 };
 function refreshMachinesSettings(){
   $('set_machines').value=getMachines().join('\n');
@@ -907,14 +890,16 @@ $('saveActions').onclick=async()=>{
 /* ===== 現場代理人・主任技術者・安全巡視員プルダウン（日報側） ===== */
 function renderGenbaShuninSelect(){
   const curG=state.r.genba||'', curS=state.r.shunin||'';
+  // 主任技術者・安全巡視員は現場代理人と同じ人を使うので、候補は現場代理人の一覧から出す
   const genbas=[...new Set([...getGenbas(), ...(curG?[curG]:[])])];
-  const shunins=[...new Set([...getShunins(), ...(curS?[curS]:[])])];
+  const shunins=[...new Set([...getGenbas(), ...(curS?[curS]:[])])];
   $('f_genba').innerHTML='<option value="">選択…</option>'+genbas.map(n=>`<option value="${esc(n)}" ${n===curG?'selected':''}>${esc(n)}</option>`).join('');
   $('f_shunin').innerHTML='<option value="">選択…</option>'+shunins.map(n=>`<option value="${esc(n)}" ${n===curS?'selected':''}>${esc(n)}</option>`).join('');
 }
 function renderPatrolPersonSelect(){
   const cur=state.r.patrol.person||'';
-  const persons=[...new Set([...getPatrolPersons(), ...(cur?[cur]:[])])];
+  // 安全巡視員は現場代理人と同じ人を使うので、候補は現場代理人の一覧から出す
+  const persons=[...new Set([...getGenbas(), ...(cur?[cur]:[])])];
   $('f_patrol_person').innerHTML='<option value="">選択…</option>'+persons.map(n=>`<option value="${esc(n)}" ${n===cur?'selected':''}>${esc(n)}</option>`).join('');
 }
 function renderTbmSelect(){
@@ -968,7 +953,13 @@ function bindBasic(){
   $('f_weather').onchange=e=>state.r.weather=e.target.value;
   $('f_kojiname').onchange=e=>state.r.koji_name=e.target.value;
   $('f_place').onchange=e=>state.r.place=e.target.value;
-  $('f_genba').onchange=e=>state.r.genba=e.target.value;
+  // 現場代理人を選ぶと、主任技術者・安全巡視員も同じ人を自動セット
+  $('f_genba').onchange=e=>{
+    state.r.genba=e.target.value;
+    state.r.shunin=e.target.value;
+    state.r.patrol.person=e.target.value;
+    renderGenbaShuninSelect();renderPatrolPersonSelect();
+  };
   $('f_shunin').onchange=e=>state.r.shunin=e.target.value;
   $('f_tbm').onchange=e=>state.r.tbm=e.target.value;
   $('f_patrol_person').onchange=e=>state.r.patrol.person=e.target.value;
@@ -1064,13 +1055,16 @@ function renderAll(){
 $('saveReportBtn').onclick=async()=>{
   if(!state.r.report_date){alert('年月日を入力してください');return;}
   const ok=await Store.saveReport(state.r);
-  if(ok){toast('保存しました');state.editId=state.r.id;$('editFlag').textContent='編集中：'+state.r.report_date;renderList();}
+  if(ok){
+    toast('保存しました');renderList();
+    // 保存したら自動で新規入力画面に切り替える
+    state.editId=null;state.r=newReport();renderAll();$('editFlag').textContent='';
+  }
 };
 $('clearReportBtn').onclick=()=>{
   if(!confirm('入力中の内容が消えます。新規作成しますか？'))return;
   state.editId=null;state.r=newReport();renderAll();$('editFlag').textContent='';
 };
-$('exportExcelBtn').onclick=()=>exportToExcel();
 function editReport(id){
   const src=state.reports.find(x=>x.id===id);
   if(!src)return;
@@ -1107,10 +1101,15 @@ function renderList(){
         <div class="muted">${esc(r.koji_name||'')} ${esc(r.place?('／'+r.place):'')}</div>
       </div>
       <div style="display:flex;gap:6px">
+        <button class="btn small ghost" data-excel="${r.id}">Excel</button>
         <button class="btn small ghost" data-edit="${r.id}">編集</button>
         <button class="btn small danger" data-del="${r.id}">削除</button>
       </div>
     </div>`).join('');
+  box.querySelectorAll('[data-excel]').forEach(b=>b.onclick=()=>{
+    const rep=state.reports.find(x=>x.id===b.dataset.excel);
+    if(rep)exportToExcel(rep);
+  });
   box.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>editReport(b.dataset.edit));
   box.querySelectorAll('[data-del]').forEach(b=>b.onclick=async()=>{
     if(!confirm('この日報を削除しますか？'))return;
@@ -1130,7 +1129,7 @@ function switchTab(name){
   if(name==='settei'){
     refreshKojiNameSettings();refreshPlaceSettings();refreshTemplateSettings();refreshModeSettings();
     refreshCompaniesSettings();refreshShokuchosSettings();refreshWorkerNamesSettings();
-    refreshGenbaShuninSettings();refreshPatrolPersonsSettings();refreshMachinesSettings();refreshTemplateSettings();refreshTenkenSettings();refreshTbmsSettings();refreshDangersSettings();refreshActionsSettings();
+    refreshGenbaShuninSettings();refreshMachinesSettings();refreshTemplateSettings();refreshTenkenSettings();refreshTbmsSettings();refreshDangersSettings();refreshActionsSettings();
   }
 }
 document.querySelectorAll('.tab-btn').forEach(b=>b.onclick=()=>switchTab(b.dataset.tab));
@@ -1167,7 +1166,7 @@ $('saveModeBtn').onclick=async()=>{
   }
   await Store.load();
   renderList();refreshModeSettings();refreshKojiNameSettings();refreshPlaceSettings();refreshTemplateSettings();
-  refreshCompaniesSettings();refreshShokuchosSettings();refreshWorkerNamesSettings();refreshGenbaShuninSettings();refreshPatrolPersonsSettings();refreshMachinesSettings();refreshTenkenSettings();refreshTbmsSettings();refreshDangersSettings();refreshActionsSettings();
+  refreshCompaniesSettings();refreshShokuchosSettings();refreshWorkerNamesSettings();refreshGenbaShuninSettings();refreshMachinesSettings();refreshTenkenSettings();refreshTbmsSettings();refreshDangersSettings();refreshActionsSettings();
   renderGenbaShuninSelect();renderPatrolPersonSelect();renderMachines();
   toast('保存方法を設定しました');
 };
@@ -1618,7 +1617,7 @@ async function exportTenken(){
 }
 $('tenkenExportBtn').onclick=()=>exportTenken();
 
-async function exportToExcel(){
+async function exportToExcel(rep){
   const t=getTemplate();
   if(!t){alert('先に「設定」タブでExcelテンプレートを登録してください。');return;}
   if(typeof JSZip==='undefined'){alert('ZIPライブラリの読み込みに失敗しています。');return;}
@@ -1628,7 +1627,7 @@ async function exportToExcel(){
   if(!path||!zip.file(path)){alert('テンプレートのシート構造を認識できませんでした。');return;}
 
   let xml=await zip.file(path).async('string');
-  const r=state.r;
+  const r=rep||state.r; // 一覧から指定された日報、無ければ入力中の日報
 
   // 日付（P3, Excelシリアル値として書き込む）・曜日（Y3）
   if(r.report_date){
