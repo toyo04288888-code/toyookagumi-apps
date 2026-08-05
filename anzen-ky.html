@@ -90,7 +90,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     <h2><span class="bar"></span>基本情報</h2>
     <div style="margin-bottom:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
       <button class="btn ghost small" id="importKantokuBtn">工事日報から取り込む</button>
-      <span class="muted" style="flex:1 1 240px">年月日を入れてから押すと、その日の工事日報から〔工事名・場所・天気・工種・使用機械・作業員〕を取り込みます（クラウド共有時）。</span>
+      <span class="muted" style="flex:1 1 240px">年月日を入れてから押すと、その日の工事日報から〔工事名・天気・工種・使用機械・作業員〕を取り込みます（クラウド共有時）。作業員は登録済みのフルネームに変換されます。</span>
     </div>
     <div class="row">
       <div class="fld" style="flex:2 1 320px"><label>工事名</label><select id="f_kojiname"><option value="">選択…</option><option value="3号工事">3号工事</option></select></div>
@@ -137,7 +137,8 @@ https://github.com/nodeca/pako/blob/main/LICENSE
 
   <div class="card">
     <h2><span class="bar"></span>本日のTBM（こうやって作業を進めよう！）</h2>
-    <div class="fld"><textarea id="f_tbm" rows="2" placeholder="例：作業前、周囲の安全確認の徹底"></textarea></div>
+    <div class="fld"><select id="f_tbm"><option value="">選択…</option></select></div>
+    <div class="muted" style="margin-top:6px">候補は「設定」タブの「TBMの管理」で登録・編集できます。</div>
   </div>
 
   <div class="card">
@@ -330,6 +331,27 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   </div>
 
   <div class="card">
+    <h2><span class="bar"></span>TBMの管理</h2>
+    <div class="fld"><label>本日のTBMの候補（1行に1件・プルダウンに出ます）</label><textarea id="set_tbms" rows="4" placeholder="例：作業前、周囲の安全確認の徹底&#10;重機周辺への立入禁止を徹底"></textarea></div>
+    <button class="btn" id="saveTbms" style="margin-top:10px">TBMを保存</button>
+    <div class="muted" style="margin-top:8px" id="tbmsNote"></div>
+  </div>
+
+  <div class="card">
+    <h2><span class="bar"></span>KY「どんな危険」の管理</h2>
+    <div class="fld"><label>危険の候補（1行に1件・KY活動記録のプルダウンに出ます）</label><textarea id="set_dangers" rows="4" placeholder="例：重機との接触&#10;掘削面の崩壊&#10;墜落・転落"></textarea></div>
+    <button class="btn" id="saveDangers" style="margin-top:10px">危険の候補を保存</button>
+    <div class="muted" style="margin-top:8px" id="dangersNote"></div>
+  </div>
+
+  <div class="card">
+    <h2><span class="bar"></span>KY「私達はこうする」の管理</h2>
+    <div class="fld"><label>対策の候補（1行に1件・KY活動記録のプルダウンに出ます）</label><textarea id="set_actions" rows="4" placeholder="例：重機の旋回範囲に立ち入らない&#10;誘導員を配置する&#10;安全帯を使用する"></textarea></div>
+    <button class="btn" id="saveActions" style="margin-top:10px">対策の候補を保存</button>
+    <div class="muted" style="margin-top:8px" id="actionsNote"></div>
+  </div>
+
+  <div class="card">
     <h2><span class="bar"></span>Excelテンプレート</h2>
     <div class="muted" style="margin-bottom:8px">「作業日報マザー.xlsx」のようなテンプレートを登録すると、日報を出力する際にそのレイアウトのまま出力できます。</div>
     <label class="btn ghost" style="cursor:pointer;display:inline-block">テンプレートExcelを選択<input type="file" id="templateUpload" accept=".xlsx" style="display:none"></label>
@@ -362,10 +384,10 @@ function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show')
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,8);}
 
 const LS={mode:'az_mode',url:'az_url',key:'az_key',list:'az_list',kojinames:'az_kojinames',places:'az_places',template:'az_template',workermaster:'az_workermaster',
-  companies:'az_companies',shokuchos:'az_shokuchos',workernames:'az_workernames',genbas:'az_genbas',shunins:'az_shunins',patrolpersons:'az_patrolpersons',machines:'az_machines',tenkenTemplate:'az_tenken_template'};
+  companies:'az_companies',shokuchos:'az_shokuchos',workernames:'az_workernames',genbas:'az_genbas',shunins:'az_shunins',patrolpersons:'az_patrolpersons',machines:'az_machines',tenkenTemplate:'az_tenken_template',tbms:'az_tbms',dangers:'az_dangers',actions:'az_actions'};
 
 /* ===== 状態 ===== */
-const state={mode:'local',sb:null,reports:[],r:null,editId:null,cloudKojiNames:null,cloudPlaces:null,cloudTemplate:null,cloudWorkerMaster:null,cloudMachines:null,cloudTenkenTemplate:null};
+const state={mode:'local',sb:null,reports:[],r:null,editId:null,cloudKojiNames:null,cloudPlaces:null,cloudTemplate:null,cloudWorkerMaster:null,cloudMachines:null,cloudTenkenTemplate:null,cloudTbms:null,cloudDangers:null,cloudActions:null};
 
 function newReport(){
   return {
@@ -427,6 +449,12 @@ const Store={
           state.cloudMachines=(mc.data&&Array.isArray(mc.data.value))?mc.data.value:[];}catch(e){state.cloudMachines=[];}
         try{const tt=await state.sb.from('az_config').select('value').eq('id','tenken_template').maybeSingle();
           state.cloudTenkenTemplate=(tt.data&&tt.data.value)?tt.data.value:null;}catch(e){state.cloudTenkenTemplate=null;}
+        try{const tb=await state.sb.from('az_config').select('value').eq('id','tbms').maybeSingle();
+          state.cloudTbms=(tb.data&&Array.isArray(tb.data.value))?tb.data.value:[];}catch(e){state.cloudTbms=[];}
+        try{const dg=await state.sb.from('az_config').select('value').eq('id','dangers').maybeSingle();
+          state.cloudDangers=(dg.data&&Array.isArray(dg.data.value))?dg.data.value:[];}catch(e){state.cloudDangers=[];}
+        try{const ac=await state.sb.from('az_config').select('value').eq('id','actions').maybeSingle();
+          state.cloudActions=(ac.data&&Array.isArray(ac.data.value))?ac.data.value:[];}catch(e){state.cloudActions=[];}
         return;
       }
     }
@@ -557,13 +585,24 @@ function renderWorks(){
     tr.innerHTML=`<td><input class="wk" value="${esc(w.kind)}" placeholder="例：水路工"></td>
       <td><input class="wc" value="${esc(w.content)}" placeholder="作業内容"></td>
       <td><button class="del">×</button></td>`;
-    tr.querySelector('.wk').oninput=e=>w.kind=e.target.value;
+    tr.querySelector('.wk').oninput=e=>{w.kind=e.target.value;syncKyContentFromWorks();};
     tr.querySelector('.wc').oninput=e=>w.content=e.target.value;
-    tr.querySelector('.del').onclick=()=>{state.r.works.splice(state.r.works.indexOf(w),1);renderWorks();};
+    tr.querySelector('.del').onclick=()=>{state.r.works.splice(state.r.works.indexOf(w),1);renderWorks();syncKyContentFromWorks();};
     tb.appendChild(tr);
   });
 }
 $('addWork').onclick=()=>{state.r.works.push({kind:'',content:''});renderWorks();};
+
+// 本日の作業の工種を、KY活動記録の作業内容に自動反映（先頭2つまで）
+function syncKyContentFromWorks(){
+  const kinds=[...new Set(state.r.works.map(w=>w&&w.kind).filter(Boolean))].slice(0,2);
+  if(!Array.isArray(state.r.ky))state.r.ky=[];
+  kinds.forEach((kind,i)=>{
+    if(!state.r.ky[i])state.r.ky[i]={content:'',danger:'',action:''};
+    state.r.ky[i].content=kind;
+  });
+  renderKy();
+}
 
 /* ===== 使用機械（プルダウンで選択・複数可） ===== */
 function renderMachines(){
@@ -586,15 +625,18 @@ $('addMachine').onclick=()=>{if(!Array.isArray(state.r.machines))state.r.machine
 /* ===== KY活動記録 ===== */
 function renderKy(){
   const tb=$('kyBody');tb.innerHTML='';
+  const dangers=getDangers(), actions=getActions();
   state.r.ky.forEach(k=>{
+    const dOpts=[...new Set([...dangers, ...(k.danger?[k.danger]:[])])];
+    const aOpts=[...new Set([...actions, ...(k.action?[k.action]:[])])];
     const tr=document.createElement('tr');
     tr.innerHTML=`<td><input class="kc" value="${esc(k.content)}" placeholder="例：水路工"></td>
-      <td><input class="kd" value="${esc(k.danger)}" placeholder="どんな危険があるか"></td>
-      <td><input class="ka" value="${esc(k.action)}" placeholder="私達はこうする"></td>
+      <td><select class="kd"><option value="">選択…</option>${dOpts.map(n=>`<option value="${esc(n)}" ${n===k.danger?'selected':''}>${esc(n)}</option>`).join('')}</select></td>
+      <td><select class="ka"><option value="">選択…</option>${aOpts.map(n=>`<option value="${esc(n)}" ${n===k.action?'selected':''}>${esc(n)}</option>`).join('')}</select></td>
       <td><button class="del">×</button></td>`;
     tr.querySelector('.kc').oninput=e=>k.content=e.target.value;
-    tr.querySelector('.kd').oninput=e=>k.danger=e.target.value;
-    tr.querySelector('.ka').oninput=e=>k.action=e.target.value;
+    tr.querySelector('.kd').onchange=e=>k.danger=e.target.value;
+    tr.querySelector('.ka').onchange=e=>k.action=e.target.value;
     tr.querySelector('.del').onclick=()=>{state.r.ky.splice(state.r.ky.indexOf(k),1);renderKy();};
     tb.appendChild(tr);
   });
@@ -718,6 +760,50 @@ async function saveMachinesList(arr){
   }else{localStorage.setItem(LS.machines,JSON.stringify(arr));}
 }
 
+/* ===== TBM・危険・対策マスタ（プルダウン候補） ===== */
+function localTbms(){const raw=localStorage.getItem(LS.tbms);if(raw){try{const p=JSON.parse(raw);if(Array.isArray(p))return p;}catch(e){}}return [];}
+function getTbms(){return (state.mode==='cloud'&&state.sb)?(state.cloudTbms||[]):localTbms();}
+async function saveTbmsList(arr){
+  arr=[...new Set(arr.filter(Boolean))];
+  if(state.mode==='cloud'&&state.sb){state.cloudTbms=arr;await azUpsertConfig('tbms', arr);}
+  else{localStorage.setItem(LS.tbms,JSON.stringify(arr));}
+}
+function localDangers(){const raw=localStorage.getItem(LS.dangers);if(raw){try{const p=JSON.parse(raw);if(Array.isArray(p))return p;}catch(e){}}return [];}
+function getDangers(){return (state.mode==='cloud'&&state.sb)?(state.cloudDangers||[]):localDangers();}
+async function saveDangersList(arr){
+  arr=[...new Set(arr.filter(Boolean))];
+  if(state.mode==='cloud'&&state.sb){state.cloudDangers=arr;await azUpsertConfig('dangers', arr);}
+  else{localStorage.setItem(LS.dangers,JSON.stringify(arr));}
+}
+function localActions(){const raw=localStorage.getItem(LS.actions);if(raw){try{const p=JSON.parse(raw);if(Array.isArray(p))return p;}catch(e){}}return [];}
+function getActions(){return (state.mode==='cloud'&&state.sb)?(state.cloudActions||[]):localActions();}
+async function saveActionsList(arr){
+  arr=[...new Set(arr.filter(Boolean))];
+  if(state.mode==='cloud'&&state.sb){state.cloudActions=arr;await azUpsertConfig('actions', arr);}
+  else{localStorage.setItem(LS.actions,JSON.stringify(arr));}
+}
+
+/* ===== 作業員名：工事日報の苗字→KY登録のフルネームに変換 ===== */
+// 例外対応（工事日報の表記 → KY日報の登録名）。旧字体などで自動一致しないものをここに追加。
+const WORKER_ALIAS={'桜田':'櫻田泰貴'};
+// 旧字体→新字体などの簡易正規化（照合用。表示は元のまま）
+function normKanji(s){
+  const map={'櫻':'桜','邊':'辺','邉':'辺','齋':'斎','齊':'斎','澤':'沢','濱':'浜','髙':'高','﨑':'崎','德':'徳','眞':'真','廣':'広','圓':'円','惠':'恵','鄕':'郷','淺':'浅','靑':'青','曾':'曽','萬':'万','來':'来','國':'国'};
+  return String(s||'').replace(/[櫻邊邉齋齊澤濱髙﨑德眞廣圓惠鄕淺靑曾萬來國]/g,c=>map[c]||c);
+}
+function matchWorkerFullName(name){
+  const raw=String(name||'').trim();if(!raw)return '';
+  if(WORKER_ALIAS[raw])return WORKER_ALIAS[raw];
+  const master=getWorkerNames();
+  const key=s=>normKanji(s).replace(/[\s　]/g,'');
+  const n=key(raw);
+  let hit=master.find(m=>key(m)===n);           // 正規化して完全一致
+  if(hit)return hit;
+  hit=master.find(m=>key(m).startsWith(n));      // フルネームが苗字で始まる
+  if(hit)return hit;
+  return raw;                                    // 見つからなければ元の表記を残す
+}
+
 /* ===== 点検簿テンプレート（使用機械用・9シートの点検簿.xlsx） ===== */
 function localTenkenTemplate(){const raw=localStorage.getItem(LS.tenkenTemplate);if(raw){try{return JSON.parse(raw);}catch(e){}}return null;}
 function getTenkenTemplate(){return (state.mode==='cloud'&&state.sb)?(state.cloudTenkenTemplate||null):localTenkenTemplate();}
@@ -779,6 +865,31 @@ $('saveMachines').onclick=async()=>{
   const a=$('set_machines').value.split(/[\n,、，]/).map(s=>s.trim()).filter(Boolean);
   await saveMachinesList(a);renderMachines();toast('保存しました');
 };
+// TBM・危険・対策は文中に「、」を含むことがあるので、改行だけで区切る
+function refreshTbmsSettings(){
+  $('set_tbms').value=getTbms().join('\n');
+  $('tbmsNote').textContent=(state.mode==='cloud'&&state.sb)?'※ クラウド共有中です。':'※ この端末のみに保存されます。';
+}
+$('saveTbms').onclick=async()=>{
+  const a=$('set_tbms').value.split(/\n/).map(s=>s.trim()).filter(Boolean);
+  await saveTbmsList(a);renderTbmSelect();toast('保存しました');
+};
+function refreshDangersSettings(){
+  $('set_dangers').value=getDangers().join('\n');
+  $('dangersNote').textContent=(state.mode==='cloud'&&state.sb)?'※ クラウド共有中です。':'※ この端末のみに保存されます。';
+}
+$('saveDangers').onclick=async()=>{
+  const a=$('set_dangers').value.split(/\n/).map(s=>s.trim()).filter(Boolean);
+  await saveDangersList(a);renderKy();toast('保存しました');
+};
+function refreshActionsSettings(){
+  $('set_actions').value=getActions().join('\n');
+  $('actionsNote').textContent=(state.mode==='cloud'&&state.sb)?'※ クラウド共有中です。':'※ この端末のみに保存されます。';
+}
+$('saveActions').onclick=async()=>{
+  const a=$('set_actions').value.split(/\n/).map(s=>s.trim()).filter(Boolean);
+  await saveActionsList(a);renderKy();toast('保存しました');
+};
 
 /* ===== 現場代理人・主任技術者・安全巡視員プルダウン（日報側） ===== */
 function renderGenbaShuninSelect(){
@@ -792,6 +903,11 @@ function renderPatrolPersonSelect(){
   const cur=state.r.patrol.person||'';
   const persons=[...new Set([...getPatrolPersons(), ...(cur?[cur]:[])])];
   $('f_patrol_person').innerHTML='<option value="">選択…</option>'+persons.map(n=>`<option value="${esc(n)}" ${n===cur?'selected':''}>${esc(n)}</option>`).join('');
+}
+function renderTbmSelect(){
+  const cur=state.r.tbm||'';
+  const opts=[...new Set([...getTbms(), ...(cur?[cur]:[])])];
+  $('f_tbm').innerHTML='<option value="">選択…</option>'+opts.map(n=>`<option value="${esc(n)}" ${n===cur?'selected':''}>${esc(n)}</option>`).join('');
 }
 
 /* ===== 体調確認・安全巡視・熱中症（固定チェックリスト） ===== */
@@ -841,7 +957,7 @@ function bindBasic(){
   $('f_place').onchange=e=>state.r.place=e.target.value;
   $('f_genba').onchange=e=>state.r.genba=e.target.value;
   $('f_shunin').onchange=e=>state.r.shunin=e.target.value;
-  $('f_tbm').oninput=e=>state.r.tbm=e.target.value;
+  $('f_tbm').onchange=e=>state.r.tbm=e.target.value;
   $('f_patrol_person').onchange=e=>state.r.patrol.person=e.target.value;
   $('f_zesei_nashi').onchange=()=>state.r.zesei_ari='nashi';
   $('f_zesei_ari').onchange=()=>state.r.zesei_ari='ari';
@@ -874,17 +990,18 @@ async function importFromKantoku(){
     chosen=rows[idx];
   }
   const d=chosen.data||chosen; // 工事日報の中身（jsonb）
-  if(!confirm('工事日報の内容で〔工事名・場所・天気・工種・使用機械・作業員〕を上書きします。よろしいですか？（KY活動・巡視などKY日報だけの項目はそのまま残ります）'))return;
+  if(!confirm('工事日報の内容で〔工事名・天気・工種・使用機械・作業員〕を上書きします。よろしいですか？（KY活動・巡視などKY日報だけの項目はそのまま残ります）'))return;
 
   if(d.koji_name!=null)state.r.koji_name=d.koji_name;
-  if(d.place!=null)state.r.place=d.place;
   if(d.weather!=null)state.r.weather=d.weather;
   if(Array.isArray(d.works)&&d.works.length)state.r.works=d.works.map(w=>({kind:(w&&w.kind)||'',content:(w&&w.content)||''}));
   if(Array.isArray(d.machines))state.r.machines=d.machines.map(m=>(m&&m.machine)?m.machine:(typeof m==='string'?m:'')).filter(Boolean);
   if(Array.isArray(d.workers)&&d.workers.length){
-    const names=d.workers.map(w=>(w&&w.name)?w.name:'').filter(Boolean);
-    if(names.length)state.r.workers=[{company:'',kind:'',shokucho:'',names}];
+    // 工事日報は苗字。KY日報はフルネームが必要なので、登録済み作業員から一致するフルネームに変換する
+    const names=d.workers.map(w=>matchWorkerFullName((w&&w.name)||'')).filter(Boolean);
+    if(names.length)state.r.workers=[{company:'',kind:'',shokucho:'',names:[...new Set(names)]}];
   }
+  syncKyContentFromWorks();
   renderAll();
   toast('工事日報から取り込みました');
 }
@@ -901,7 +1018,7 @@ function loadBasicToForm(){
   const wsel=$('f_weather'), wv=state.r.weather||'';
   if(wv && ![...wsel.options].some(o=>o.value===wv)) wsel.add(new Option(wv,wv));
   wsel.value=wv;
-  $('f_tbm').value=state.r.tbm||'';
+  renderTbmSelect();
   $('f_zesei_nashi').checked=state.r.zesei_ari!=='ari';
   $('f_zesei_ari').checked=state.r.zesei_ari==='ari';
   $('f_zesei_text').value=state.r.zesei_text||'';
@@ -989,7 +1106,7 @@ function switchTab(name){
   if(name==='settei'){
     refreshKojiNameSettings();refreshPlaceSettings();refreshTemplateSettings();refreshModeSettings();
     refreshCompaniesSettings();refreshShokuchosSettings();refreshWorkerNamesSettings();
-    refreshGenbaShuninSettings();refreshPatrolPersonsSettings();refreshMachinesSettings();refreshTemplateSettings();refreshTenkenSettings();
+    refreshGenbaShuninSettings();refreshPatrolPersonsSettings();refreshMachinesSettings();refreshTemplateSettings();refreshTenkenSettings();refreshTbmsSettings();refreshDangersSettings();refreshActionsSettings();
   }
 }
 document.querySelectorAll('.tab-btn').forEach(b=>b.onclick=()=>switchTab(b.dataset.tab));
@@ -1026,7 +1143,7 @@ $('saveModeBtn').onclick=async()=>{
   }
   await Store.load();
   renderList();refreshModeSettings();refreshKojiNameSettings();refreshPlaceSettings();refreshTemplateSettings();
-  refreshCompaniesSettings();refreshShokuchosSettings();refreshWorkerNamesSettings();refreshGenbaShuninSettings();refreshPatrolPersonsSettings();refreshMachinesSettings();refreshTenkenSettings();
+  refreshCompaniesSettings();refreshShokuchosSettings();refreshWorkerNamesSettings();refreshGenbaShuninSettings();refreshPatrolPersonsSettings();refreshMachinesSettings();refreshTenkenSettings();refreshTbmsSettings();refreshDangersSettings();refreshActionsSettings();
   renderGenbaShuninSelect();renderPatrolPersonSelect();renderMachines();
   toast('保存方法を設定しました');
 };
