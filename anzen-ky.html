@@ -804,6 +804,19 @@ function matchWorkerFullName(name){
   return raw;                                    // 見つからなければ元の表記を残す
 }
 
+// 作業員の所属会社（苗字→会社名）。工事日報の取り込み時に、この会社ごとに名簿を分ける
+// （＝Excelの名簿で会社ごとに1行空けて表示される）。別会社の人を追加したいときはここに足す。
+const WORKER_COMPANY={'桜田':'(株)トヨオカ','道本':'(株)トヨオカ'};
+function workerCompany(originalName, fullName){
+  const norm=s=>normKanji(String(s||'')).replace(/[\s　]/g,'');
+  const names=[norm(originalName), norm(fullName)];
+  for(const sn of Object.keys(WORKER_COMPANY)){
+    const k=norm(sn);
+    if(k && names.some(nm=>nm.startsWith(k))) return WORKER_COMPANY[sn];
+  }
+  return '';
+}
+
 /* ===== 点検簿テンプレート（使用機械用・9シートの点検簿.xlsx） ===== */
 function localTenkenTemplate(){const raw=localStorage.getItem(LS.tenkenTemplate);if(raw){try{return JSON.parse(raw);}catch(e){}}return null;}
 function getTenkenTemplate(){return (state.mode==='cloud'&&state.sb)?(state.cloudTenkenTemplate||null):localTenkenTemplate();}
@@ -997,9 +1010,20 @@ async function importFromKantoku(){
   if(Array.isArray(d.works)&&d.works.length)state.r.works=d.works.map(w=>({kind:(w&&w.kind)||'',content:(w&&w.content)||''}));
   if(Array.isArray(d.machines))state.r.machines=d.machines.map(m=>(m&&m.machine)?m.machine:(typeof m==='string'?m:'')).filter(Boolean);
   if(Array.isArray(d.workers)&&d.workers.length){
-    // 工事日報は苗字。KY日報はフルネームが必要なので、登録済み作業員から一致するフルネームに変換する
-    const names=d.workers.map(w=>matchWorkerFullName((w&&w.name)||'')).filter(Boolean);
-    if(names.length)state.r.workers=[{company:'',kind:'',shokucho:'',names:[...new Set(names)]}];
+    // 工事日報は苗字。KY日報はフルネームが必要なので登録済み作業員のフルネームに変換し、
+    // さらに所属会社ごとにグループ分けする（別会社は名簿で1行空けて表示される）。
+    const groupsMap=new Map(); // 会社名 → 名前配列
+    d.workers.forEach(w=>{
+      const orig=(w&&w.name)||''; if(!orig)return;
+      const full=matchWorkerFullName(orig); if(!full)return;
+      const co=workerCompany(orig, full);
+      if(!groupsMap.has(co))groupsMap.set(co,[]);
+      const arr=groupsMap.get(co); if(!arr.includes(full))arr.push(full);
+    });
+    const groups=[];
+    if(groupsMap.has('')){groups.push({company:'',kind:'',shokucho:'',names:groupsMap.get('')});} // 会社指定なし（主）を先に
+    for(const [co,names] of groupsMap){ if(co==='')continue; groups.push({company:co,kind:'',shokucho:'',names}); }
+    if(groups.length)state.r.workers=groups;
   }
   syncKyContentFromWorks();
   renderAll();
