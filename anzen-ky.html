@@ -343,6 +343,13 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   </div>
 
   <div class="card">
+    <h2><span class="bar"></span>KY活動事例（例集）の取り込み</h2>
+    <div class="muted" style="margin-bottom:8px">「KY活動事例.xlsx」（作業内容・どんな危険・私達はこうする）を登録すると、KY活動記録の「どんな危険」がこの例集から選べるようになり、危険を選ぶと対策が自動で入ります。作業内容に合う危険が上に出ます。</div>
+    <label class="btn ghost" style="cursor:pointer;display:inline-block">KY活動事例Excelを選択<input type="file" id="kyExamplesUpload" accept=".xlsx" style="display:none"></label>
+    <div class="muted" style="margin-top:8px" id="kyExamplesNote"></div>
+  </div>
+
+  <div class="card">
     <h2><span class="bar"></span>Excelテンプレート</h2>
     <div class="muted" style="margin-bottom:8px">「作業日報マザー.xlsx」のようなテンプレートを登録すると、日報を出力する際にそのレイアウトのまま出力できます。</div>
     <label class="btn ghost" style="cursor:pointer;display:inline-block">テンプレートExcelを選択<input type="file" id="templateUpload" accept=".xlsx" style="display:none"></label>
@@ -375,10 +382,10 @@ function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show')
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,8);}
 
 const LS={mode:'az_mode',url:'az_url',key:'az_key',list:'az_list',kojinames:'az_kojinames',places:'az_places',template:'az_template',workermaster:'az_workermaster',
-  companies:'az_companies',shokuchos:'az_shokuchos',workernames:'az_workernames',genbas:'az_genbas',shunins:'az_shunins',patrolpersons:'az_patrolpersons',machines:'az_machines',tenkenTemplate:'az_tenken_template',tbms:'az_tbms',dangers:'az_dangers',actions:'az_actions'};
+  companies:'az_companies',shokuchos:'az_shokuchos',workernames:'az_workernames',genbas:'az_genbas',shunins:'az_shunins',patrolpersons:'az_patrolpersons',machines:'az_machines',tenkenTemplate:'az_tenken_template',tbms:'az_tbms',dangers:'az_dangers',actions:'az_actions',kyexamples:'az_kyexamples'};
 
 /* ===== 状態 ===== */
-const state={mode:'local',sb:null,reports:[],r:null,editId:null,cloudKojiNames:null,cloudPlaces:null,cloudTemplate:null,cloudWorkerMaster:null,cloudMachines:null,cloudTenkenTemplate:null,cloudTbms:null,cloudDangers:null,cloudActions:null};
+const state={mode:'local',sb:null,reports:[],r:null,editId:null,cloudKojiNames:null,cloudPlaces:null,cloudTemplate:null,cloudWorkerMaster:null,cloudMachines:null,cloudTenkenTemplate:null,cloudTbms:null,cloudDangers:null,cloudActions:null,cloudKyExamples:null};
 
 function newReport(){
   return {
@@ -446,6 +453,8 @@ const Store={
           state.cloudDangers=(dg.data&&Array.isArray(dg.data.value))?dg.data.value:[];}catch(e){state.cloudDangers=[];}
         try{const ac=await state.sb.from('az_config').select('value').eq('id','actions').maybeSingle();
           state.cloudActions=(ac.data&&Array.isArray(ac.data.value))?ac.data.value:[];}catch(e){state.cloudActions=[];}
+        try{const ke=await state.sb.from('az_config').select('value').eq('id','kyexamples').maybeSingle();
+          state.cloudKyExamples=(ke.data&&Array.isArray(ke.data.value))?ke.data.value:[];}catch(e){state.cloudKyExamples=[];}
         return;
       }
     }
@@ -616,17 +625,29 @@ $('addMachine').onclick=()=>{if(!Array.isArray(state.r.machines))state.r.machine
 /* ===== KY活動記録 ===== */
 function renderKy(){
   const tb=$('kyBody');tb.innerHTML='';
-  const dangers=getDangers(), actions=getActions();
+  const examples=getKyExamples();
+  const manualD=getDangers(), manualA=getActions();
+  const allActions=examples.map(e=>e.action).filter(Boolean);
   state.r.ky.forEach(k=>{
-    const dOpts=[...new Set([...dangers, ...(k.danger?[k.danger]:[])])];
-    const aOpts=[...new Set([...actions, ...(k.action?[k.action]:[])])];
+    const content=(k.content||'').trim();
+    // 危険：作業内容に合う例を先頭に、その後に残りの例＋手動候補
+    const matchD=[], otherD=[];
+    examples.forEach(ex=>{ if(!ex.danger)return; (content&&exWorkMatches(ex.work,content)?matchD:otherD).push(ex.danger); });
+    const dOpts=[...new Set([...matchD, ...otherD, ...manualD, ...(k.danger?[k.danger]:[])])];
+    const aOpts=[...new Set([...allActions, ...manualA, ...(k.action?[k.action]:[])])];
     const tr=document.createElement('tr');
     tr.innerHTML=`<td><input class="kc" value="${esc(k.content)}" placeholder="例：水路工"></td>
       <td><select class="kd"><option value="">選択…</option>${dOpts.map(n=>`<option value="${esc(n)}" ${n===k.danger?'selected':''}>${esc(n)}</option>`).join('')}</select></td>
       <td><select class="ka"><option value="">選択…</option>${aOpts.map(n=>`<option value="${esc(n)}" ${n===k.action?'selected':''}>${esc(n)}</option>`).join('')}</select></td>
       <td><button class="del">×</button></td>`;
     tr.querySelector('.kc').oninput=e=>k.content=e.target.value;
-    tr.querySelector('.kd').onchange=e=>k.danger=e.target.value;
+    tr.querySelector('.kd').onchange=e=>{
+      k.danger=e.target.value;
+      // 危険を選んだら、対応する対策を例集から自動で入れる
+      const act=suggestActionForDanger(k.danger, (k.content||'').trim());
+      if(act)k.action=act;
+      renderKy();
+    };
     tr.querySelector('.ka').onchange=e=>k.action=e.target.value;
     tr.querySelector('.del').onclick=()=>{state.r.ky.splice(state.r.ky.indexOf(k),1);renderKy();};
     tb.appendChild(tr);
@@ -772,6 +793,50 @@ async function saveActionsList(arr){
   arr=[...new Set(arr.filter(Boolean))];
   if(state.mode==='cloud'&&state.sb){state.cloudActions=arr;await azUpsertConfig('actions', arr);}
   else{localStorage.setItem(LS.actions,JSON.stringify(arr));}
+}
+
+/* ===== KY活動事例（例集）: {work=作業内容, danger=どんな危険, action=私達はこうする} の配列 ===== */
+function localKyExamples(){const raw=localStorage.getItem(LS.kyexamples);if(raw){try{const p=JSON.parse(raw);if(Array.isArray(p))return p;}catch(e){}}return [];}
+function getKyExamples(){return (state.mode==='cloud'&&state.sb)?(state.cloudKyExamples||[]):localKyExamples();}
+async function saveKyExamples(arr){
+  if(state.mode==='cloud'&&state.sb){state.cloudKyExamples=arr;await azUpsertConfig('kyexamples', arr);}
+  else{localStorage.setItem(LS.kyexamples,JSON.stringify(arr));}
+}
+// KY活動事例.xlsx を解析：B列=作業内容/C列=危険/D列=対策、F列=危険/G列=対策（作業内容なし）
+async function parseKyExamplesXlsx(base64){
+  const zip=await JSZip.loadAsync(base64ToArrayBuffer(base64));
+  const sheets=await resolveAllSheetPaths(zip);
+  if(!sheets.length)return [];
+  const shared=await tenkenLoadSharedStrings(zip);
+  const xml=await zip.file(sheets[0].path).async('string');
+  const out=[];const seen=new Set();
+  const push=(work,danger,action)=>{
+    work=(work||'').trim();danger=(danger||'').trim();action=(action||'').trim();
+    if(!danger||!action)return;
+    const key=work+'|'+danger+'|'+action;if(seen.has(key))return;seen.add(key);
+    out.push({work,danger,action});
+  };
+  for(let r=2;r<=300;r++){
+    push(tenkenCellText(xml,'B'+r,shared), tenkenCellText(xml,'C'+r,shared), tenkenCellText(xml,'D'+r,shared));
+    const f=tenkenCellText(xml,'F'+r,shared);
+    if(f!=='危険のポイント') push('', f, tenkenCellText(xml,'G'+r,shared));
+  }
+  return out;
+}
+// 作業内容と例集の作業内容が一致するか（旧字体・空白を無視して部分一致）
+function exWorkMatches(exWork, content){
+  if(!exWork||!content)return false;
+  const norm=s=>normKanji(String(s||'')).replace(/[\s　（）()]/g,'');
+  const a=norm(exWork), b=norm(content);
+  if(!a||!b)return false;
+  return a.includes(b)||b.includes(a);
+}
+// 危険に対応する対策を例集から探す（作業内容が合うものを優先、無ければ最初）
+function suggestActionForDanger(danger, content){
+  const exs=getKyExamples().filter(e=>e.danger===danger && e.action);
+  if(!exs.length)return '';
+  const m=exs.find(e=>exWorkMatches(e.work, content));
+  return (m||exs[0]).action;
 }
 
 /* ===== 作業員名：工事日報の苗字→KY登録のフルネームに変換 ===== */
@@ -1129,7 +1194,7 @@ function switchTab(name){
   if(name==='settei'){
     refreshKojiNameSettings();refreshPlaceSettings();refreshTemplateSettings();refreshModeSettings();
     refreshCompaniesSettings();refreshShokuchosSettings();refreshWorkerNamesSettings();
-    refreshGenbaShuninSettings();refreshMachinesSettings();refreshTemplateSettings();refreshTenkenSettings();refreshTbmsSettings();refreshDangersSettings();refreshActionsSettings();
+    refreshGenbaShuninSettings();refreshMachinesSettings();refreshTemplateSettings();refreshTenkenSettings();refreshTbmsSettings();refreshDangersSettings();refreshActionsSettings();refreshKyExamplesSettings();
   }
 }
 document.querySelectorAll('.tab-btn').forEach(b=>b.onclick=()=>switchTab(b.dataset.tab));
@@ -1166,7 +1231,7 @@ $('saveModeBtn').onclick=async()=>{
   }
   await Store.load();
   renderList();refreshModeSettings();refreshKojiNameSettings();refreshPlaceSettings();refreshTemplateSettings();
-  refreshCompaniesSettings();refreshShokuchosSettings();refreshWorkerNamesSettings();refreshGenbaShuninSettings();refreshMachinesSettings();refreshTenkenSettings();refreshTbmsSettings();refreshDangersSettings();refreshActionsSettings();
+  refreshCompaniesSettings();refreshShokuchosSettings();refreshWorkerNamesSettings();refreshGenbaShuninSettings();refreshMachinesSettings();refreshTenkenSettings();refreshTbmsSettings();refreshDangersSettings();refreshActionsSettings();refreshKyExamplesSettings();
   renderGenbaShuninSelect();renderPatrolPersonSelect();renderMachines();
   toast('保存方法を設定しました');
 };
@@ -1216,6 +1281,23 @@ $('tenkenUpload').onchange=async(e)=>{
     }catch(_){ toast('点検簿テンプレートを登録しました'); }
     refreshTenkenSettings();
   }catch(err){$('tenkenNote').textContent='読み込みに失敗しました：'+(err.message||err);}
+  e.target.value='';
+};
+function refreshKyExamplesSettings(){
+  const n=getKyExamples().length;
+  $('kyExamplesNote').textContent=n?`登録済み：${n}件の事例`:'※ まだKY活動事例が登録されていません。';
+}
+$('kyExamplesUpload').onchange=async(e)=>{
+  const file=e.target.files[0];if(!file)return;
+  $('kyExamplesNote').textContent='読み込み中…';
+  try{
+    const buf=await file.arrayBuffer();
+    const list=await parseKyExamplesXlsx(arrayBufferToBase64(buf));
+    if(!list.length){$('kyExamplesNote').textContent='事例が読み取れませんでした。B列=作業内容/C列=危険/D列=対策 の形式か確認してください。';e.target.value='';return;}
+    await saveKyExamples(list);
+    renderKy();refreshKyExamplesSettings();
+    toast(`KY活動事例を${list.length}件取り込みました`);
+  }catch(err){$('kyExamplesNote').textContent='読み込みに失敗しました：'+(err.message||err);}
   e.target.value='';
 };
 $('backupBtn').onclick=()=>{
