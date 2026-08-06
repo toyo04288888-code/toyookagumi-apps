@@ -138,7 +138,8 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   <div class="card">
     <h2><span class="bar"></span>本日のTBM（こうやって作業を進めよう！）</h2>
     <div class="fld"><select id="f_tbm"><option value="">選択…</option></select></div>
-    <div class="muted" style="margin-top:6px">候補は「設定」タブの「TBMの管理」で登録・編集できます。</div>
+    <div class="muted" style="margin-top:6px" id="tbmWeekHint"></div>
+    <div class="muted" style="margin-top:4px">候補は「設定」タブの「TBMの管理」で登録・編集できます。TBMは月〜金は同じでOK（同じ週の日報から自動で入ります）。</div>
   </div>
 
   <div class="card">
@@ -796,8 +797,20 @@ async function saveActionsList(arr){
 }
 
 /* ===== KY活動事例（例集）: {work=作業内容, danger=どんな危険, action=私達はこうする} の配列 ===== */
+// 「No.〇〇：」などの通し番号表記だけ除去（「2人で運ぶ」等の意味のある数字は残す）
+function cleanKyText(s){
+  return String(s||'')
+    .replace(/(No|Ｎｏ|№)\s*[.．]?\s*[0-9０-９]+\s*[：:.．]?\s*/gi,'')
+    .replace(/^[\s　・:：.．、,]+/,'')
+    .trim();
+}
 function localKyExamples(){const raw=localStorage.getItem(LS.kyexamples);if(raw){try{const p=JSON.parse(raw);if(Array.isArray(p))return p;}catch(e){}}return [];}
-function getKyExamples(){return (state.mode==='cloud'&&state.sb)?(state.cloudKyExamples||[]):localKyExamples();}
+function getKyExamples(){
+  const raw=(state.mode==='cloud'&&state.sb)?(state.cloudKyExamples||[]):localKyExamples();
+  // 既に保存済みのデータも読み取り時にNo.〇〇を除去（再取り込み不要で反映）
+  return raw.map(e=>({work:cleanKyText(e.work),danger:cleanKyText(e.danger),action:cleanKyText(e.action)}))
+            .filter(e=>e.danger&&e.action);
+}
 async function saveKyExamples(arr){
   if(state.mode==='cloud'&&state.sb){state.cloudKyExamples=arr;await azUpsertConfig('kyexamples', arr);}
   else{localStorage.setItem(LS.kyexamples,JSON.stringify(arr));}
@@ -811,7 +824,7 @@ async function parseKyExamplesXlsx(base64){
   const xml=await zip.file(sheets[0].path).async('string');
   const out=[];const seen=new Set();
   const push=(work,danger,action)=>{
-    work=(work||'').trim();danger=(danger||'').trim();action=(action||'').trim();
+    work=cleanKyText(work);danger=cleanKyText(danger);action=cleanKyText(action);
     if(!danger||!action)return;
     const key=work+'|'+danger+'|'+action;if(seen.has(key))return;seen.add(key);
     out.push({work,danger,action});
@@ -972,6 +985,28 @@ function renderTbmSelect(){
   const opts=[...new Set([...getTbms(), ...(cur?[cur]:[])])];
   $('f_tbm').innerHTML='<option value="">選択…</option>'+opts.map(n=>`<option value="${esc(n)}" ${n===cur?'selected':''}>${esc(n)}</option>`).join('');
 }
+// その日付が属する週の月曜の日付（YYYY-MM-DD）を返す
+function weekKeyOf(dateStr){
+  if(!dateStr)return '';
+  const d=new Date(dateStr+'T00:00:00');if(isNaN(d))return '';
+  const off=(d.getDay()+6)%7; // 月=0 … 日=6
+  d.setDate(d.getDate()-off);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+// 同じ週（月曜起点）の保存済み日報で使われているTBMを返す（最新日を優先）
+function weekTbm(dateStr){
+  const wk=weekKeyOf(dateStr);if(!wk)return '';
+  const same=state.reports.filter(r=>r.report_date&&r.tbm&&weekKeyOf(r.report_date)===wk&&r.id!==state.r.id)
+    .sort((a,b)=>(b.report_date||'').localeCompare(a.report_date||''));
+  return same.length?same[0].tbm:'';
+}
+// 「今週のTBM」ヒントを表示し、TBMが空なら今週のTBMを自動でセットする
+function applyWeekTbm(){
+  const hint=$('tbmWeekHint');if(!hint)return;
+  const wt=weekTbm(state.r.report_date);
+  if(wt && !state.r.tbm){ state.r.tbm=wt; renderTbmSelect(); }
+  hint.textContent = wt ? `※ 今週（月〜金）のTBM：「${wt}」（同じでOK。変える場合はプルダウンで選択）` : '';
+}
 
 /* ===== 体調確認・安全巡視・熱中症（固定チェックリスト） ===== */
 function renderTaicho(){
@@ -1014,7 +1049,7 @@ function renderNecchusho(){
 
 /* ===== 基本情報バインド ===== */
 function bindBasic(){
-  $('f_date').oninput=e=>{state.r.report_date=e.target.value;updateYoubi();};
+  $('f_date').oninput=e=>{state.r.report_date=e.target.value;updateYoubi();applyWeekTbm();};
   $('f_weather').onchange=e=>state.r.weather=e.target.value;
   $('f_kojiname').onchange=e=>state.r.koji_name=e.target.value;
   $('f_place').onchange=e=>state.r.place=e.target.value;
@@ -1099,6 +1134,7 @@ function loadBasicToForm(){
   if(wv && ![...wsel.options].some(o=>o.value===wv)) wsel.add(new Option(wv,wv));
   wsel.value=wv;
   renderTbmSelect();
+  applyWeekTbm();
   $('f_zesei_nashi').checked=state.r.zesei_ari!=='ari';
   $('f_zesei_ari').checked=state.r.zesei_ari==='ari';
   $('f_zesei_text').value=state.r.zesei_text||'';
