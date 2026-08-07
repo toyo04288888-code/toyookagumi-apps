@@ -344,13 +344,6 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   </div>
 
   <div class="card">
-    <h2><span class="bar"></span>KY活動事例（例集）の取り込み</h2>
-    <div class="muted" style="margin-bottom:8px">「KY活動事例.xlsx」（作業内容・どんな危険・私達はこうする）を登録すると、KY活動記録の「どんな危険」がこの例集から選べるようになり、危険を選ぶと対策が自動で入ります。作業内容に合う危険が上に出ます。</div>
-    <label class="btn ghost" style="cursor:pointer;display:inline-block">KY活動事例Excelを選択<input type="file" id="kyExamplesUpload" accept=".xlsx" style="display:none"></label>
-    <div class="muted" style="margin-top:8px" id="kyExamplesNote"></div>
-  </div>
-
-  <div class="card">
     <h2><span class="bar"></span>Excelテンプレート</h2>
     <div class="muted" style="margin-bottom:8px">「作業日報マザー.xlsx」のようなテンプレートを登録すると、日報を出力する際にそのレイアウトのまま出力できます。</div>
     <label class="btn ghost" style="cursor:pointer;display:inline-block">テンプレートExcelを選択<input type="file" id="templateUpload" accept=".xlsx" style="display:none"></label>
@@ -1235,7 +1228,7 @@ function switchTab(name){
   if(name==='settei'){
     refreshKojiNameSettings();refreshPlaceSettings();refreshTemplateSettings();refreshModeSettings();
     refreshCompaniesSettings();refreshShokuchosSettings();refreshWorkerNamesSettings();
-    refreshGenbaShuninSettings();refreshMachinesSettings();refreshTemplateSettings();refreshTenkenSettings();refreshTbmsSettings();refreshDangersSettings();refreshActionsSettings();refreshKyExamplesSettings();
+    refreshGenbaShuninSettings();refreshMachinesSettings();refreshTemplateSettings();refreshTenkenSettings();refreshTbmsSettings();refreshDangersSettings();refreshActionsSettings();
   }
 }
 document.querySelectorAll('.tab-btn').forEach(b=>b.onclick=()=>switchTab(b.dataset.tab));
@@ -1272,7 +1265,7 @@ $('saveModeBtn').onclick=async()=>{
   }
   await Store.load();
   renderList();refreshModeSettings();refreshKojiNameSettings();refreshPlaceSettings();refreshTemplateSettings();
-  refreshCompaniesSettings();refreshShokuchosSettings();refreshWorkerNamesSettings();refreshGenbaShuninSettings();refreshMachinesSettings();refreshTenkenSettings();refreshTbmsSettings();refreshDangersSettings();refreshActionsSettings();refreshKyExamplesSettings();
+  refreshCompaniesSettings();refreshShokuchosSettings();refreshWorkerNamesSettings();refreshGenbaShuninSettings();refreshMachinesSettings();refreshTenkenSettings();refreshTbmsSettings();refreshDangersSettings();refreshActionsSettings();
   renderGenbaShuninSelect();renderPatrolPersonSelect();renderMachines();
   toast('保存方法を設定しました');
 };
@@ -1322,23 +1315,6 @@ $('tenkenUpload').onchange=async(e)=>{
     }catch(_){ toast('点検簿テンプレートを登録しました'); }
     refreshTenkenSettings();
   }catch(err){$('tenkenNote').textContent='読み込みに失敗しました：'+(err.message||err);}
-  e.target.value='';
-};
-function refreshKyExamplesSettings(){
-  const n=getKyExamples().length;
-  $('kyExamplesNote').textContent=n?`登録済み：${n}件の事例`:'※ まだKY活動事例が登録されていません。';
-}
-$('kyExamplesUpload').onchange=async(e)=>{
-  const file=e.target.files[0];if(!file)return;
-  $('kyExamplesNote').textContent='読み込み中…';
-  try{
-    const buf=await file.arrayBuffer();
-    const list=await parseKyExamplesXlsx(arrayBufferToBase64(buf));
-    if(!list.length){$('kyExamplesNote').textContent='事例が読み取れませんでした。B列=作業内容/C列=危険/D列=対策 の形式か確認してください。';e.target.value='';return;}
-    await saveKyExamples(list);
-    renderKy();refreshKyExamplesSettings();
-    toast(`KY活動事例を${list.length}件取り込みました`);
-  }catch(err){$('kyExamplesNote').textContent='読み込みに失敗しました：'+(err.message||err);}
   e.target.value='';
 };
 $('backupBtn').onclick=()=>{
