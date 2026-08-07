@@ -797,12 +797,16 @@ async function saveActionsList(arr){
 }
 
 /* ===== KY活動事例（例集）: {work=作業内容, danger=どんな危険, action=私達はこうする} の配列 ===== */
-// 「No.〇〇：」などの通し番号表記だけ除去（「2人で運ぶ」等の意味のある数字は残す）
+// 「No.〇〇：」などの通し番号表記を除去し、数字だけの項目は候補にしない
+// （「重いものは2人で運ぶ」等、文章中の意味のある数字は残す）
 function cleanKyText(s){
-  return String(s||'')
+  const t=String(s||'')
     .replace(/(No|Ｎｏ|№)\s*[.．]?\s*[0-9０-９]+\s*[：:.．]?\s*/gi,'')
     .replace(/^[\s　・:：.．、,]+/,'')
     .trim();
+  // 記号・数字だけになったもの（例：「47」「1.」）は空にして除外する
+  if(/^[0-9０-９\s　.．,、:：;；・\-ー―()（）＊*]*$/.test(t)) return '';
+  return t;
 }
 function localKyExamples(){const raw=localStorage.getItem(LS.kyexamples);if(raw){try{const p=JSON.parse(raw);if(Array.isArray(p))return p;}catch(e){}}return [];}
 function getKyExamples(){
@@ -823,16 +827,17 @@ async function parseKyExamplesXlsx(base64){
   const shared=await tenkenLoadSharedStrings(zip);
   const xml=await zip.file(sheets[0].path).async('string');
   const out=[];const seen=new Set();
+  const HEADERS=new Set(['作業内容','どんな危険がありますか','危険のポイント','事例','私達はこうする','私たちはこうする','対策']);
   const push=(work,danger,action)=>{
     work=cleanKyText(work);danger=cleanKyText(danger);action=cleanKyText(action);
     if(!danger||!action)return;
+    if(HEADERS.has(danger)||HEADERS.has(action))return; // 見出し行は除外
     const key=work+'|'+danger+'|'+action;if(seen.has(key))return;seen.add(key);
     out.push({work,danger,action});
   };
-  for(let r=2;r<=300;r++){
+  // B列=作業内容 / C列=どんな危険 / D列=私達はこうする（2〜83行）のみ。同じ文言は1つに（seenで重複除外）
+  for(let r=2;r<=83;r++){
     push(tenkenCellText(xml,'B'+r,shared), tenkenCellText(xml,'C'+r,shared), tenkenCellText(xml,'D'+r,shared));
-    const f=tenkenCellText(xml,'F'+r,shared);
-    if(f!=='危険のポイント') push('', f, tenkenCellText(xml,'G'+r,shared));
   }
   return out;
 }
