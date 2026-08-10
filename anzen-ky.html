@@ -655,39 +655,59 @@ function renderWorkers(){
   const companies=getCompanies();
   const shokuchos=getShokuchos();
   const workernames=getWorkerNames();
-  state.r.workers.forEach(w=>{
+  const compOpts=companies.map(c=>`<option value="${esc(c)}"></option>`).join('');
+  const shokuOpts=shokuchos.map(s=>`<option value="${esc(s)}"></option>`).join('');
+  state.r.workers.forEach((w,idx)=>{
     if(!Array.isArray(w.names))w.names=w.names?String(w.names).split(/[\n,、，]/).map(s=>s.trim()).filter(Boolean):[];
+    const namesLabel=w.names.length?w.names.join('、'):'作業員を選択・入力…';
+    const allNames=[...new Set([...workernames, ...w.names])]; // 直接入力した名前もチェックボックスに出す
     const tr=document.createElement('tr');
-    const companyOpts=['<option value="">選択…</option>'].concat(companies.map(c=>`<option value="${esc(c)}" ${c===w.company?'selected':''}>${esc(c)}</option>`)).join('');
-    const shokuchoOpts=['<option value="">選択…</option>'].concat(shokuchos.map(s=>`<option value="${esc(s)}" ${s===w.shokucho?'selected':''}>${esc(s)}</option>`)).join('');
-    const namesLabel=w.names.length?w.names.join('、'):'作業員を選択…';
-    tr.innerHTML=`<td><select class="wco">${companyOpts}</select></td>
+    // 会社名・職長は「選択も直接入力もできる」入力欄（datalistで候補表示）
+    tr.innerHTML=`<td><input class="wco" list="wcoList${idx}" value="${esc(w.company)}" placeholder="会社名"><datalist id="wcoList${idx}">${compOpts}</datalist></td>
       <td><select class="wki">
           <option value="">選択…</option>
           <option value="元請" ${w.kind==='元請'?'selected':''}>元請</option>
           <option value="下請" ${w.kind==='下請'?'selected':''}>下請</option>
         </select></td>
-      <td><select class="wsh">${shokuchoOpts}</select></td>
+      <td><input class="wsh" list="wshList${idx}" value="${esc(w.shokucho)}" placeholder="職長名"><datalist id="wshList${idx}">${shokuOpts}</datalist></td>
       <td>
         <button type="button" class="btn ghost small wna-btn" style="width:100%;text-align:left">${esc(namesLabel)}</button>
-        <div class="wna-panel hidden" style="border:1px solid var(--border);border-radius:8px;padding:8px;margin-top:6px;max-height:160px;overflow:auto;background:#fafbfc">
-          ${workernames.map(nm=>`<label style="display:flex;align-items:center;gap:6px;padding:3px 0;font-size:13px"><input type="checkbox" value="${esc(nm)}" ${w.names.includes(nm)?'checked':''}> ${esc(nm)}</label>`).join('') || '<div class="muted">設定タブで作業員名を登録してください</div>'}
+        <div class="wna-panel hidden" style="border:1px solid var(--border);border-radius:8px;padding:8px;margin-top:6px;max-height:180px;overflow:auto;background:#fafbfc">
+          <div style="display:flex;gap:6px;margin-bottom:6px">
+            <input class="wna-add" placeholder="名前を直接入力（複数は「、」区切り）" style="flex:1">
+            <button type="button" class="btn small wna-addbtn">追加</button>
+          </div>
+          <div class="wna-list">${allNames.map(nm=>`<label style="display:flex;align-items:center;gap:6px;padding:3px 0;font-size:13px"><input type="checkbox" value="${esc(nm)}" ${w.names.includes(nm)?'checked':''}> ${esc(nm)}</label>`).join('') || '<div class="muted">下の欄に名前を直接入力するか、設定タブで作業員名を登録できます。</div>'}</div>
         </div>
       </td>
       <td><button class="del">×</button></td>`;
-    tr.querySelector('.wco').onchange=e=>w.company=e.target.value;
+    tr.querySelector('.wco').oninput=e=>w.company=e.target.value;
     tr.querySelector('.wki').onchange=e=>w.kind=e.target.value;
-    tr.querySelector('.wsh').onchange=e=>w.shokucho=e.target.value;
+    tr.querySelector('.wsh').oninput=e=>w.shokucho=e.target.value;
     const panel=tr.querySelector('.wna-panel');
     const btn=tr.querySelector('.wna-btn');
+    const list=tr.querySelector('.wna-list');
     btn.onclick=()=>panel.classList.toggle('hidden');
-    panel.querySelectorAll('input[type=checkbox]').forEach(cb=>{
-      cb.onchange=()=>{
-        w.names = w.names.includes(cb.value) ? w.names.filter(n=>n!==cb.value) : [...w.names, cb.value];
-        btn.textContent = w.names.length ? w.names.join('、') : '作業員を選択…';
-      };
-    });
-    tr.querySelector('.del').onclick=()=>{state.r.workers.splice(state.r.workers.indexOf(w),1);renderWorkers();};
+    const relabel=()=>{btn.textContent=w.names.length?w.names.join('、'):'作業員を選択・入力…';};
+    const bindCb=cb=>{cb.onchange=()=>{w.names=w.names.includes(cb.value)?w.names.filter(n=>n!==cb.value):[...w.names,cb.value];relabel();};};
+    list.querySelectorAll('input[type=checkbox]').forEach(bindCb);
+    // 直接入力で名前を追加（チェックボックスにも即反映・パネルは開いたまま）
+    const addInput=tr.querySelector('.wna-add'), addBtn=tr.querySelector('.wna-addbtn');
+    const addName=()=>{
+      (addInput.value||'').split(/[\n,、，]/).map(s=>s.trim()).filter(Boolean).forEach(nm=>{
+        if(!w.names.includes(nm)){
+          w.names.push(nm);
+          const lbl=document.createElement('label');
+          lbl.style.cssText='display:flex;align-items:center;gap:6px;padding:3px 0;font-size:13px';
+          lbl.innerHTML=`<input type="checkbox" value="${esc(nm)}" checked> ${esc(nm)}`;
+          bindCb(lbl.querySelector('input'));list.appendChild(lbl);
+        }
+      });
+      addInput.value='';relabel();
+    };
+    addBtn.onclick=addName;
+    addInput.onkeydown=ev=>{if(ev.key==='Enter'){ev.preventDefault();addName();}};
+    tr.querySelector('.del').onclick=()=>{state.r.workers.splice(idx,1);renderWorkers();};
     tb.appendChild(tr);
   });
 }
@@ -871,15 +891,22 @@ function matchWorkerFullName(name){
   return raw;                                    // 見つからなければ元の表記を残す
 }
 
-// 作業員の所属会社（苗字→会社名）。工事日報の取り込み時に、この会社ごとに名簿を分ける
+// 作業員の所属会社（氏名→会社名）。工事日報の取り込み時に、この会社ごとに名簿を分ける
 // （＝Excelの名簿で会社ごとに1行空けて表示される）。別会社の人を追加したいときはここに足す。
-const WORKER_COMPANY={'桜田':'(株)トヨオカ','道本':'(株)トヨオカ'};
+const WORKER_COMPANY={
+  '豊岡強志':'(株)豊岡組','豊岡敦志':'(株)豊岡組','白崎健一':'(株)豊岡組','本郷憲市':'(株)豊岡組',
+  '坂本圭司':'(株)豊岡組','谷口勝康':'(株)豊岡組','十左近昭悟':'(株)豊岡組',
+  '道本博文':'トヨオカ(株)','櫻田泰貴':'トヨオカ(株)'
+};
+// 会社名 → 元請/下請
+const COMPANY_KIND={'(株)豊岡組':'元請','トヨオカ(株)':'下請'};
 function workerCompany(originalName, fullName){
   const norm=s=>normKanji(String(s||'')).replace(/[\s　]/g,'');
-  const names=[norm(originalName), norm(fullName)];
-  for(const sn of Object.keys(WORKER_COMPANY)){
-    const k=norm(sn);
-    if(k && names.some(nm=>nm.startsWith(k))) return WORKER_COMPANY[sn];
+  const names=[norm(originalName), norm(fullName)].filter(Boolean);
+  for(const key of Object.keys(WORKER_COMPANY)){
+    const k=norm(key);if(!k)continue;
+    // 氏名一致／フルネームが登録名で始まる／苗字(2文字以上)が登録名の先頭 のいずれか
+    if(names.some(nm=> nm===k || nm.startsWith(k) || (nm.length>=2 && k.startsWith(nm)))) return WORKER_COMPANY[key];
   }
   return '';
 }
@@ -1056,7 +1083,9 @@ function bindBasic(){
     state.r.genba=e.target.value;
     state.r.shunin=e.target.value;
     state.r.patrol.person=e.target.value;
-    renderGenbaShuninSelect();renderPatrolPersonSelect();
+    // (株)豊岡組グループの職長を現場代理人に合わせる
+    (state.r.workers||[]).forEach(w=>{ if(w.company==='(株)豊岡組') w.shokucho=e.target.value; });
+    renderGenbaShuninSelect();renderPatrolPersonSelect();renderWorkers();
   };
   $('f_shunin').onchange=e=>state.r.shunin=e.target.value;
   $('f_tbm').onchange=e=>state.r.tbm=e.target.value;
@@ -1109,9 +1138,11 @@ async function importFromKantoku(){
       if(!groupsMap.has(co))groupsMap.set(co,[]);
       const arr=groupsMap.get(co); if(!arr.includes(full))arr.push(full);
     });
+    const genba=state.r.genba||''; // 現場代理人（＝(株)豊岡組の職長に自動入力）
+    const mkGroup=(co,names)=>({company:co,kind:(COMPANY_KIND[co]||''),shokucho:(co==='(株)豊岡組'?genba:''),names});
     const groups=[];
-    if(groupsMap.has('')){groups.push({company:'',kind:'',shokucho:'',names:groupsMap.get('')});} // 会社指定なし（主）を先に
-    for(const [co,names] of groupsMap){ if(co==='')continue; groups.push({company:co,kind:'',shokucho:'',names}); }
+    if(groupsMap.has('')){groups.push(mkGroup('',groupsMap.get('')));} // 会社指定なし（主）を先に
+    for(const [co,names] of groupsMap){ if(co==='')continue; groups.push(mkGroup(co,names)); }
     if(groups.length)state.r.workers=groups;
   }
   syncKyContentFromWorks();
