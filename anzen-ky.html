@@ -196,7 +196,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   <div class="card">
     <h2><span class="bar"></span>社内安全パトロール</h2>
     <div class="row">
-      <div class="fld"><label>実施者</label><input type="text" id="f_shanai_patrol" value="社長：豊岡昭三" readonly="" style="background:#f4f5f7"></div>
+      <div class="fld"><label>実施者</label><input type="text" id="f_shanai_patrol" value="豊岡昭三" readonly="" style="background:#f4f5f7"></div>
       <div class="fld" style="flex:0 0 auto;min-width:140px"><label>実施</label>
         <input type="text" value="実施済" readonly="" style="background:#f4f5f7;text-align:center">
       </div>
@@ -399,7 +399,7 @@ function newReport(){
     workers:[],
     patrol:{ampm:'',time:'',person:'',checks:{}},
     shiji:'', zesei_ari:'nashi', zesei_text:'',
-    shanai_patrol:'社長：豊岡昭三', shanai_patrol_done:false,
+    shanai_patrol:'豊岡昭三', shanai_patrol_done:false,
     necchusho:{}
   };
 }
@@ -900,7 +900,7 @@ function matchWorkerFullName(name){
 // （＝Excelの名簿で会社ごとに1行空けて表示される）。別会社の人を追加したいときはここに足す。
 const WORKER_COMPANY={
   '豊岡強志':'(株)豊岡組','豊岡敦志':'(株)豊岡組','白崎健一':'(株)豊岡組','本郷憲市':'(株)豊岡組',
-  '坂本圭司':'(株)豊岡組','谷口勝康':'(株)豊岡組','十左近昭悟':'(株)豊岡組',
+  '坂本圭司':'(株)豊岡組','谷口勝康':'(株)豊岡組','十左近昭悟':'(株)豊岡組','武内進':'(株)豊岡組',
   '道本博文':'トヨオカ(株)','櫻田泰貴':'トヨオカ(株)'
 };
 // 会社名 → 元請/下請
@@ -1119,7 +1119,7 @@ function bindBasic(){
   $('f_zesei_nashi').onchange=()=>state.r.zesei_ari='nashi';
   $('f_zesei_ari').onchange=()=>state.r.zesei_ari='ari';
   $('f_zesei_text').oninput=e=>state.r.zesei_text=e.target.value;
-  state.r.shanai_patrol='社長：豊岡昭三'; // 実施者は固定
+  state.r.shanai_patrol='豊岡昭三'; // 実施者は固定
 }
 
 /* ===== 工事日報から取り込む（同じ日付の工事日報の内容を流用） ===== */
@@ -1196,7 +1196,7 @@ function loadBasicToForm(){
   $('f_zesei_nashi').checked=state.r.zesei_ari!=='ari';
   $('f_zesei_ari').checked=state.r.zesei_ari==='ari';
   $('f_zesei_text').value=state.r.zesei_text||'';
-  state.r.shanai_patrol='社長：豊岡昭三'; // 実施者は固定
+  state.r.shanai_patrol='豊岡昭三'; // 実施者は固定
   $('f_shanai_patrol').value=state.r.shanai_patrol;
 }
 
@@ -1934,7 +1934,7 @@ async function exportToExcel(rep, opts){
   xml=setCellTextInXml(xml,'G44', r.zesei_ari==='ari'?(r.zesei_text||''):'なし');
 
   // 社内安全パトロール：実施欄は「実施済」固定
-  xml=setCellTextInXml(xml,'J47', '社長：豊岡昭三');
+  xml=setCellTextInXml(xml,'J47', '豊岡昭三');
   xml=setCellTextInXml(xml,'S47', '☑');
 
   const necchushoCells=[['C54','D54'],['K54','L54'],['P54','Q54'],['W54','X54']];
