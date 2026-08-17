@@ -234,6 +234,11 @@ https://github.com/nodeca/pako/blob/main/LICENSE
       <div class="fld"><label>工事名で絞り込み</label><select id="list_filter_kojiname"><option value="">すべて</option><option value="3号工事">3号工事</option></select></div>
       <div class="fld"><label>日付で絞り込み</label><select id="list_filter_date"><option value="">すべて</option><option value="2026-07-29">2026-07-29</option><option value="2026-07-28">2026-07-28</option></select></div>
     </div>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
+      <label style="display:flex;align-items:center;gap:6px;font-size:13px"><input type="checkbox" id="listSelectAll"> すべて選択</label>
+      <button class="btn small" id="batchExcelBtn">選択した日報をまとめてExcel出力</button>
+      <span class="muted" id="batchExcelNote"></span>
+    </div>
     <div id="reportListBody">
     <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 4px;border-bottom:1px solid var(--border)">
       <div>
@@ -910,6 +915,22 @@ function workerCompany(originalName, fullName){
   }
   return '';
 }
+// 現場代理人・主任技術者を、その所属会社の職長として割り当てる（会社名→氏名）
+function companyLeaders(){
+  const map={};
+  [state.r.genba, state.r.shunin].forEach(p=>{
+    p=(p||'').trim(); if(!p)return;
+    const co=workerCompany(p,p);
+    if(co && !map[co]) map[co]=p;
+  });
+  return map;
+}
+// 元請/下請は「現場代理人の所属会社＝元請、他社＝下請」で判定（現場代理人未設定時は既定表）
+function companyKind(company){
+  const genbaCo=state.r.genba?workerCompany(state.r.genba,state.r.genba):'';
+  if(genbaCo)return company===genbaCo?'元請':'下請';
+  return COMPANY_KIND[company]||'';
+}
 
 /* ===== 点検簿テンプレート（使用機械用・9シートの点検簿.xlsx） ===== */
 function localTenkenTemplate(){const raw=localStorage.getItem(LS.tenkenTemplate);if(raw){try{return JSON.parse(raw);}catch(e){}}return null;}
@@ -1083,8 +1104,13 @@ function bindBasic(){
     state.r.genba=e.target.value;
     state.r.shunin=e.target.value;
     state.r.patrol.person=e.target.value;
-    // (株)豊岡組グループの職長を現場代理人に合わせる
-    (state.r.workers||[]).forEach(w=>{ if(w.company==='(株)豊岡組') w.shokucho=e.target.value; });
+    // 現場代理人/主任技術者を、その会社の職長に自動転記（職長は作業員名から外す）
+    const leaders=companyLeaders();
+    (state.r.workers||[]).forEach(w=>{
+      if(w.company) w.kind=companyKind(w.company); // 現場代理人の会社が元請
+      const s=leaders[w.company]||'';
+      if(s){ w.shokucho=s; if(Array.isArray(w.names)) w.names=w.names.filter(nm=>nm!==s); }
+    });
     renderGenbaShuninSelect();renderPatrolPersonSelect();renderWorkers();
   };
   $('f_shunin').onchange=e=>state.r.shunin=e.target.value;
@@ -1135,14 +1161,17 @@ async function importFromKantoku(){
       const orig=(w&&w.name)||''; if(!orig)return;
       const full=matchWorkerFullName(orig); if(!full)return;
       const co=workerCompany(orig, full);
+      if(!co)return; // 会社が判定できない作業員は名簿に入れない（会社名空欄の行を作らない）
       if(!groupsMap.has(co))groupsMap.set(co,[]);
       const arr=groupsMap.get(co); if(!arr.includes(full))arr.push(full);
     });
-    const genba=state.r.genba||''; // 現場代理人（＝(株)豊岡組の職長に自動入力）
-    const mkGroup=(co,names)=>({company:co,kind:(COMPANY_KIND[co]||''),shokucho:(co==='(株)豊岡組'?genba:''),names});
+    const leaders=companyLeaders(); // 会社名 → 現場代理人/主任技術者（＝その会社の職長）
     const groups=[];
-    if(groupsMap.has('')){groups.push(mkGroup('',groupsMap.get('')));} // 会社指定なし（主）を先に
-    for(const [co,names] of groupsMap){ if(co==='')continue; groups.push(mkGroup(co,names)); }
+    for(const [co,names] of groupsMap){
+      const shokucho=leaders[co]||'';
+      const workerNames=shokucho?names.filter(nm=>nm!==shokucho):names; // 職長は作業員名から外す
+      groups.push({company:co,kind:companyKind(co),shokucho,names:workerNames});
+    }
     if(groups.length)state.r.workers=groups;
   }
   syncKyContentFromWorks();
@@ -1227,9 +1256,12 @@ function renderList(){
   const sorted=filtered.sort((a,b)=>(b.report_date||'').localeCompare(a.report_date||''));
   box.innerHTML=sorted.map(r=>`
     <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 4px;border-bottom:1px solid var(--border)">
-      <div>
-        <div style="font-weight:600">${esc(r.report_date||'（日付未設定）')}</div>
-        <div class="muted">${esc(r.koji_name||'')} ${esc(r.place?('／'+r.place):'')}</div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <input type="checkbox" class="listsel" data-id="${r.id}">
+        <div>
+          <div style="font-weight:600">${esc(r.report_date||'（日付未設定）')}</div>
+          <div class="muted">${esc(r.koji_name||'')} ${esc(r.place?('／'+r.place):'')}</div>
+        </div>
       </div>
       <div style="display:flex;gap:6px">
         <button class="btn small ghost" data-excel="${r.id}">Excel</button>
@@ -1237,6 +1269,7 @@ function renderList(){
         <button class="btn small danger" data-del="${r.id}">削除</button>
       </div>
     </div>`).join('');
+  const selAll=$('listSelectAll'); if(selAll)selAll.checked=false;
   box.querySelectorAll('[data-excel]').forEach(b=>b.onclick=()=>{
     const rep=state.reports.find(x=>x.id===b.dataset.excel);
     if(rep)exportToExcel(rep);
@@ -1249,6 +1282,33 @@ function renderList(){
 }
 $('list_filter_kojiname').onchange=()=>renderList();
 $('list_filter_date').onchange=()=>renderList();
+$('listSelectAll').onchange=e=>{document.querySelectorAll('#reportListBody .listsel').forEach(cb=>cb.checked=e.target.checked);};
+$('batchExcelBtn').onclick=async()=>{
+  const ids=[...document.querySelectorAll('#reportListBody .listsel:checked')].map(cb=>cb.dataset.id);
+  const note=$('batchExcelNote');
+  if(!ids.length){note.textContent='出力する日報にチェックを入れてください。';return;}
+  if(!getTemplate()){alert('先に「設定」タブでExcelテンプレートを登録してください。');return;}
+  note.textContent='作成中…';
+  try{
+    const files=[];
+    for(const id of ids){
+      const rep=state.reports.find(x=>x.id===id); if(!rep)continue;
+      const res=await exportToExcel(rep,{returnBlob:true});
+      if(res&&res.blob)files.push(res);
+    }
+    if(!files.length){note.textContent='出力できる日報がありませんでした。';return;}
+    const dl=(blob,name)=>{const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();document.body.removeChild(a);setTimeout(()=>URL.revokeObjectURL(url),10000);};
+    if(files.length===1){
+      dl(files[0].blob, files[0].filename);
+    }else{
+      const zip=new JSZip();const seen={};
+      files.forEach(f=>{let name=f.filename;if(seen[name]){name=f.filename.replace(/\.xlsx$/i,`_${++seen[f.filename]}.xlsx`);}else seen[name]=1;zip.file(name,f.blob);});
+      const zb=await zip.generateAsync({type:'blob'});
+      dl(zb, `日報_まとめて_${new Date().toISOString().slice(0,10)}.zip`);
+    }
+    note.textContent=`${files.length}件を出力しました。`;toast('まとめて出力しました');
+  }catch(err){note.textContent='出力に失敗しました：'+(err.message||err);}
+};
 
 /* ===== タブ切り替え ===== */
 function switchTab(name){
@@ -1748,7 +1808,8 @@ async function exportTenken(){
 }
 $('tenkenExportBtn').onclick=()=>exportTenken();
 
-async function exportToExcel(rep){
+async function exportToExcel(rep, opts){
+  opts=opts||{};
   const t=getTemplate();
   if(!t){alert('先に「設定」タブでExcelテンプレートを登録してください。');return;}
   if(typeof JSZip==='undefined'){alert('ZIPライブラリの読み込みに失敗しています。');return;}
@@ -1884,12 +1945,13 @@ async function exportToExcel(rep){
 
   zip.file(path, xml);
 
-  if(workerRowsOverflow){
+  if(workerRowsOverflow && !opts.returnBlob){
     alert('建設作業員名簿の欄（19〜23行目）に全員を書ききれませんでした。会社数または作業員数を減らすか、テンプレートの行数を増やす必要があります。書ききれた分のみ出力します。');
   }
 
   const outBuf=await zip.generateAsync({type:'blob'});
   const fn=(t.filename||'日報').replace(/\.xlsx$/i,'')+`_${r.report_date||'日付未設定'}.xlsx`;
+  if(opts.returnBlob) return {blob:outBuf, filename:fn}; // まとめて出力用にBlobを返す
   const url=URL.createObjectURL(outBuf);
   const a=document.createElement('a');a.href=url;a.download=fn;document.body.appendChild(a);a.click();
   document.body.removeChild(a);
