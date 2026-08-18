@@ -219,10 +219,11 @@ https://github.com/nodeca/pako/blob/main/LICENSE
 <div id="listTab" class="hidden">
   <div class="card">
     <h2><span class="bar"></span>点検簿を出力（使用機械）</h2>
-    <div class="muted" style="margin-bottom:10px">選んだ月の日報から、その月に使った機械ごとに点検簿を作ります（1機械＝1ファイル、複数ならZIPでまとめてダウンロード）。使用日の列に✔と点検者名が入ります。先に「設定」タブで点検簿テンプレートを登録してください。</div>
+    <div class="muted" style="margin-bottom:10px">選んだ月・工事現場の日報から、使った機械ごとに点検簿を作ります（1機械＝1ファイル、複数ならZIPでまとめてダウンロード）。使用日の列に✔と点検者名が入ります。「工事現場」を選ぶとその工事だけ、「すべての工事」なら月全体で集計します。先に「設定」タブで点検簿テンプレートを登録してください。</div>
     <div class="row">
       <div class="fld" style="flex:1 1 120px"><label>年</label><select id="tenken_year"></select></div>
       <div class="fld" style="flex:1 1 100px"><label>月</label><select id="tenken_month"></select></div>
+      <div class="fld" style="flex:1 1 200px"><label>工事現場</label><select id="tenken_koji"><option value="">すべての工事</option></select></div>
       <div class="fld" style="flex:1 1 160px"><label>点検者</label><select id="tenken_inspector"><option value="">選択…</option></select></div>
     </div>
     <button class="btn" id="tenkenExportBtn" style="margin-top:12px">点検簿を作成してダウンロード</button>
@@ -1559,8 +1560,14 @@ function circleChar(ch){return ch.split('').map(c=>c+'\u20DD').join('');}
 /* ===== 点検簿（使用機械）出力 ===== */
 // 出力画面の年・月・点検者プルダウンを埋める
 function refreshTenkenExportUI(){
-  const yEl=$('tenken_year'), mEl=$('tenken_month'), iEl=$('tenken_inspector');
+  const yEl=$('tenken_year'), mEl=$('tenken_month'), iEl=$('tenken_inspector'), kEl=$('tenken_koji');
   if(!yEl||!mEl||!iEl)return;
+  // 工事現場：保存済み日報の工事名を候補に（「すべての工事」＝月全体）
+  if(kEl){
+    const curK=kEl.value;
+    const kojis=[...new Set(state.reports.map(r=>r.koji_name).filter(Boolean))].sort();
+    kEl.innerHTML='<option value="">すべての工事</option>'+kojis.map(k=>`<option value="${esc(k)}" ${k===curK?'selected':''}>${esc(k)}</option>`).join('');
+  }
   // 年：保存済み日報の年＋今年、前後1年を候補に
   const years=new Set();
   const now=new Date();
@@ -1758,14 +1765,16 @@ async function exportTenken(){
   if(typeof JSZip==='undefined'){alert('ZIPライブラリの読み込みに失敗しています。');return;}
   const year=+$('tenken_year').value, month=+$('tenken_month').value;
   const inspector=tenkenStampName($('tenken_inspector').value);
+  const koji=($('tenken_koji')&&$('tenken_koji').value)||''; // 工事現場（空＝すべての工事）
   const note=$('tenkenExportNote');
   note.textContent='作成中…';
 
-  // 対象月の日報から「機械名→使用日(1〜31)の集合」を作る
+  // 対象月（＋選んだ工事現場）の日報から「機械名→使用日(1〜31)の集合」を作る
   const ym=`${year}-${String(month).padStart(2,'0')}`;
   const machineDays={};
   state.reports.forEach(r=>{
     if(!r.report_date||r.report_date.slice(0,7)!==ym)return;
+    if(koji && r.koji_name!==koji)return; // 工事現場でしぼり込み
     const day=+r.report_date.slice(8,10);
     (Array.isArray(r.machines)?r.machines:[]).forEach(mc=>{
       const name=(mc||'').trim();if(!name||!day)return;
@@ -1773,19 +1782,21 @@ async function exportTenken(){
     });
   });
   const names=Object.keys(machineDays);
-  if(!names.length){note.textContent='この月に使用機械が記録された日報がありません。';return;}
+  if(!names.length){note.textContent=(koji?`「${koji}」の`:'')+'この月に使用機械が記録された日報がありません。';return;}
 
   try{
     const probe=await JSZip.loadAsync(base64ToArrayBuffer(tpl.base64));
     const sheetNames=(await resolveAllSheetPaths(probe)).map(s=>s.name.trim());
     const mm=String(month).padStart(2,'0');
+    const kojiSafe=koji?koji.replace(/[\\/:*?"<>|]/g,'_'):'';
+    const kojiPart=kojiSafe?`_${kojiSafe}`:''; // 工事現場を選んだらファイル名に付ける
     const files=[];const unmatched=[];
     for(const name of names){
       if(!sheetNames.includes(name)){unmatched.push(name);continue;}
       const blob=await tenkenBuildSingleSheetFile(tpl.base64,name,machineDays[name],inspector,year,month);
       if(!blob){unmatched.push(name);continue;}
       const safe=name.replace(/[\\/:*?"<>|]/g,'_');
-      files.push({fname:`点検簿_${safe}_${year}年${mm}月.xlsx`,blob});
+      files.push({fname:`点検簿${kojiPart}_${safe}_${year}年${mm}月.xlsx`,blob,machine:name});
     }
     if(!files.length){note.textContent=`点検簿にシートが無い機械のみでした：${unmatched.join('・')}`;return;}
 
@@ -1796,10 +1807,10 @@ async function exportTenken(){
       const outZip=new JSZip();
       files.forEach(f=>outZip.file(f.fname,f.blob));
       const zipBlob=await outZip.generateAsync({type:'blob'});
-      tenkenDownload(zipBlob,`点検簿_${year}年${mm}月.zip`);
+      tenkenDownload(zipBlob,`点検簿${kojiPart}_${year}年${mm}月.zip`);
     }
 
-    let msg=`${files.length}機械分を出力しました（${files.map(f=>f.fname.replace(/^点検簿_/,'').replace(/_\d{4}年.*$/,'')).join('・')}）。`;
+    let msg=`${koji?`「${koji}」の`:''}${files.length}機械分を出力しました（${files.map(f=>f.machine).join('・')}）。`;
     if(files.length>1)msg+=' ZIPにまとめています。';
     if(unmatched.length)msg+=` ※点検簿にシートが無い機械：${unmatched.join('・')}`;
     note.textContent=msg;
