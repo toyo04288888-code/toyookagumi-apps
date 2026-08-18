@@ -1112,6 +1112,7 @@ function bindBasic(){
       const s=leaders[w.company]||'';
       if(s){ w.shokucho=s; if(Array.isArray(w.names)) w.names=w.names.filter(nm=>nm!==s); }
     });
+    if(Array.isArray(state.r.workers)) state.r.workers.sort((a,b)=>(a.kind==='元請'?0:1)-(b.kind==='元請'?0:1)); // 元請を一番上に
     renderGenbaShuninSelect();renderPatrolPersonSelect();renderWorkers();
   };
   $('f_shunin').onchange=e=>state.r.shunin=e.target.value;
@@ -1173,6 +1174,7 @@ async function importFromKantoku(){
       const workerNames=shokucho?names.filter(nm=>nm!==shokucho):names; // 職長は作業員名から外す
       groups.push({company:co,kind:companyKind(co),shokucho,names:workerNames});
     }
+    groups.sort((a,b)=>(a.kind==='元請'?0:1)-(b.kind==='元請'?0:1)); // 元請の会社を一番上に
     if(groups.length)state.r.workers=groups;
   }
   syncKyContentFromWorks();
