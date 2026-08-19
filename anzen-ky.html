@@ -1845,8 +1845,8 @@ async function exportToExcel(rep, opts){
   xml=setCellTextInXml(xml,'AD6',r.genba||'');
   xml=setCellTextInXml(xml,'AH6',r.shunin||'');
 
-  // 天気：テンプレートの4分割セル(晴/曇/雨/雪)は使わず、AD3セルに選んだ天気の文字列をそのまま表示する
-  xml=setCellTextInXml(xml,'AD3', r.weather||'');
+  // 天気：テンプレートの4分割セル(晴/曇/雨/雪)は使わず、AD3セルに「天気：〇〇」の形で表示する
+  xml=setCellTextInXml(xml,'AD3', r.weather?('天気：'+r.weather):'');
   xml=setCellTextInXml(xml,'AF3', '');
   xml=setCellTextInXml(xml,'AH3', '');
   xml=setCellTextInXml(xml,'AJ3', '');
