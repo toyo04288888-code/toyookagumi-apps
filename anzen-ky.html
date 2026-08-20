@@ -1690,13 +1690,15 @@ function tenkenStampName(name){
   return name.length>=4?name.slice(0,2):name;
 }
 
-// 1シート分のxmlに、使用日の✔と点検者名・年月を記入する（記入前にテンプレの記入例を消す）
-function tenkenMarkSheet(xml, shared, days, inspector, year, month){
+// 1シート分のxmlに、使用日の✔と点検者名・年月・現場名を記入する（記入前にテンプレの記入例を消す）
+function tenkenMarkSheet(xml, shared, days, inspector, year, month, koji){
   const {map:dayCols,row:dayRow}=tenkenFindDayColumns(xml);
   if(!dayRow||Object.keys(dayCols).length===0)return {xml,ok:false};
   const {itemRows,inspectorRow}=tenkenDetectRows(xml,dayRow,shared);
   const ymCells=tenkenFindYearMonthCells(xml,dayRow+1);
   if(ymCells){xml=setCellNumberInXml(xml,ymCells.yearCell,year);xml=setCellNumberInXml(xml,ymCells.monthCell,month);}
+  // 現場名：日報の工事名で統一（現場名の値セルは Q列・「日付行の2つ上」＝標準Q2/玉掛けQ3）
+  if(koji!=null) xml=tenkenSetCell(xml,'Q'+(dayRow-2), koji||'');
   // まず全日列の項目行・点検者行を空にする（テンプレートの記入例を消す）
   for(let d=1;d<=31;d++){
     const col=dayCols[d];if(!col)continue;
@@ -1716,7 +1718,7 @@ function tenkenMarkSheet(xml, shared, days, inspector, year, month){
 function tenkenReEsc(s){return String(s).replace(/[.*+?^${}()|[\]\\]/g,'\\$&');}
 
 // 9シートのマスタから、対象機械の1シートだけを残した単一Excel（Blob）を作る
-async function tenkenBuildSingleSheetFile(base64, sheetName, days, inspector, year, month){
+async function tenkenBuildSingleSheetFile(base64, sheetName, days, inspector, year, month, koji){
   const zip=await JSZip.loadAsync(base64ToArrayBuffer(base64));
   const sheets=await resolveAllSheetPaths(zip);
   const shared=await tenkenLoadSharedStrings(zip);
@@ -1724,7 +1726,7 @@ async function tenkenBuildSingleSheetFile(base64, sheetName, days, inspector, ye
   if(!keep)return null;
   // 対象シートに記入
   let xml=await zip.file(keep.path).async('string');
-  xml=tenkenMarkSheet(xml,shared,days,inspector,year,month).xml;
+  xml=tenkenMarkSheet(xml,shared,days,inspector,year,month,koji).xml;
   zip.file(keep.path,xml);
   // 他の8シートを削除する
   const others=sheets.filter(s=>s.rId!==keep.rId);
@@ -1774,6 +1776,7 @@ async function exportTenken(){
   // 対象月（＋選んだ工事現場）の日報から「機械名→使用日(1〜31)の集合」を作る
   const ym=`${year}-${String(month).padStart(2,'0')}`;
   const machineDays={};
+  const machineKojis={}; // 機械名 → その機械を使った日報の工事名の集合（現場名に使う）
   state.reports.forEach(r=>{
     if(!r.report_date||r.report_date.slice(0,7)!==ym)return;
     if(koji && r.koji_name!==koji)return; // 工事現場でしぼり込み
@@ -1781,6 +1784,7 @@ async function exportTenken(){
     (Array.isArray(r.machines)?r.machines:[]).forEach(mc=>{
       const name=(mc||'').trim();if(!name||!day)return;
       (machineDays[name]=machineDays[name]||new Set()).add(day);
+      if(r.koji_name)(machineKojis[name]=machineKojis[name]||new Set()).add(r.koji_name);
     });
   });
   const names=Object.keys(machineDays);
@@ -1795,7 +1799,9 @@ async function exportTenken(){
     const files=[];const unmatched=[];
     for(const name of names){
       if(!sheetNames.includes(name)){unmatched.push(name);continue;}
-      const blob=await tenkenBuildSingleSheetFile(tpl.base64,name,machineDays[name],inspector,year,month);
+      // 現場名＝選んだ工事現場、無ければその機械を使った日報の工事名（複数なら「・」でつなぐ）
+      const kojiName=koji || [...(machineKojis[name]||[])].join('・');
+      const blob=await tenkenBuildSingleSheetFile(tpl.base64,name,machineDays[name],inspector,year,month,kojiName);
       if(!blob){unmatched.push(name);continue;}
       const safe=name.replace(/[\\/:*?"<>|]/g,'_');
       files.push({fname:`点検簿${kojiPart}_${safe}_${year}年${mm}月.xlsx`,blob,machine:name});
