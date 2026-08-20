@@ -628,28 +628,30 @@ function renderKy(){
   const examples=getKyExamples();
   const manualD=getDangers(), manualA=getActions();
   const allActions=examples.map(e=>e.action).filter(Boolean);
-  state.r.ky.forEach(k=>{
+  state.r.ky.forEach((k,idx)=>{
     const content=(k.content||'').trim();
     // 危険：作業内容に合う例を先頭に、その後に残りの例＋手動候補
     const matchD=[], otherD=[];
     examples.forEach(ex=>{ if(!ex.danger)return; (content&&exWorkMatches(ex.work,content)?matchD:otherD).push(ex.danger); });
-    const dOpts=[...new Set([...matchD, ...otherD, ...manualD, ...(k.danger?[k.danger]:[])])];
-    const aOpts=[...new Set([...allActions, ...manualA, ...(k.action?[k.action]:[])])];
+    const dOpts=[...new Set([...matchD, ...otherD, ...manualD])];
+    const aOpts=[...new Set([...allActions, ...manualA])];
     const tr=document.createElement('tr');
-    tr.innerHTML=`<td><input class="kc" value="${esc(k.content)}" placeholder="例：水路工"></td>
-      <td><select class="kd"><option value="">選択…</option>${dOpts.map(n=>`<option value="${esc(n)}" ${n===k.danger?'selected':''}>${esc(n)}</option>`).join('')}</select></td>
-      <td><select class="ka"><option value="">選択…</option>${aOpts.map(n=>`<option value="${esc(n)}" ${n===k.action?'selected':''}>${esc(n)}</option>`).join('')}</select></td>
+    // 危険・対策は「選択も直接入力もできる」入力欄（datalistで候補表示）
+    tr.innerHTML=`<td><input class="kc" value="${esc(k.content)}" placeholder="例：土工"></td>
+      <td><input class="kd" list="kdList${idx}" value="${esc(k.danger)}" placeholder="選択・入力"><datalist id="kdList${idx}">${dOpts.map(n=>`<option value="${esc(n)}"></option>`).join('')}</datalist></td>
+      <td><input class="ka" list="kaList${idx}" value="${esc(k.action)}" placeholder="選択・入力"><datalist id="kaList${idx}">${aOpts.map(n=>`<option value="${esc(n)}"></option>`).join('')}</datalist></td>
       <td><button class="del">×</button></td>`;
     tr.querySelector('.kc').oninput=e=>k.content=e.target.value;
-    tr.querySelector('.kd').onchange=e=>{
+    const kd=tr.querySelector('.kd'), ka=tr.querySelector('.ka');
+    kd.oninput=e=>k.danger=e.target.value;
+    kd.onchange=e=>{
       k.danger=e.target.value;
-      // 危険を選んだら、対応する対策を例集から自動で入れる
+      // 危険を選んだ（確定した）ら、対応する対策を例集から自動で入れる
       const act=suggestActionForDanger(k.danger, (k.content||'').trim());
-      if(act)k.action=act;
-      renderKy();
+      if(act){ k.action=act; renderKy(); }
     };
-    tr.querySelector('.ka').onchange=e=>k.action=e.target.value;
-    tr.querySelector('.del').onclick=()=>{state.r.ky.splice(state.r.ky.indexOf(k),1);renderKy();};
+    ka.oninput=e=>k.action=e.target.value;
+    tr.querySelector('.del').onclick=()=>{state.r.ky.splice(idx,1);renderKy();};
     tb.appendChild(tr);
   });
 }
@@ -828,11 +830,32 @@ function cleanKyText(s){
   return t;
 }
 function localKyExamples(){const raw=localStorage.getItem(LS.kyexamples);if(raw){try{const p=JSON.parse(raw);if(Array.isArray(p))return p;}catch(e){}}return [];}
+// 組み込みのKY事例（作業内容ごとの危険・対策）。取り込みが無くても使える。
+const BUILTIN_KY_EXAMPLES=[
+  {work:'土工',danger:'トラック積込み時のバックの死角',action:'周りの状況をよく確認する。声の合図。'},
+  {work:'土工',danger:'大型車両の死角になりやすい',action:'作業中は死角にならない'},
+  {work:'土工',danger:'通行車両との接触',action:'周りの状況をよく確認して作業をおこなう'},
+  {work:'土工',danger:'機械から作業員が死角になる',action:'合図、指示を大きな声でおこなう'},
+  {work:'土工',danger:'車や通行人との接触',action:'周りをよく確認する'},
+  {work:'土工',danger:'車との接触',action:'周りをよく確認する'},
+  {work:'土工',danger:'バックホウ後退時作業員が轢かれる',action:'合図の徹底、周囲の安全確認'},
+  {work:'土工',danger:'バックホウと作業員が接触する',action:'合図の徹底、周囲の安全確認'},
+  {work:'土工',danger:'ダンプ後退時作業員が轢かれる',action:'後方の安全確認、誘導員による誘導'},
+  {work:'土工',danger:'作業中足が滑って転倒しそうになる',action:'足元に注意する'},
+  {work:'土工',danger:'足元の荷物につまずき転倒する',action:'足元に荷物を置かない'},
+  {work:'土工',danger:'資材とぶつかりそうになる',action:'合図をして安全確保する'},
+  {work:'土工',danger:'重機車両との接触',action:'合図の確認を大きな声でおこなう'},
+  {work:'土工',danger:'重機車両との接触',action:'近くで作業をおこなわない'}
+];
 function getKyExamples(){
   const raw=(state.mode==='cloud'&&state.sb)?(state.cloudKyExamples||[]):localKyExamples();
   // 既に保存済みのデータも読み取り時にNo.〇〇を除去（再取り込み不要で反映）
-  return raw.map(e=>({work:cleanKyText(e.work),danger:cleanKyText(e.danger),action:cleanKyText(e.action)}))
-            .filter(e=>e.danger&&e.action);
+  const out=raw.map(e=>({work:cleanKyText(e.work),danger:cleanKyText(e.danger),action:cleanKyText(e.action)}))
+               .filter(e=>e.danger&&e.action);
+  // 組み込みの例を追加（同じ組み合わせは重複させない）
+  const seen=new Set(out.map(e=>e.work+'|'+e.danger+'|'+e.action));
+  BUILTIN_KY_EXAMPLES.forEach(e=>{const k=e.work+'|'+e.danger+'|'+e.action;if(!seen.has(k)){seen.add(k);out.push(e);}});
+  return out;
 }
 async function saveKyExamples(arr){
   if(state.mode==='cloud'&&state.sb){state.cloudKyExamples=arr;await azUpsertConfig('kyexamples', arr);}
