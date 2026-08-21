@@ -234,6 +234,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     <div class="row" style="margin-bottom:12px">
       <div class="fld"><label>工事名で絞り込み</label><select id="list_filter_kojiname"><option value="">すべて</option><option value="3号工事">3号工事</option></select></div>
       <div class="fld"><label>日付で絞り込み</label><select id="list_filter_date"><option value="">すべて</option><option value="2026-07-29">2026-07-29</option><option value="2026-07-28">2026-07-28</option></select></div>
+      <div class="fld" style="flex:0 1 160px"><label>状態で絞り込み</label><select id="list_filter_status"><option value="">すべて</option><option value="施工中">施工中</option><option value="完了">完了</option></select></div>
     </div>
     <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
       <label style="display:flex;align-items:center;gap:6px;font-size:13px"><input type="checkbox" id="listSelectAll"> すべて選択</label>
@@ -401,7 +402,8 @@ function newReport(){
     patrol:{ampm:'',time:'',person:'',checks:{}},
     shiji:'', zesei_ari:'nashi', zesei_text:'',
     shanai_patrol:'豊岡昭三', shanai_patrol_done:false,
-    necchusho:{}
+    necchusho:{},
+    status:'施工中'
   };
 }
 
@@ -1273,14 +1275,21 @@ function renderList(){
 
   if(state.reports.length===0){box.innerHTML='<p class="muted">まだ保存された日報がありません。</p>';return;}
 
+  const curStatusFilter=$('list_filter_status')?$('list_filter_status').value:'';
   let filtered=[...state.reports];
   if(curKojiFilter) filtered=filtered.filter(r=>r.koji_name===curKojiFilter);
   if(curDateFilter) filtered=filtered.filter(r=>r.report_date===curDateFilter);
+  if(curStatusFilter) filtered=filtered.filter(r=>(r.status||'施工中')===curStatusFilter);
 
   if(filtered.length===0){box.innerHTML='<p class="muted">条件に一致する日報がありません。</p>';return;}
 
   const sorted=filtered.sort((a,b)=>(b.report_date||'').localeCompare(a.report_date||''));
-  box.innerHTML=sorted.map(r=>`
+  box.innerHTML=sorted.map(r=>{
+    const st=r.status||'施工中';
+    const stStyle=st==='完了'
+      ? 'background:#e6f4ea;color:#1f7a3d;border:1px solid #bfe3c9'
+      : 'background:#fff4e6;color:#b5651d;border:1px solid #f0d3a8';
+    return `
     <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 4px;border-bottom:1px solid var(--border)">
       <div style="display:flex;align-items:center;gap:10px">
         <input type="checkbox" class="listsel" data-id="${r.id}">
@@ -1289,13 +1298,24 @@ function renderList(){
           <div class="muted">${esc(r.koji_name||'')} ${esc(r.place?('／'+r.place):'')}</div>
         </div>
       </div>
-      <div style="display:flex;gap:6px">
+      <div style="display:flex;gap:6px;align-items:center">
+        <select class="rstatus" data-id="${r.id}" style="${stStyle};border-radius:6px;padding:4px 6px;font-size:12.5px;font-weight:600">
+          <option value="施工中" ${st==='施工中'?'selected':''}>施工中</option>
+          <option value="完了" ${st==='完了'?'selected':''}>完了</option>
+        </select>
         <button class="btn small ghost" data-excel="${r.id}">Excel</button>
         <button class="btn small ghost" data-edit="${r.id}">編集</button>
         <button class="btn small danger" data-del="${r.id}">削除</button>
       </div>
-    </div>`).join('');
+    </div>`;}).join('');
   const selAll=$('listSelectAll'); if(selAll)selAll.checked=false;
+  box.querySelectorAll('.rstatus').forEach(sel=>sel.onchange=async()=>{
+    const rep=state.reports.find(x=>x.id===sel.dataset.id);
+    if(!rep)return;
+    rep.status=sel.value;
+    await Store.saveReport(rep);
+    renderList();
+  });
   box.querySelectorAll('[data-excel]').forEach(b=>b.onclick=()=>{
     const rep=state.reports.find(x=>x.id===b.dataset.excel);
     if(rep)exportToExcel(rep);
@@ -1308,6 +1328,7 @@ function renderList(){
 }
 $('list_filter_kojiname').onchange=()=>renderList();
 $('list_filter_date').onchange=()=>renderList();
+$('list_filter_status').onchange=()=>renderList();
 $('listSelectAll').onchange=e=>{document.querySelectorAll('#reportListBody .listsel').forEach(cb=>cb.checked=e.target.checked);};
 $('batchExcelBtn').onclick=async()=>{
   const ids=[...document.querySelectorAll('#reportListBody .listsel:checked')].map(cb=>cb.dataset.id);
