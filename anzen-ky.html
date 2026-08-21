@@ -239,7 +239,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     </div>
     <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
       <label style="display:flex;align-items:center;gap:6px;font-size:13px"><input type="checkbox" id="listSelectAll"> すべて選択</label>
-      <button class="btn small" id="batchExcelBtn">選択した日報をまとめてExcel出力</button>
+      <button class="btn small" id="batchExcelBtn">選択した日報を1つのExcel（日付順の別シート）で出力</button>
       <span class="muted" id="batchExcelNote"></span>
     </div>
     <div id="reportListBody">
@@ -1349,23 +1349,20 @@ $('batchExcelBtn').onclick=async()=>{
   if(!getTemplate()){alert('先に「設定」タブでExcelテンプレートを登録してください。');return;}
   note.textContent='作成中…';
   try{
-    const files=[];
-    for(const id of ids){
-      const rep=state.reports.find(x=>x.id===id); if(!rep)continue;
-      const res=await exportToExcel(rep,{returnBlob:true});
-      if(res&&res.blob)files.push(res);
-    }
-    if(!files.length){note.textContent='出力できる日報がありませんでした。';return;}
+    // 選択された日報を集め、1つのExcelの別シートに（日付順・新しい日を左、古い日を右）出力する
+    const reps=ids.map(id=>state.reports.find(x=>x.id===id)).filter(Boolean);
+    if(!reps.length){note.textContent='出力できる日報がありませんでした。';return;}
     const dl=(blob,name)=>{const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();document.body.removeChild(a);setTimeout(()=>URL.revokeObjectURL(url),10000);};
-    if(files.length===1){
-      dl(files[0].blob, files[0].filename);
-    }else{
-      const zip=new JSZip();const seen={};
-      files.forEach(f=>{let name=f.filename;if(seen[name]){name=f.filename.replace(/\.xlsx$/i,`_${++seen[f.filename]}.xlsx`);}else seen[name]=1;zip.file(name,f.blob);});
-      const zb=await zip.generateAsync({type:'blob'});
-      dl(zb, `日報_まとめて_${new Date().toISOString().slice(0,10)}.zip`);
-    }
-    note.textContent=`${files.length}件を出力しました。`;toast('まとめて出力しました');
+    const out=await buildKyMultiSheet(reps);
+    if(!out||!out.blob){note.textContent='出力できませんでした。';return;}
+    const tpl=getTemplate();
+    const base=(tpl.filename||'日報').replace(/\.xlsx$/i,'');
+    const dates=reps.map(r=>r.report_date).filter(Boolean).sort();
+    const range=dates.length?`_${dates[0]}〜${dates[dates.length-1]}`:'';
+    dl(out.blob, `${base}${range}.xlsx`);
+    note.textContent=`${out.count}件を1つのExcel（日付順の別シート）で出力しました。`;
+    if(out.overflow)note.textContent+=' ※一部シートで作業員名簿に書ききれない行がありました。';
+    toast('まとめて出力しました');
   }catch(err){note.textContent='出力に失敗しました：'+(err.message||err);}
 };
 
@@ -1944,20 +1941,18 @@ $('tenkenExportBtn').onclick=()=>exportTenken();
 ['tenken_year','tenken_month','tenken_koji'].forEach(id=>{ if($(id))$(id).onchange=()=>refreshTenkenMachineInspectors(); });
 if($('tenken_inspector'))$('tenken_inspector').onchange=()=>refreshTenkenMachineInspectors();
 
-async function exportToExcel(rep, opts){
-  opts=opts||{};
-  const t=getTemplate();
-  if(!t){alert('先に「設定」タブでExcelテンプレートを登録してください。');return;}
-  if(typeof JSZip==='undefined'){alert('ZIPライブラリの読み込みに失敗しています。');return;}
-
-  const zip=await JSZip.loadAsync(base64ToArrayBuffer(t.base64));
-  const path=await resolveSheetXmlPath(zip);
-  if(!path||!zip.file(path)){alert('テンプレートのシート構造を認識できませんでした。');return;}
-
-  let xml=await zip.file(path).async('string');
-  const r=rep||state.r; // 一覧から指定された日報、無ければ入力中の日報
-
-  // 日付（P3, Excelシリアル値として書き込む）・曜日（Y3）
+const KY_WORKER_AVAILABLE_ROWS=[19,20,21,22,23];
+// 会社名セルを中央揃えにするスタイルを、作業員名簿の各行ぶん用意する（styles.xmlに追加。1回だけ計算して使い回す）
+async function buildWorkerStyleOverrides(zip, baseXml){
+  const styleOverrides={};
+  for(const rn of KY_WORKER_AVAILABLE_ROWS){
+    const origId=getCellStyleIdFromXml(baseXml, `C${rn}`);
+    styleOverrides[rn]=await addCenterAlignedStyle(zip, origId);
+  }
+  return styleOverrides;
+}
+// 1枚のシートXMLに、1件の日報の内容を記入して返す（{xml, overflow}）
+function applyKyMarks(xml, r, styleOverrides){
   if(r.report_date){
     xml=setCellNumberInXml(xml,'P3', dateToExcelSerial(r.report_date));
     const d=new Date(r.report_date+'T00:00:00');
@@ -1967,131 +1962,157 @@ async function exportToExcel(rep, opts){
   xml=setCellTextInXml(xml,'G5',r.place||'');
   xml=setCellTextInXml(xml,'AD6',r.genba||'');
   xml=setCellTextInXml(xml,'AH6',r.shunin||'');
-
-  // 天気：テンプレートの4分割セル(晴/曇/雨/雪)は使わず、AD3セルに「天気：〇〇」の形で表示する
+  // 天気：AD3セルに「天気：〇〇」の形で表示する
   xml=setCellTextInXml(xml,'AD3', r.weather?('天気：'+r.weather):'');
-  xml=setCellTextInXml(xml,'AF3', '');
-  xml=setCellTextInXml(xml,'AH3', '');
-  xml=setCellTextInXml(xml,'AJ3', '');
-
+  xml=setCellTextInXml(xml,'AF3', '');xml=setCellTextInXml(xml,'AH3', '');xml=setCellTextInXml(xml,'AJ3', '');
   const workCells=[['D8','J8'],['D9','J9'],['D10','J10']];
-  r.works.slice(0,3).forEach((w,i)=>{
+  (r.works||[]).slice(0,3).forEach((w,i)=>{
     xml=setCellTextInXml(xml, workCells[i][0], w.kind);
     xml=setCellTextInXml(xml, workCells[i][1], w.content);
   });
-
   const kyCells=[['C15','L15','Y15'],['C16','L16','Y16']];
-  r.ky.slice(0,2).forEach((k,i)=>{
+  (r.ky||[]).slice(0,2).forEach((k,i)=>{
     xml=setCellTextInXml(xml, kyCells[i][0], k.content);
     xml=setCellTextInXml(xml, kyCells[i][1], k.danger);
     xml=setCellTextInXml(xml, kyCells[i][2], k.action);
   });
-
-  // 建設作業員名簿：19〜23行目の5行に、会社ごとに必要な行数だけ割り当てる。
-  // 1行あたり作業員は最大4人（R:V, W:AA, AB:AF, AG:AK）。5人目以降は次の行のR:V以降に続けて書く。
-  // 会社と会社の間には空白を1行はさむ（最後の会社の後ろには入れない）。19〜23行目に収まらない分は出力されない。
-  const WORKER_AVAILABLE_ROWS=[19,20,21,22,23];
+  // 建設作業員名簿（19〜23行目、会社ごとに空白1行はさむ、1行4人まで）
   const nameCols=['R','W','AB','AG'];
-  // C20だけ元々「左揃え」になっているテンプレートがあるため、会社名を書く可能性のある行すべてで
-  // あらかじめ中央揃えのスタイルを用意しておく（罫線・フォント等はそのセル自身のものを保つ）。
-  const styleOverrides={};
-  for(const rn of WORKER_AVAILABLE_ROWS){
-    const origId=getCellStyleIdFromXml(xml, `C${rn}`);
-    styleOverrides[rn]=await addCenterAlignedStyle(zip, origId);
-  }
-
-  let rowCursor=0; // WORKER_AVAILABLE_ROWSのインデックス
-  let workerRowsOverflow=false;
-  r.workers.forEach((w, widx) => {
-    if(workerRowsOverflow) return;
+  let rowCursor=0, overflow=false;
+  (r.workers||[]).forEach((w, widx) => {
+    if(overflow) return;
     const names=Array.isArray(w.names)?w.names:(w.names?String(w.names).split(/[\n,、，]/).map(s=>s.trim()).filter(Boolean):[]);
     const rowsNeeded=Math.max(1, Math.ceil(names.length/4));
-
-    if(rowCursor + rowsNeeded > WORKER_AVAILABLE_ROWS.length){
-      workerRowsOverflow=true;
-      return; // これ以上テンプレートの行に収まらない
-    }
-
-    const firstRow=WORKER_AVAILABLE_ROWS[rowCursor];
+    if(rowCursor + rowsNeeded > KY_WORKER_AVAILABLE_ROWS.length){overflow=true;return;}
+    const firstRow=KY_WORKER_AVAILABLE_ROWS[rowCursor];
     xml=setCellTextInXml(xml,`C${firstRow}`, w.company, styleOverrides[firstRow]);
     xml=setCellTextInXml(xml,`H${firstRow}`, w.kind);
     xml=setCellTextInXml(xml,`M${firstRow}`, w.shokucho);
-
     names.forEach((nm,ni)=>{
-      const rowOffset=Math.floor(ni/4);
-      const colIdx=ni%4;
-      const targetRow=WORKER_AVAILABLE_ROWS[rowCursor+rowOffset];
+      const rowOffset=Math.floor(ni/4), colIdx=ni%4;
+      const targetRow=KY_WORKER_AVAILABLE_ROWS[rowCursor+rowOffset];
       xml=setCellTextInXml(xml, `${nameCols[colIdx]}${targetRow}`, nm);
     });
-
     rowCursor += rowsNeeded;
-    // 次に処理すべき会社がまだ残っている場合だけ、間に空白を1行あける（最後の会社の後ろには入れない）
-    const hasNextCompany = widx < r.workers.length - 1;
-    if(hasNextCompany) rowCursor += 1;
+    if(widx < (r.workers.length-1)) rowCursor += 1;
   });
-
-  // 本日の体調・服装確認：3項目とも常に「○」固定で出力
-  const taichoCells=['AJ8','AJ9','AJ10'];
-  taichoCells.forEach(cell=>{
-    xml=setCellTextInXml(xml,cell, '○');
-  });
-
+  // 本日の体調・服装確認：3項目とも「○」固定
+  ['AJ8','AJ9','AJ10'].forEach(cell=>{xml=setCellTextInXml(xml,cell, '○');});
   xml=setCellTextInXml(xml,'P11',r.tbm||'');
-
-  // 安全巡視パトロール：時刻は「午後2時」固定（K28に「2」、L28の固定文字「時」と合わせて「2時」表示）、巡視員は選択値
+  // 安全巡視パトロール
   xml=setCellTextInXml(xml,'K28', '2');
-  xml=setCellTextInXml(xml,'AG28', r.patrol.person||'');
+  xml=setCellTextInXml(xml,'AG28', (r.patrol&&r.patrol.person)||'');
   xml=setCellTextInXml(xml,'C28', '□午前　☑午後');
-
-  // 確認項目：「10.土留支保工の状況」（通し番号9=PATROL_RIGHTの2番目）だけ空欄、他はすべて「良」に☑
   const patrolLeftCells=[['P30','R30'],['P31','R31'],['P32','R32'],['P33','R33'],['P34','R34'],['P35','R35'],['P36','R36'],['P37','R37']];
   const patrolRightCells=[['AH30','AJ30'],['AH31','AJ31'],['AH32','AJ32'],['AH33','AJ33'],['AH34','AJ34'],['AH35','AJ35'],['AH36','AJ36'],['AH37','AJ37']];
-  PATROL_LEFT.forEach((_,i)=>{
-    xml=setCellTextInXml(xml,patrolLeftCells[i][0], '☑');
-    xml=setCellTextInXml(xml,patrolLeftCells[i][1], '□');
-  });
+  PATROL_LEFT.forEach((_,i)=>{xml=setCellTextInXml(xml,patrolLeftCells[i][0], '☑');xml=setCellTextInXml(xml,patrolLeftCells[i][1], '□');});
   PATROL_RIGHT.forEach((_,i)=>{
     const idx=i+8;
-    if(idx===PATROL_EXCLUDE_INDEX){
-      xml=setCellTextInXml(xml,patrolRightCells[i][0], '□');
-      xml=setCellTextInXml(xml,patrolRightCells[i][1], '□');
-    }else{
-      xml=setCellTextInXml(xml,patrolRightCells[i][0], '☑');
-      xml=setCellTextInXml(xml,patrolRightCells[i][1], '□');
-    }
+    if(idx===PATROL_EXCLUDE_INDEX){xml=setCellTextInXml(xml,patrolRightCells[i][0], '□');xml=setCellTextInXml(xml,patrolRightCells[i][1], '□');}
+    else{xml=setCellTextInXml(xml,patrolRightCells[i][0], '☑');xml=setCellTextInXml(xml,patrolRightCells[i][1], '□');}
   });
-
-  // 指示事項：固定の3項目をそれぞれの行に出力
+  // 指示事項・是正事項
   xml=setCellTextInXml(xml,'G40', '掘削箇所の明示をすること。');
   xml=setCellTextInXml(xml,'G41', '工事終了時は、鉄板で開口部を養生すること。');
   xml=setCellTextInXml(xml,'G42', '通行車両の安全を第一に作業すること。');
   xml=setCellTextInXml(xml,'F44', r.zesei_ari==='nashi'?'☑':'□');
   xml=setCellTextInXml(xml,'M44', r.zesei_ari==='ari'?'☑あり':'□あり');
   xml=setCellTextInXml(xml,'G44', r.zesei_ari==='ari'?(r.zesei_text||''):'なし');
-
-  // 社内安全パトロール：実施欄は「実施済」固定
+  // 社内安全パトロール
   xml=setCellTextInXml(xml,'J47', '豊岡昭三');
   xml=setCellTextInXml(xml,'S47', '☑');
-
   const necchushoCells=[['C54','D54'],['K54','L54'],['P54','Q54'],['W54','X54']];
   NECCHUSHO_ITEMS.forEach((label,i)=>{
-    const checked=!!r.necchusho[label];
+    const checked=!!(r.necchusho&&r.necchusho[label]);
     xml=setCellTextInXml(xml,necchushoCells[i][0], checked?'☑':'□');
   });
+  return {xml, overflow};
+}
 
-  zip.file(path, xml);
-
-  if(workerRowsOverflow && !opts.returnBlob){
+async function exportToExcel(rep, opts){
+  opts=opts||{};
+  const t=getTemplate();
+  if(!t){alert('先に「設定」タブでExcelテンプレートを登録してください。');return;}
+  if(typeof JSZip==='undefined'){alert('ZIPライブラリの読み込みに失敗しています。');return;}
+  const zip=await JSZip.loadAsync(base64ToArrayBuffer(t.base64));
+  const path=await resolveSheetXmlPath(zip);
+  if(!path||!zip.file(path)){alert('テンプレートのシート構造を認識できませんでした。');return;}
+  let xml=await zip.file(path).async('string');
+  const r=rep||state.r;
+  const styleOverrides=await buildWorkerStyleOverrides(zip, xml);
+  const res=applyKyMarks(xml, r, styleOverrides);
+  zip.file(path, res.xml);
+  if(res.overflow && !opts.returnBlob){
     alert('建設作業員名簿の欄（19〜23行目）に全員を書ききれませんでした。会社数または作業員数を減らすか、テンプレートの行数を増やす必要があります。書ききれた分のみ出力します。');
   }
-
   const outBuf=await zip.generateAsync({type:'blob'});
   const fn=(t.filename||'日報').replace(/\.xlsx$/i,'')+`_${r.report_date||'日付未設定'}.xlsx`;
-  if(opts.returnBlob) return {blob:outBuf, filename:fn}; // まとめて出力用にBlobを返す
+  if(opts.returnBlob) return {blob:outBuf, filename:fn};
   const url=URL.createObjectURL(outBuf);
   const a=document.createElement('a');a.href=url;a.download=fn;document.body.appendChild(a);a.click();
   document.body.removeChild(a);
   setTimeout(()=>URL.revokeObjectURL(url),10000);
+}
+
+// 複数の日報を「1つのExcelの別シート」に出力する。日付順（新しい日を左＝先頭、古い日を右＝末尾）。
+async function buildKyMultiSheet(reports){
+  const t=getTemplate();
+  if(!t)return null;
+  const zip=await JSZip.loadAsync(base64ToArrayBuffer(t.base64));
+  const basePath=await resolveSheetXmlPath(zip);
+  if(!basePath||!zip.file(basePath))return null;
+  const baseXml=await zip.file(basePath).async('string');
+  const styleOverrides=await buildWorkerStyleOverrides(zip, baseXml);
+  // 日付順：新しい日を先頭（左）、古い日を末尾（右）
+  const sorted=[...reports].sort((a,b)=>(b.report_date||'').localeCompare(a.report_date||''));
+  // 既存の全ワークシート部品とその関係を削除（日報ごとに作り直す）
+  Object.keys(zip.files).filter(f=>/^xl\/worksheets\/sheet\d+\.xml$/.test(f)).forEach(f=>{
+    zip.remove(f);const rp='xl/worksheets/_rels/'+f.split('/').pop()+'.rels';if(zip.file(rp))zip.remove(rp);
+  });
+  const usedNames=new Set();const sheetMeta=[];let overflowAny=false;
+  sorted.forEach((r,i)=>{
+    const res=applyKyMarks(baseXml, r, styleOverrides);
+    if(res.overflow)overflowAny=true;
+    // 印刷設定(printerSettings)の参照を外す（シート個別relsを作らずに済ませ、修復ダイアログを避ける）
+    const sxml=res.xml.replace(/(<pageSetup\b[^>]*?)\s+r:id="[^"]*"/g,'$1');
+    const partName='kysheet'+(i+1)+'.xml';
+    zip.file('xl/worksheets/'+partName, sxml);
+    let nm=(r.report_date||('日報'+(i+1))).replace(/[:\\\/?*\[\]]/g,'-').slice(0,31);
+    let b=nm,k=2; while(usedNames.has(nm)){ nm=(b.slice(0,27)+'('+k+')').slice(0,31); k++; }
+    usedNames.add(nm);
+    sheetMeta.push({name:nm, part:partName});
+  });
+  // workbook.xml
+  let wb=await zip.file('xl/workbook.xml').async('string');
+  // workbook.xml.rels（既存のworksheet/calcChain関係を削除→新規worksheet関係を追加）
+  let rels=await zip.file('xl/_rels/workbook.xml.rels').async('string');
+  rels=rels.replace(/<Relationship[^>]*Type="[^"]*\/worksheet"[^>]*\/>/g,'').replace(/<Relationship[^>]*Target="calcChain\.xml"[^>]*\/>/,'');
+  let maxRid=0;(rels.match(/Id="rId(\d+)"/g)||[]).forEach(m=>{const n=+m.match(/\d+/)[0];if(n>maxRid)maxRid=n;});
+  const rids=sheetMeta.map((s,i)=>'rId'+(maxRid+1+i));
+  const relAdds=sheetMeta.map((s,i)=>`<Relationship Id="${rids[i]}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/${s.part}"/>`).join('');
+  rels=rels.replace('</Relationships>', relAdds+'</Relationships>');
+  zip.file('xl/_rels/workbook.xml.rels', rels);
+  const sheetTags=sheetMeta.map((s,i)=>`<sheet name="${esc(s.name)}" sheetId="${i+1}" r:id="${rids[i]}"/>`).join('');
+  wb=wb.replace(/<sheets>[\s\S]*?<\/sheets>/, `<sheets>${sheetTags}</sheets>`);
+  wb=wb.replace(/<definedNames>[\s\S]*?<\/definedNames>/,'');
+  wb=wb.replace(/activeTab="\d+"/,'activeTab="0"');
+  if(/<calcPr\b[^>]*\/>/.test(wb)) wb=wb.replace(/<calcPr\b([^>]*?)\s*\/>/, (m,a)=>`<calcPr${a.replace(/\s*fullCalcOnLoad="[^"]*"/,'')} fullCalcOnLoad="1"/>`);
+  else wb=wb.replace('</workbook>','<calcPr fullCalcOnLoad="1"/></workbook>');
+  zip.file('xl/workbook.xml', wb);
+  // [Content_Types].xml
+  let ct=await zip.file('[Content_Types].xml').async('string');
+  ct=ct.replace(/<Override[^>]*PartName="\/xl\/worksheets\/sheet\d+\.xml"[^>]*\/>/g,'').replace(/<Override[^>]*PartName="\/xl\/calcChain\.xml"[^>]*\/>/,'');
+  const ctAdds=sheetMeta.map(s=>`<Override PartName="/xl/worksheets/${s.part}" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join('');
+  ct=ct.replace('</Types>', ctAdds+'</Types>');
+  zip.file('[Content_Types].xml', ct);
+  if(zip.file('xl/calcChain.xml'))zip.remove('xl/calcChain.xml');
+  // docProps/app.xml をシート数・シート名に整合
+  const titles=sheetMeta.map(s=>`<vt:lpstr>${esc(s.name)}</vt:lpstr>`).join('');
+  const appXml='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\r\n'+
+    '<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes"><Application>Microsoft Excel</Application><DocSecurity>0</DocSecurity><ScaleCrop>false</ScaleCrop><HeadingPairs><vt:vector size="2" baseType="variant"><vt:variant><vt:lpstr>ワークシート</vt:lpstr></vt:variant><vt:variant><vt:i4>'+sheetMeta.length+'</vt:i4></vt:variant></vt:vector></HeadingPairs><TitlesOfParts><vt:vector size="'+sheetMeta.length+'" baseType="lpstr">'+titles+'</vt:vector></TitlesOfParts><LinksUpToDate>false</LinksUpToDate><SharedDoc>false</SharedDoc><HyperlinksChanged>false</HyperlinksChanged><AppVersion>16.0300</AppVersion></Properties>';
+  if(zip.file('docProps/app.xml'))zip.file('docProps/app.xml',appXml);
+  const blob=await zip.generateAsync({type:'blob'});
+  return {blob, overflow:overflowAny, count:sheetMeta.length};
 }
 
 /* ===== 初期化 ===== */
