@@ -1803,10 +1803,14 @@ async function exportTenken(){
   const machineDays={};
   const machineKojis={}; // 機械名 → 工事名の集合（現場名に使う）
   const machineGenbas={}; // 機械名 → 現場代理人の集合（現場代理人に使う）
+  const allDays=new Set(), allKojis=new Set(), allGenbas=new Set(); // 玉掛け用（日報がある全日）
   state.reports.forEach(r=>{
     if(!r.report_date||r.report_date.slice(0,7)!==ym)return;
     if(koji && r.koji_name!==koji)return; // 工事現場でしぼり込み
     const day=+r.report_date.slice(8,10);
+    if(day)allDays.add(day);
+    if(r.koji_name)allKojis.add(r.koji_name);
+    if(r.genba)allGenbas.add(r.genba);
     (Array.isArray(r.machines)?r.machines:[]).forEach(mc=>{
       const name=(mc||'').trim();if(!name||!day)return;
       (machineDays[name]=machineDays[name]||new Set()).add(day);
@@ -1814,8 +1818,14 @@ async function exportTenken(){
       if(r.genba)(machineGenbas[name]=machineGenbas[name]||new Set()).add(r.genba);
     });
   });
+  // 玉掛けは使用機械の選択に関係なく、日報がある全日にチェックする
+  if(allDays.size){
+    machineDays['玉掛け']=allDays;
+    if(allKojis.size)machineKojis['玉掛け']=allKojis;
+    if(allGenbas.size)machineGenbas['玉掛け']=allGenbas;
+  }
   const names=Object.keys(machineDays);
-  if(!names.length){note.textContent=(koji?`「${koji}」の`:'')+'この月に使用機械が記録された日報がありません。';return;}
+  if(!names.length){note.textContent=(koji?`「${koji}」の`:'')+'この月に日報がありません。';return;}
 
   try{
     const probe=await JSZip.loadAsync(base64ToArrayBuffer(tpl.base64));
