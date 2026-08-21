@@ -1289,11 +1289,12 @@ function renderList(){
     const stStyle=st==='完了'
       ? 'background:#e6f4ea;color:#1f7a3d;border:1px solid #bfe3c9'
       : 'background:#fff4e6;color:#b5651d;border:1px solid #f0d3a8';
+    const infoStyle=st==='完了'?'opacity:0.45':''; // 完了は文字を薄めに
     return `
     <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 4px;border-bottom:1px solid var(--border)">
       <div style="display:flex;align-items:center;gap:10px">
         <input type="checkbox" class="listsel" data-id="${r.id}">
-        <div>
+        <div style="${infoStyle}">
           <div style="font-weight:600">${esc(r.report_date||'（日付未設定）')}</div>
           <div class="muted">${esc(r.koji_name||'')} ${esc(r.place?('／'+r.place):'')}</div>
         </div>
