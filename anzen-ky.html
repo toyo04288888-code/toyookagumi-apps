@@ -219,11 +219,11 @@ https://github.com/nodeca/pako/blob/main/LICENSE
 <div id="listTab" class="hidden">
   <div class="card">
     <h2><span class="bar"></span>点検簿を出力（使用機械）</h2>
-    <div class="muted" style="margin-bottom:10px">選んだ年（と工事現場）の日報から、使った機械ごとに点検簿を作ります（1機械＝1ファイル、複数機械ならZIPでまとめてダウンロード）。その機械を使った月のシート（例：5月・6月…）を1つのExcelにまとめて出力し、使用日の列に✔が入ります。「工事現場」を選ぶとその工事だけ、「すべての工事」なら年全体で集計します。先に「設定」タブで点検簿テンプレートを登録してください。</div>
+    <div class="muted" style="margin-bottom:10px">「工事現場」を選ぶと、その現場で使った機械ごとに点検簿を作ります（1機械＝1ファイル、複数機械ならZIPでまとめてダウンロード）。その現場で使った月のシート（例：5月・6月…）を1つのExcelにまとめて出力し、使用日の列に✔が入ります。点検者は下の一覧で機械ごとに選べます（日報の作業員・職長から選択）。先に「設定」タブで点検簿テンプレートを登録してください。</div>
     <div class="row">
-      <div class="fld" style="flex:1 1 120px"><label>年</label><select id="tenken_year"></select></div>
-      <div class="fld" style="flex:1 1 200px"><label>工事現場</label><select id="tenken_koji"><option value="">すべての工事</option></select></div>
+      <div class="fld" style="flex:1 1 260px"><label>工事現場</label><select id="tenken_koji"><option value="">すべての工事</option></select></div>
     </div>
+    <div id="tenkenInspectorList" style="margin-top:10px"></div>
     <button class="btn" id="tenkenExportBtn" style="margin-top:12px">点検簿を作成してダウンロード</button>
     <div class="muted" style="margin-top:8px" id="tenkenExportNote"></div>
   </div>
@@ -963,6 +963,8 @@ function tenkenMotoukeName(genba){
   for(const n of names){ const co=workerCompany(n,n); if(COMPANY_MOTOUKE_NAME[co]&&co!=='(株)豊岡組') return COMPANY_MOTOUKE_NAME[co]; }
   return '株式会社　豊岡組';
 }
+// 点検簿ごとの点検者（機械名 → 点検者フルネーム）
+const tenkenInspectorMap={};
 
 /* ===== 点検簿テンプレート（使用機械用・9シートの点検簿.xlsx） ===== */
 function localTenkenTemplate(){const raw=localStorage.getItem(LS.tenkenTemplate);if(raw){try{return JSON.parse(raw);}catch(e){}}return null;}
@@ -1135,7 +1137,8 @@ function bindBasic(){
   $('f_genba').onchange=e=>{
     state.r.genba=e.target.value;
     state.r.shunin=e.target.value;
-    state.r.patrol.person=e.target.value;
+    // 現場代理人が櫻田泰貴のときは、安全巡視員は豊岡昭三にする
+    state.r.patrol.person=(e.target.value==='櫻田泰貴')?'豊岡昭三':e.target.value;
     // 現場代理人/主任技術者を、その会社の職長に自動転記（職長は作業員名から外す）
     const leaders=companyLeaders();
     (state.r.workers||[]).forEach(w=>{
@@ -1610,27 +1613,55 @@ function dateToExcelSerial(dateStr){
 function circleChar(ch){return ch.split('').map(c=>c+'\u20DD').join('');}
 
 /* ===== 点検簿（使用機械）出力 ===== */
-// 出力画面の年・工事現場プルダウンを埋める
+// 出力画面の工事現場プルダウンを埋める
 function refreshTenkenExportUI(){
-  const yEl=$('tenken_year'), kEl=$('tenken_koji');
-  if(!yEl)return;
-  // 工事現場：保存済み日報の工事名を候補に（「すべての工事」＝年全体）
-  if(kEl){
-    const curK=kEl.value;
-    const kojis=[...new Set(state.reports.map(r=>r.koji_name).filter(Boolean))].sort();
-    kEl.innerHTML='<option value="">すべての工事</option>'+kojis.map(k=>`<option value="${esc(k)}" ${k===curK?'selected':''}>${esc(k)}</option>`).join('');
-  }
-  // 年：保存済み日報の年＋今年、前後1年を候補に
-  const years=new Set();
-  const now=new Date();
-  years.add(now.getFullYear());
-  state.reports.forEach(r=>{if(r.report_date&&/^\d{4}/.test(r.report_date))years.add(+r.report_date.slice(0,4));});
-  years.add(now.getFullYear()-1);years.add(now.getFullYear()+1);
-  const yArr=[...years].sort((a,b)=>b-a);
-  // 直近の日報の年をデフォルトに
-  const latest=state.reports.map(r=>r.report_date).filter(Boolean).sort().reverse()[0]||'';
-  const defY=latest?+latest.slice(0,4):now.getFullYear();
-  yEl.innerHTML=yArr.map(y=>`<option value="${y}" ${y===defY?'selected':''}>${y}年</option>`).join('');
+  const kEl=$('tenken_koji'); if(!kEl)return;
+  const curK=kEl.value;
+  const kojis=[...new Set(state.reports.map(r=>r.koji_name).filter(Boolean))].sort();
+  kEl.innerHTML='<option value="">すべての工事</option>'+kojis.map(k=>`<option value="${esc(k)}" ${k===curK?'selected':''}>${esc(k)}</option>`).join('');
+  refreshTenkenMachineInspectors();
+}
+// 選んだ工事現場で出力される機械名の一覧（玉掛け含む）
+function getTenkenTargetMachines(){
+  const koji=($('tenken_koji')&&$('tenken_koji').value)||'';
+  const set=new Set(); let hasReport=false;
+  state.reports.forEach(r=>{
+    if(!r.report_date)return;
+    if(koji&&r.koji_name!==koji)return;
+    hasReport=true;
+    (Array.isArray(r.machines)?r.machines:[]).forEach(mc=>{const n=(mc||'').trim();if(n)set.add(n);});
+  });
+  if(hasReport)set.add('玉掛け');
+  return [...set];
+}
+// 点検者の候補（選んだ工事現場の日報に入っている作業員＋職長）
+function getReportWorkerCandidates(koji){
+  const set=new Set();
+  state.reports.forEach(r=>{
+    if(koji&&r.koji_name!==koji)return;
+    (Array.isArray(r.workers)?r.workers:[]).forEach(w=>{
+      if(w.shokucho)set.add(String(w.shokucho).trim());
+      const names=Array.isArray(w.names)?w.names:(w.names?String(w.names).split(/[\n,、，]/):[]);
+      names.forEach(nm=>{const n=String(nm).trim();if(n)set.add(n);});
+    });
+  });
+  return [...set].filter(Boolean);
+}
+// 点検簿ごと（機械ごと）の点検者プルダウンを表示する（候補＝日報の作業員・職長）
+function refreshTenkenMachineInspectors(){
+  const box=$('tenkenInspectorList'); if(!box)return;
+  const koji=($('tenken_koji')&&$('tenken_koji').value)||'';
+  const machines=getTenkenTargetMachines();
+  if(!machines.length){box.innerHTML='<div class="muted">工事現場を選ぶと、点検簿ごとに点検者を設定できます。</div>';return;}
+  const cands=getReportWorkerCandidates(koji);
+  box.innerHTML='<div class="muted" style="margin-bottom:4px">点検簿ごとの点検者（日報の作業員・職長から選択）：</div>'+machines.map(mc=>{
+    const curV=tenkenInspectorMap[mc]||'';
+    const opts=[...new Set([...cands, ...(curV?[curV]:[])])];
+    return `<div style="display:flex;gap:8px;align-items:center;margin:3px 0"><span style="flex:0 0 200px;font-size:13px">${esc(mc)}</span><select class="tk-insp" data-machine="${esc(mc)}"><option value="">（未選択）</option>${opts.map(w=>`<option value="${esc(w)}" ${w===curV?'selected':''}>${esc(w)}</option>`).join('')}</select></div>`;
+  }).join('');
+  box.querySelectorAll('.tk-insp').forEach(sel=>sel.onchange=()=>{
+    if(sel.value)tenkenInspectorMap[sel.dataset.machine]=sel.value; else delete tenkenInspectorMap[sel.dataset.machine];
+  });
 }
 
 // XMLエンティティを元に戻す（共有文字列の読み取り用）
@@ -1772,8 +1803,8 @@ function tenkenMarkSheet(xml, shared, days, inspectorFull, year, month, koji, ge
 function tenkenReEsc(s){return String(s).replace(/[.*+?^${}()|[\]\\]/g,'\\$&');}
 
 // マスタから対象機械のシートだけを残し、使った月ごとにシートを複製した単一Excel（Blob）を作る
-// monthData: {月(1-12): {days:Set(使用日), koji, genba, motouke}} — 使った月だけ入る
-async function tenkenBuildMachineFile(base64, sheetName, monthData, year){
+// specs: [{name(シート名), year, month, days:Set(使用日), koji, genba, motouke, inspector}, …] 表示順
+async function tenkenBuildMachineFile(base64, sheetName, specs){
   const zip=await JSZip.loadAsync(base64ToArrayBuffer(base64));
   const sheets=await resolveAllSheetPaths(zip);
   const shared=await tenkenLoadSharedStrings(zip);
@@ -1781,7 +1812,6 @@ async function tenkenBuildMachineFile(base64, sheetName, monthData, year){
   if(!keep)return null;
   const others=sheets.filter(s=>s.rId!==keep.rId);
   const baseXml=await zip.file(keep.path).async('string');
-  const months=Object.keys(monthData).map(Number).sort((a,b)=>a-b);
 
   // 既存のworksheetファイル番号の最大値（新規パートの連番用）
   let maxSheetNum=0;
@@ -1790,16 +1820,16 @@ async function tenkenBuildMachineFile(base64, sheetName, monthData, year){
   const keepRelsPath='xl/worksheets/_rels/'+keep.path.split('/').pop()+'.rels';
   const keepRelsXml=zip.file(keepRelsPath)?await zip.file(keepRelsPath).async('string'):null;
 
-  // 各月のワークシートパートを用意（[0]はkeepを再利用、以降は新規複製）
-  const parts=months.map((m,i)=>{
-    if(i===0)return {month:m,path:keep.path};
+  // 各シートのワークシートパートを用意（[0]はkeepを再利用、以降は新規複製）
+  const parts=specs.map((sp,i)=>{
+    if(i===0)return {spec:sp,path:keep.path};
     maxSheetNum++;
-    return {month:m,path:'xl/worksheets/sheet'+maxSheetNum+'.xml'};
+    return {spec:sp,path:'xl/worksheets/sheet'+maxSheetNum+'.xml'};
   });
-  // 各パートにその月のデータを記入（点検者は空欄・依頼により廃止）
+  // 各パートにその月のデータを記入
   for(const p of parts){
-    const md=monthData[p.month];
-    let x=tenkenMarkSheet(baseXml,shared,[...md.days],'',year,p.month,md.koji,md.genba,md.motouke).xml;
+    const sp=p.spec;
+    let x=tenkenMarkSheet(baseXml,shared,[...sp.days],sp.inspector||'',sp.year,sp.month,sp.koji,sp.genba,sp.motouke).xml;
     zip.file(p.path,x);
     if(p.path!==keep.path && keepRelsXml){
       zip.file('xl/worksheets/_rels/'+p.path.split('/').pop()+'.rels', keepRelsXml);
@@ -1818,7 +1848,7 @@ async function tenkenBuildMachineFile(base64, sheetName, monthData, year){
 
   // workbook.xml: <sheets>を再構築、definedNames除去、activeTab=0、開いた時に全数式を再計算
   let wb=await zip.file('xl/workbook.xml').async('string');
-  const sheetsXml=parts.map((p,i)=>`<sheet name="${esc(p.month+'月')}" sheetId="${i+1}" r:id="${p.rId}"/>`).join('');
+  const sheetsXml=parts.map((p,i)=>`<sheet name="${esc(p.spec.name)}" sheetId="${i+1}" r:id="${p.rId}"/>`).join('');
   wb=wb.replace(/<sheets>[\s\S]*?<\/sheets>/,'<sheets>'+sheetsXml+'</sheets>');
   wb=wb.replace(/<definedNames>[\s\S]*?<\/definedNames>/,'');
   wb=wb.replace(/activeTab="\d+"/,'activeTab="0"');
@@ -1843,7 +1873,7 @@ async function tenkenBuildMachineFile(base64, sheetName, monthData, year){
 
   // docProps/app.xml をシート枚数分に整合させる（枚数・シート名の不一致による修復を防ぐ）
   if(zip.file('docProps/app.xml')){
-    const titles=parts.map(p=>`<vt:lpstr>${esc(p.month+'月')}</vt:lpstr>`).join('');
+    const titles=parts.map(p=>`<vt:lpstr>${esc(p.spec.name)}</vt:lpstr>`).join('');
     const appXml='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\r\n'+
       '<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes"><Application>Microsoft Excel</Application><DocSecurity>0</DocSecurity><ScaleCrop>false</ScaleCrop><HeadingPairs><vt:vector size="2" baseType="variant"><vt:variant><vt:lpstr>ワークシート</vt:lpstr></vt:variant><vt:variant><vt:i4>'+parts.length+'</vt:i4></vt:variant></vt:vector></HeadingPairs><TitlesOfParts><vt:vector size="'+parts.length+'" baseType="lpstr">'+titles+'</vt:vector></TitlesOfParts><LinksUpToDate>false</LinksUpToDate><SharedDoc>false</SharedDoc><HyperlinksChanged>false</HyperlinksChanged><AppVersion>16.0300</AppVersion></Properties>';
     zip.file('docProps/app.xml',appXml);
@@ -1864,33 +1894,32 @@ async function exportTenken(){
   const tpl=getTenkenTemplate();
   if(!tpl){alert('先に「設定」タブで点検簿テンプレートを登録してください。');return;}
   if(typeof JSZip==='undefined'){alert('ZIPライブラリの読み込みに失敗しています。');return;}
-  const year=+$('tenken_year').value;
   const koji=($('tenken_koji')&&$('tenken_koji').value)||''; // 工事現場（空＝すべての工事）
   const note=$('tenkenExportNote');
   note.textContent='作成中…';
 
-  // 対象年（＋選んだ工事現場）の日報から「機械名→{月→{使用日,工事名,現場代理人}}」を作る
-  // machine[name][month] = {days:Set, kojis:Set, genbas:Set}
+  // 選んだ工事現場の日報から「機械名→{年月(YYYY-MM)→{使用日,工事名,現場代理人}}」を作る
   const mach={};
-  const tama={}; // 玉掛け用（日報がある全日）：month → {days,kojis,genbas}
-  const ensure=(obj,month)=>obj[month]=obj[month]||{days:new Set(),kojis:new Set(),genbas:new Set()};
+  const tama={}; // 玉掛け用（日報がある全日）
+  const ensure=(obj,key,year,month)=>obj[key]=obj[key]||{year,month,days:new Set(),kojis:new Set(),genbas:new Set()};
   state.reports.forEach(r=>{
-    if(!r.report_date||+r.report_date.slice(0,4)!==year)return;
+    if(!r.report_date)return;
     if(koji && r.koji_name!==koji)return; // 工事現場でしぼり込み
-    const month=+r.report_date.slice(5,7), day=+r.report_date.slice(8,10);
-    if(!month||!day)return;
-    const te=ensure(tama,month);
+    const year=+r.report_date.slice(0,4), month=+r.report_date.slice(5,7), day=+r.report_date.slice(8,10);
+    if(!year||!month||!day)return;
+    const key=year+'-'+String(month).padStart(2,'0');
+    const te=ensure(tama,key,year,month);
     te.days.add(day); if(r.koji_name)te.kojis.add(r.koji_name); if(r.genba)te.genbas.add(r.genba);
     (Array.isArray(r.machines)?r.machines:[]).forEach(mc=>{
       const name=(mc||'').trim();if(!name)return;
-      const e=ensure(mach[name]=mach[name]||{},month);
+      const e=ensure(mach[name]=mach[name]||{},key,year,month);
       e.days.add(day); if(r.koji_name)e.kojis.add(r.koji_name); if(r.genba)e.genbas.add(r.genba);
     });
   });
   // 玉掛けは使用機械の選択に関係なく、日報がある全日にチェックする
   if(Object.keys(tama).length)mach['玉掛け']=tama;
   const names=Object.keys(mach);
-  if(!names.length){note.textContent=(koji?`「${koji}」の`:'')+`${year}年に日報がありません。`;return;}
+  if(!names.length){note.textContent=(koji?`「${koji}」`:'')+'の日報がありません。';return;}
 
   try{
     const probe=await JSZip.loadAsync(base64ToArrayBuffer(tpl.base64));
@@ -1900,20 +1929,23 @@ async function exportTenken(){
     const files=[];const unmatched=[];
     for(const name of names){
       if(!sheetNames.includes(name)){unmatched.push(name);continue;}
-      const byMonth=mach[name];
-      // 月ごとに {days, koji, genba, motouke} を組み立てる
-      const monthData={};
-      Object.keys(byMonth).map(Number).forEach(month=>{
-        const e=byMonth[month];
+      const byKey=mach[name];
+      const keys=Object.keys(byKey).sort(); // 年月の昇順
+      const years=[...new Set(keys.map(k=>byKey[k].year))];
+      const multiYear=years.length>1; // 複数年にまたがる場合はシート名に年を付ける
+      const inspector=tenkenInspectorMap[name]||''; // 機械ごとに選んだ点検者
+      const specs=keys.map(k=>{
+        const e=byKey[k];
         const kojiName=koji || [...e.kojis].join('・'); // 現場名（選んだ工事、無ければ日報の工事名）
         const genbaName=[...e.genbas].join('・');       // 現場代理人
-        monthData[month]={days:e.days, koji:kojiName, genba:genbaName, motouke:tenkenMotoukeName(genbaName)};
+        return {name:multiYear?`${e.year}年${e.month}月`:`${e.month}月`, year:e.year, month:e.month,
+                days:e.days, koji:kojiName, genba:genbaName, motouke:tenkenMotoukeName(genbaName), inspector};
       });
-      const blob=await tenkenBuildMachineFile(tpl.base64,name,monthData,year);
+      const blob=await tenkenBuildMachineFile(tpl.base64,name,specs);
       if(!blob){unmatched.push(name);continue;}
       const safe=name.replace(/[\\/:*?"<>|]/g,'_');
-      const months=Object.keys(byMonth).map(Number).sort((a,b)=>a-b);
-      files.push({fname:`点検簿${kojiPart}_${safe}_${year}年.xlsx`,blob,machine:name,months});
+      const yLabel=years.length===1?`_${years[0]}年`:`_${Math.min(...years)}-${Math.max(...years)}年`;
+      files.push({fname:`点検簿${kojiPart}_${safe}${yLabel}.xlsx`,blob,machine:name,monthCount:keys.length});
     }
     if(!files.length){note.textContent=`点検簿にシートが無い機械のみでした：${unmatched.join('・')}`;return;}
 
@@ -1924,10 +1956,10 @@ async function exportTenken(){
       const outZip=new JSZip();
       files.forEach(f=>outZip.file(f.fname,f.blob));
       const zipBlob=await outZip.generateAsync({type:'blob'});
-      tenkenDownload(zipBlob,`点検簿${kojiPart}_${year}年.zip`);
+      tenkenDownload(zipBlob,`点検簿${kojiPart}.zip`);
     }
 
-    let msg=`${koji?`「${koji}」の`:''}${files.length}機械分を出力しました（${files.map(f=>`${f.machine}：${f.months.join('・')}月`).join('／')}）。`;
+    let msg=`${koji?`「${koji}」の`:''}${files.length}機械分を出力しました（${files.map(f=>`${f.machine}：${f.monthCount}か月`).join('／')}）。`;
     if(files.length>1)msg+=' ZIPにまとめています。';
     if(unmatched.length)msg+=` ※点検簿にシートが無い機械：${unmatched.join('・')}`;
     note.textContent=msg;
@@ -1935,6 +1967,8 @@ async function exportTenken(){
   }catch(err){note.textContent='出力に失敗しました：'+(err.message||err);alert('点検簿の出力に失敗しました：'+(err.message||err));}
 }
 $('tenkenExportBtn').onclick=()=>exportTenken();
+// 工事現場を変えたら、機械ごとの点検者リスト（候補＝日報の作業員・職長）を作り直す
+if($('tenken_koji'))$('tenken_koji').onchange=()=>refreshTenkenMachineInspectors();
 
 const KY_WORKER_AVAILABLE_ROWS=[19,20,21,22,23];
 // 会社名セルを中央揃えにするスタイルを、作業員名簿の各行ぶん用意する（styles.xmlに追加。1回だけ計算して使い回す）
@@ -1994,9 +2028,11 @@ function applyKyMarks(xml, r, styleOverrides){
   // 本日の体調・服装確認：3項目とも「○」固定
   ['AJ8','AJ9','AJ10'].forEach(cell=>{xml=setCellTextInXml(xml,cell, '○');});
   xml=setCellTextInXml(xml,'P11',r.tbm||'');
+  // 現場代理人が櫻田泰貴の日報は、安全巡視員を豊岡昭三にし、社内安全パトロールは空白にする
+  const isSakurada=(r.genba||'').trim()==='櫻田泰貴';
   // 安全巡視パトロール
   xml=setCellTextInXml(xml,'K28', '2');
-  xml=setCellTextInXml(xml,'AG28', (r.patrol&&r.patrol.person)||'');
+  xml=setCellTextInXml(xml,'AG28', isSakurada ? '豊岡昭三' : ((r.patrol&&r.patrol.person)||''));
   xml=setCellTextInXml(xml,'C28', '□午前　☑午後');
   const patrolLeftCells=[['P30','R30'],['P31','R31'],['P32','R32'],['P33','R33'],['P34','R34'],['P35','R35'],['P36','R36'],['P37','R37']];
   const patrolRightCells=[['AH30','AJ30'],['AH31','AJ31'],['AH32','AJ32'],['AH33','AJ33'],['AH34','AJ34'],['AH35','AJ35'],['AH36','AJ36'],['AH37','AJ37']];
@@ -2013,9 +2049,9 @@ function applyKyMarks(xml, r, styleOverrides){
   xml=setCellTextInXml(xml,'F44', r.zesei_ari==='nashi'?'☑':'□');
   xml=setCellTextInXml(xml,'M44', r.zesei_ari==='ari'?'☑あり':'□あり');
   xml=setCellTextInXml(xml,'G44', r.zesei_ari==='ari'?(r.zesei_text||''):'なし');
-  // 社内安全パトロール
-  xml=setCellTextInXml(xml,'J47', '豊岡昭三');
-  xml=setCellTextInXml(xml,'S47', '☑');
+  // 社内安全パトロール（櫻田泰貴の日報では実施者・実施を空白にする）
+  xml=setCellTextInXml(xml,'J47', isSakurada ? '' : '豊岡昭三');
+  xml=setCellTextInXml(xml,'S47', isSakurada ? '' : '☑');
   const necchushoCells=[['C54','D54'],['K54','L54'],['P54','Q54'],['W54','X54']];
   NECCHUSHO_ITEMS.forEach((label,i)=>{
     const checked=!!(r.necchusho&&r.necchusho[label]);
