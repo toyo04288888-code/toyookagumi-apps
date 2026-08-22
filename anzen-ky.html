@@ -650,7 +650,7 @@ function renderKy(){
       <td><input class="ka" list="kaList${idx}" value="${esc(k.action)}" placeholder="選択・入力"><datalist id="kaList${idx}">${aOpts.map(n=>`<option value="${esc(n)}"></option>`).join('')}</datalist></td>
       <td><button class="del">×</button></td>`;
     const kc=tr.querySelector('.kc'), kd=tr.querySelector('.kd'), ka=tr.querySelector('.ka');
-    kc.oninput=e=>k.content=e.target.value;
+    kc.oninput=e=>{ k.content=e.target.value; if(workOpts.some(w=>exWorkExact(w,e.target.value))) renderKy(); }; // 登録工種と完全一致したら即絞り込み
     kc.onchange=e=>{ k.content=e.target.value; renderKy(); }; // 作業内容が決まったら候補を絞り直す
     kd.oninput=e=>k.danger=e.target.value;
     kd.onchange=e=>{
