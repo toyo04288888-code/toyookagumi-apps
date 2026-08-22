@@ -628,21 +628,29 @@ function renderKy(){
   const examples=getKyExamples();
   const manualD=getDangers(), manualA=getActions();
   const allActions=examples.map(e=>e.action).filter(Boolean);
+  const workOpts=[...new Set(examples.map(e=>e.work).filter(Boolean))]; // 作業内容の候補（土工など）
   state.r.ky.forEach((k,idx)=>{
     const content=(k.content||'').trim();
-    // 危険：作業内容に合う例を先頭に、その後に残りの例＋手動候補
-    const matchD=[], otherD=[];
-    examples.forEach(ex=>{ if(!ex.danger)return; (content&&exWorkMatches(ex.work,content)?matchD:otherD).push(ex.danger); });
-    const dOpts=[...new Set([...matchD, ...otherD, ...manualD])];
-    const aOpts=[...new Set([...allActions, ...manualA])];
+    // 作業内容（例：土工）に当てはまる事例だけに絞る。危険・対策はその事例の組だけを候補に出す。
+    const matchEx = content ? examples.filter(ex=>ex.danger&&ex.action&&exWorkMatches(ex.work,content)) : [];
+    let dOpts, aOpts;
+    if(matchEx.length){
+      dOpts=[...new Set(matchEx.map(e=>e.danger))];
+      aOpts=[...new Set(matchEx.map(e=>e.action))];
+    }else{
+      // 作業内容が未入力／一致なしのときは全候補（従来どおり）
+      dOpts=[...new Set([...examples.map(e=>e.danger).filter(Boolean), ...manualD])];
+      aOpts=[...new Set([...allActions, ...manualA])];
+    }
     const tr=document.createElement('tr');
-    // 危険・対策は「選択も直接入力もできる」入力欄（datalistで候補表示）
-    tr.innerHTML=`<td><input class="kc" value="${esc(k.content)}" placeholder="例：土工"></td>
+    // 作業内容・危険・対策は「選択も直接入力もできる」入力欄（datalistで候補表示）
+    tr.innerHTML=`<td><input class="kc" list="kcList${idx}" value="${esc(k.content)}" placeholder="例：土工"><datalist id="kcList${idx}">${workOpts.map(n=>`<option value="${esc(n)}"></option>`).join('')}</datalist></td>
       <td><input class="kd" list="kdList${idx}" value="${esc(k.danger)}" placeholder="選択・入力"><datalist id="kdList${idx}">${dOpts.map(n=>`<option value="${esc(n)}"></option>`).join('')}</datalist></td>
       <td><input class="ka" list="kaList${idx}" value="${esc(k.action)}" placeholder="選択・入力"><datalist id="kaList${idx}">${aOpts.map(n=>`<option value="${esc(n)}"></option>`).join('')}</datalist></td>
       <td><button class="del">×</button></td>`;
-    tr.querySelector('.kc').oninput=e=>k.content=e.target.value;
-    const kd=tr.querySelector('.kd'), ka=tr.querySelector('.ka');
+    const kc=tr.querySelector('.kc'), kd=tr.querySelector('.kd'), ka=tr.querySelector('.ka');
+    kc.oninput=e=>k.content=e.target.value;
+    kc.onchange=e=>{ k.content=e.target.value; renderKy(); }; // 作業内容が決まったら候補を絞り直す
     kd.oninput=e=>k.danger=e.target.value;
     kd.onchange=e=>{
       k.danger=e.target.value;
@@ -651,6 +659,14 @@ function renderKy(){
       if(act){ k.action=act; renderKy(); }
     };
     ka.oninput=e=>k.action=e.target.value;
+    ka.onchange=e=>{
+      k.action=e.target.value;
+      // 対策を選んだら、危険が空なら対応する危険を自動で入れる（逆方向の連動）
+      if(!(k.danger||'').trim()){
+        const dg=suggestDangerForAction(k.action, (k.content||'').trim());
+        if(dg){ k.danger=dg; renderKy(); }
+      }
+    };
     tr.querySelector('.del').onclick=()=>{state.r.ky.splice(idx,1);renderKy();};
     tb.appendChild(tr);
   });
@@ -897,6 +913,13 @@ function suggestActionForDanger(danger, content){
   if(!exs.length)return '';
   const m=exs.find(e=>exWorkMatches(e.work, content));
   return (m||exs[0]).action;
+}
+// 対策に対応する危険を例集から探す（作業内容が合うものを優先、無ければ最初）
+function suggestDangerForAction(action, content){
+  const exs=getKyExamples().filter(e=>e.action===action && e.danger);
+  if(!exs.length)return '';
+  const m=exs.find(e=>exWorkMatches(e.work, content));
+  return (m||exs[0]).danger;
 }
 
 /* ===== 作業員名：工事日報の苗字→KY登録のフルネームに変換 ===== */
