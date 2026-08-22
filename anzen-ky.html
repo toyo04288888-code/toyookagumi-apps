@@ -1365,7 +1365,7 @@ async function importFromKantoku(){
     const list=rows.map((r,i)=>`${i+1}: ${(r.koji_name||(r.data&&r.data.koji_name)||'(工事名なし)')}`).join('\n');
     const ans=prompt('同じ日に複数の工事日報があります。取り込む番号を入力してください：\n'+list,'1');
     if(ans==null)return;
-    const idx=parseInt(ans,10)-1;
+    const idx=parseInt(normWidth(ans).trim(),10)-1; // 全角数字で入力しても受け付ける
     if(isNaN(idx)||idx<0||idx>=rows.length){alert('番号が正しくありません。');return;}
     chosen=rows[idx];
   }
