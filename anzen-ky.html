@@ -631,16 +631,15 @@ function renderKy(){
   const workOpts=[...new Set(examples.map(e=>e.work).filter(Boolean))]; // 作業内容の候補（土工など）
   state.r.ky.forEach((k,idx)=>{
     const content=(k.content||'').trim();
-    // 作業内容（例：土工）に当てはまる事例だけに絞る。まず完全一致、無ければ部分一致でひろう。
-    // （「舗装工」と「ブロック舗装工」のように名前が重なる工種で候補が混ざらないようにする）
-    let matchEx = content ? examples.filter(ex=>ex.danger&&ex.action&&exWorkExact(ex.work,content)) : [];
-    if(content && !matchEx.length) matchEx = examples.filter(ex=>ex.danger&&ex.action&&exWorkMatches(ex.work,content));
+    // 作業内容が登録した工種と完全一致するときだけ、その工種の危険・対策に絞る。
+    // 一致しない（登録候補に無い作業内容）や未入力のときは、すべての候補を出す。
+    const matchEx = content ? examples.filter(ex=>ex.danger&&ex.action&&exWorkExact(ex.work,content)) : [];
     let dOpts, aOpts;
     if(matchEx.length){
       dOpts=[...new Set(matchEx.map(e=>e.danger))];
       aOpts=[...new Set(matchEx.map(e=>e.action))];
     }else{
-      // 作業内容が未入力／一致なしのときは全候補（従来どおり）
+      // すべての候補（事例の危険・対策＋設定で登録した候補）
       dOpts=[...new Set([...examples.map(e=>e.danger).filter(Boolean), ...manualD])];
       aOpts=[...new Set([...allActions, ...manualA])];
     }
