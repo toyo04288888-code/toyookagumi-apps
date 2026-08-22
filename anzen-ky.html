@@ -1769,7 +1769,8 @@ function tenkenStampName(name){
 
 // 1シート分のxmlに、使用日の✔と点検者・年月・現場名・現場代理人を記入する（記入前にテンプレの記入例を消す）
 // inspectorFull=選択した点検者のフルネーム。「点検者：」にはフルネーム、各日の判子には苗字を入れる。
-function tenkenMarkSheet(xml, shared, days, inspectorFull, year, month, koji, genba, motouke){
+function tenkenMarkSheet(xml, shared, days, inspectorFull, year, month, koji, genba, motouke, excludeRows){
+  excludeRows=excludeRows||[]; // ✔を付けない行（玉掛の10・16・22・24行など）
   const {map:dayCols,row:dayRow}=tenkenFindDayColumns(xml);
   if(!dayRow||Object.keys(dayCols).length===0)return {xml,ok:false};
   const {itemRows,inspectorRow}=tenkenDetectRows(xml,dayRow,shared);
@@ -1790,10 +1791,10 @@ function tenkenMarkSheet(xml, shared, days, inspectorFull, year, month, koji, ge
     for(const r of itemRows)xml=tenkenSetCell(xml,col+r,'');
     if(inspectorRow)xml=tenkenSetCell(xml,col+inspectorRow,'');
   }
-  // 使用日に✔と点検者の苗字
+  // 使用日に✔と点検者の苗字（excludeRowsの行は✔を付けない＝空欄のまま）
   for(const d of days){
     const col=dayCols[d];if(!col)continue;
-    for(const r of itemRows)xml=tenkenSetCell(xml,col+r,'✔');
+    for(const r of itemRows){ if(excludeRows.indexOf(r)>=0)continue; xml=tenkenSetCell(xml,col+r,'✔'); }
     if(inspectorRow&&surname)xml=tenkenSetCell(xml,col+inspectorRow,surname);
   }
   return {xml,ok:true};
@@ -1801,6 +1802,24 @@ function tenkenMarkSheet(xml, shared, days, inspectorFull, year, month, koji, ge
 
 // 正規表現用エスケープ
 function tenkenReEsc(s){return String(s).replace(/[.*+?^${}()|[\]\\]/g,'\\$&');}
+
+// 指定文字を含むセルがある最終行を探す（印刷範囲の下端＝「西暦○○年」行の検出に使う）
+function tenkenFindTextRow(xml, shared, needle){
+  let m; const cellRe=/<c r="[A-Z]+(\d+)"([^>]*)>([\s\S]*?)<\/c>/g; let found=null;
+  while((m=cellRe.exec(xml))){
+    const row=+m[1], attrs=m[2], inner=m[3]; let text='';
+    if(/t="inlineStr"/.test(attrs)){let tt,tr=/<t[^>]*>([\s\S]*?)<\/t>/g;while((tt=tr.exec(inner)))text+=tenkenDecodeXml(tt[1]);}
+    else if(/t="s"/.test(attrs)){const v=inner.match(/<v>(\d+)<\/v>/);if(v)text=shared[+v[1]]||'';}
+    if(text.indexOf(needle)>=0 && (found===null||row>found))found=row;
+  }
+  return found;
+}
+// シート内で使われている一番右の列文字（印刷範囲の右端の目安）を返す
+function tenkenMaxCol(xml){
+  let m,max=0,letters='A'; const re=/<c r="([A-Z]+)\d+"/g;
+  while((m=re.exec(xml))){const n=tenkenColNum(m[1]);if(n>max){max=n;letters=m[1];}}
+  return letters;
+}
 
 // マスタから対象機械のシートだけを残し、使った月ごとにシートを複製した単一Excel（Blob）を作る
 // specs: [{name(シート名), year, month, days:Set(使用日), koji, genba, motouke, inspector}, …] 表示順
@@ -1829,7 +1848,7 @@ async function tenkenBuildMachineFile(base64, sheetName, specs){
   // 各パートにその月のデータを記入
   for(const p of parts){
     const sp=p.spec;
-    let x=tenkenMarkSheet(baseXml,shared,[...sp.days],sp.inspector||'',sp.year,sp.month,sp.koji,sp.genba,sp.motouke).xml;
+    let x=tenkenMarkSheet(baseXml,shared,[...sp.days],sp.inspector||'',sp.year,sp.month,sp.koji,sp.genba,sp.motouke,sp.excludeRows).xml;
     zip.file(p.path,x);
     if(p.path!==keep.path && keepRelsXml){
       zip.file('xl/worksheets/_rels/'+p.path.split('/').pop()+'.rels', keepRelsXml);
@@ -1846,11 +1865,25 @@ async function tenkenBuildMachineFile(base64, sheetName, specs){
   rels=rels.replace('</Relationships>',relIns+'</Relationships>');
   zip.file('xl/_rels/workbook.xml.rels',rels);
 
-  // workbook.xml: <sheets>を再構築、definedNames除去、activeTab=0、開いた時に全数式を再計算
+  // workbook.xml: <sheets>を再構築、印刷範囲を全シート「西暦○○年」行までに揃える、activeTab=0、開いた時に全数式を再計算
   let wb=await zip.file('xl/workbook.xml').async('string');
+  // 印刷範囲の横幅：元テンプレートのPrint_Areaの列、無ければ使用列の右端。上端も元テンプレートに合わせる（無ければ1行目）
+  let paLeft='A', paTop=1, paRight=null;
+  const paM=wb.match(/_xlnm\.Print_Area[^>]*>([^<]*)</);
+  if(paM){const rng=paM[1].split('!').pop();const c=rng.match(/\$?([A-Z]+)\$?(\d+):\$?([A-Z]+)\$?(\d+)/);if(c){paLeft=c[1];paTop=+c[2];paRight=c[3];}}
+  if(!paRight)paRight=tenkenMaxCol(baseXml);
+  // 下端：「西暦」を含む行（点検簿の一番下の年月欄）。見つからなければ元テンプレートの下端。
+  let paBottom=tenkenFindTextRow(baseXml,shared,'西暦');
+  if(!paBottom && paM){const c=paM[1].split('!').pop().match(/:\$?[A-Z]+\$?(\d+)/);if(c)paBottom=+c[1];}
   const sheetsXml=parts.map((p,i)=>`<sheet name="${esc(p.spec.name)}" sheetId="${i+1}" r:id="${p.rId}"/>`).join('');
   wb=wb.replace(/<sheets>[\s\S]*?<\/sheets>/,'<sheets>'+sheetsXml+'</sheets>');
-  wb=wb.replace(/<definedNames>[\s\S]*?<\/definedNames>/,'');
+  if(paBottom){
+    const dn=parts.map((p,i)=>`<definedName name="_xlnm.Print_Area" localSheetId="${i}">'${String(p.spec.name).replace(/'/g,"''")}'!$${paLeft}$${paTop}:$${paRight}$${paBottom}</definedName>`).join('');
+    if(/<definedNames>[\s\S]*?<\/definedNames>/.test(wb))wb=wb.replace(/<definedNames>[\s\S]*?<\/definedNames>/,`<definedNames>${dn}</definedNames>`);
+    else wb=wb.replace('</sheets>',`</sheets><definedNames>${dn}</definedNames>`);
+  }else{
+    wb=wb.replace(/<definedNames>[\s\S]*?<\/definedNames>/,'');
+  }
   wb=wb.replace(/activeTab="\d+"/,'activeTab="0"');
   if(/<calcPr\b[^>]*\/>/.test(wb)) wb=wb.replace(/<calcPr\b([^>]*?)\s*\/>/, (m,a)=>`<calcPr${a.replace(/\s*fullCalcOnLoad="[^"]*"/,'')} fullCalcOnLoad="1"/>`);
   else wb=wb.replace('</workbook>','<calcPr fullCalcOnLoad="1"/></workbook>');
@@ -1934,12 +1967,13 @@ async function exportTenken(){
       const years=[...new Set(keys.map(k=>byKey[k].year))];
       const multiYear=years.length>1; // 複数年にまたがる場合はシート名に年を付ける
       const inspector=tenkenInspectorMap[name]||''; // 機械ごとに選んだ点検者
+      const excludeRows=(name==='玉掛け')?[10,16,22,24]:[]; // 玉掛はこの行はチェック不要
       const specs=keys.map(k=>{
         const e=byKey[k];
         const kojiName=koji || [...e.kojis].join('・'); // 現場名（選んだ工事、無ければ日報の工事名）
         const genbaName=[...e.genbas].join('・');       // 現場代理人
         return {name:multiYear?`${e.year}年${e.month}月`:`${e.month}月`, year:e.year, month:e.month,
-                days:e.days, koji:kojiName, genba:genbaName, motouke:tenkenMotoukeName(genbaName), inspector};
+                days:e.days, koji:kojiName, genba:genbaName, motouke:tenkenMotoukeName(genbaName), inspector, excludeRows};
       });
       const blob=await tenkenBuildMachineFile(tpl.base64,name,specs);
       if(!blob){unmatched.push(name);continue;}
