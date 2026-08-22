@@ -496,9 +496,24 @@ async function azUpsertConfig(id, value, extraHint){
   }catch(e){alert('クラウド保存に失敗しました：'+(e.message||e));return false;}
 }
 
+/* ===== 半角全角をそろえる（数字・アルファベット・記号を半角に、全角スペースを半角スペースに） ===== */
+// 工事日報とKY日報の照合で、半角全角の違いは無視して同じものとして扱うために使う
+function normWidth(s){
+  return String(s==null?'':s)
+    .replace(/[！-～]/g, ch=>String.fromCharCode(ch.charCodeAt(0)-0xFEE0))
+    .replace(/　/g,' ');
+}
+
 /* ===== 工事名マスタ ===== */
 function localKojiNames(){const raw=localStorage.getItem(LS.kojinames);if(raw){try{const p=JSON.parse(raw);if(Array.isArray(p))return p;}catch(e){}}return [];}
 function getKojiNames(){return (state.mode==='cloud'&&state.sb)?(state.cloudKojiNames||[]):localKojiNames();}
+// 取り込んだ工事名を、登録済み工事名の中から半角全角を無視して一致するものに揃える（あれば登録済みの表記を使う）
+function canonicalKojiName(name){
+  const n=normWidth(name).trim();
+  if(!n)return name||'';
+  const hit=getKojiNames().find(k=>normWidth(k).trim()===n);
+  return hit||name;
+}
 async function saveKojiNames(arr){
   arr=[...new Set(arr.filter(Boolean))];
   if(state.mode==='cloud'&&state.sb){
@@ -1357,7 +1372,7 @@ async function importFromKantoku(){
   const d=chosen.data||chosen; // 工事日報の中身（jsonb）
   if(!confirm('工事日報の内容で〔工事名・天気・工種・使用機械・作業員〕を上書きします。よろしいですか？（KY活動・巡視などKY日報だけの項目はそのまま残ります）'))return;
 
-  if(d.koji_name!=null)state.r.koji_name=d.koji_name;
+  if(d.koji_name!=null)state.r.koji_name=canonicalKojiName(d.koji_name); // 半角全角の違いは無視して登録済み工事名に揃える
   if(d.weather!=null)state.r.weather=d.weather;
   if(Array.isArray(d.works)&&d.works.length)state.r.works=d.works.map(w=>({kind:(w&&w.kind)||'',content:(w&&w.content)||''}));
   if(Array.isArray(d.machines))state.r.machines=d.machines.map(m=>(m&&m.machine)?m.machine:(typeof m==='string'?m:'')).filter(Boolean);
