@@ -1019,7 +1019,18 @@ const BUILTIN_KY_EXAMPLES=[
   {work:'切り株撤去',danger:'油圧ショベルが旋回したため衝突しそうになる',action:'機械の作業範囲、運行経路を定めておこなう'},
   {work:'切り株撤去',danger:'重機と作業員が接触する',action:'作業範囲に入らない'},
   {work:'切り株撤去',danger:'破片が飛び散る',action:'慎重に操作する'},
-  {work:'切り株撤去',danger:'炎天下による熱中症',action:'水分の補給を充分おこなう'}
+  {work:'切り株撤去',danger:'炎天下による熱中症',action:'水分の補給を充分おこなう'},
+  // 追加分（土工）
+  {work:'土工',danger:'油圧ショベルが旋回したため衝突しそうになる',action:'オペレーターに必ず合図を送る'},
+  {work:'土工',danger:'重機と接触する危険性がある',action:'作業範囲に入らない'},
+  // 付帯工
+  {work:'付帯工',danger:'車や通行人との接触',action:'周囲をよく確認する'},
+  {work:'付帯工',danger:'布設時の製品落下の危険',action:'周囲の確認と合図の徹底'},
+  {work:'付帯工',danger:'現場内の段差に躓き転倒する',action:'足元をよく確認して作業をする'},
+  // 水路工（追加分）
+  {work:'水路工',danger:'積み荷のバランスが崩れる',action:'地上がりの確認を行う'},
+  {work:'水路工',danger:'無理な体勢で作業をして怪我をする',action:'適切な体勢で作業をおこなう'},
+  {work:'水路工',danger:'急な斜面での作業でバランスを崩し転倒する',action:'足元に注意して作業をする'}
 ];
 function getKyExamples(){
   const raw=(state.mode==='cloud'&&state.sb)?(state.cloudKyExamples||[]):localKyExamples();
