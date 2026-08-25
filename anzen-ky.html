@@ -1051,6 +1051,16 @@ function getKyExamples(){
   // 組み込みの例を追加（同じ組み合わせは重複させない）
   const seen=new Set(out.map(e=>e.work+'|'+e.danger+'|'+e.action));
   BUILTIN_KY_EXAMPLES.forEach(e=>{const k=e.work+'|'+e.danger+'|'+e.action;if(!seen.has(k)){seen.add(k);out.push(e);}});
+  // 一部の工種は他の工種の危険・対策も選べるようにする（擁壁工＝土工＋水路工も併せて表示）
+  const inherit={'擁壁工':['土工','水路工']};
+  for(const w in inherit){
+    out.slice().forEach(e=>{
+      if(inherit[w].indexOf(e.work)>=0){
+        const k=w+'|'+e.danger+'|'+e.action;
+        if(!seen.has(k)){seen.add(k);out.push({work:w,danger:e.danger,action:e.action});}
+      }
+    });
+  }
   return out;
 }
 async function saveKyExamples(arr){
