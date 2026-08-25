@@ -1995,8 +1995,12 @@ function tenkenFindTextRow(xml, shared, needle){
   let m; const cellRe=/<c r="[A-Z]+(\d+)"([^>]*)>([\s\S]*?)<\/c>/g; let found=null;
   while((m=cellRe.exec(xml))){
     const row=+m[1], attrs=m[2], inner=m[3]; let text='';
-    if(/t="inlineStr"/.test(attrs)){let tt,tr=/<t[^>]*>([\s\S]*?)<\/t>/g;while((tt=tr.exec(inner)))text+=tenkenDecodeXml(tt[1]);}
-    else if(/t="s"/.test(attrs)){const v=inner.match(/<v>(\d+)<\/v>/);if(v)text=shared[+v[1]]||'';}
+    if(/t="s"/.test(attrs)){const v=inner.match(/<v>(\d+)<\/v>/);if(v)text=shared[+v[1]]||'';}
+    else{
+      // インライン文字列(<t>)＋数式の結果文字列(t="str"の<v>)を集める。「西暦○○年」が数式でも拾えるように。
+      let tt,tr=/<t[^>]*>([\s\S]*?)<\/t>/g;while((tt=tr.exec(inner)))text+=tenkenDecodeXml(tt[1]);
+      const vv=inner.match(/<v>([\s\S]*?)<\/v>/); if(vv && isNaN(+vv[1])) text+=tenkenDecodeXml(vv[1]);
+    }
     if(text.indexOf(needle)>=0 && (found===null||row>found))found=row;
   }
   return found;
@@ -2073,11 +2077,11 @@ async function tenkenBuildMachineFile(base64, sheetName, specs){
   const paM=wb.match(/_xlnm\.Print_Area[^>]*>([^<]*)</);
   if(paM){const rng=paM[1].split('!').pop();const c=rng.match(/\$?([A-Z]+)\$?(\d+):\$?([A-Z]+)\$?(\d+)/);if(c){paLeft=c[1];paTop=+c[2];paRight=c[3];}}
   if(!paRight)paRight=tenkenMaxCol(baseXml);
-  // 下端：「西暦」を含む行（点検簿の一番下の年月欄）。
-  // 玉掛など「西暦」が無いシートは、最下部の「○年○月○日」の行を下端にする。それも無ければ元テンプレートの下端。
+  // 下端：まず「西暦」を含む行（点検簿の一番下の年月欄／数式でも検出）。
+  // 見つからなければ元テンプレートの印刷範囲の下端、それも無ければ最下部の「○年○月○日」行。
   let paBottom=tenkenFindTextRow(baseXml,shared,'西暦');
-  if(!paBottom) paBottom=tenkenFindDateLineRow(baseXml,shared);
   if(!paBottom && paM){const c=paM[1].split('!').pop().match(/:\$?[A-Z]+\$?(\d+)/);if(c)paBottom=+c[1];}
+  if(!paBottom) paBottom=tenkenFindDateLineRow(baseXml,shared);
   const sheetsXml=parts.map((p,i)=>`<sheet name="${esc(p.spec.name)}" sheetId="${i+1}" r:id="${p.rId}"/>`).join('');
   wb=wb.replace(/<sheets>[\s\S]*?<\/sheets>/,'<sheets>'+sheetsXml+'</sheets>');
   if(paBottom){
