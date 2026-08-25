@@ -1041,7 +1041,20 @@ const BUILTIN_KY_EXAMPLES=[
   // 擁壁工
   {work:'擁壁工',danger:'吊荷が落下して作業員に衝突する',action:'吊荷の下に立ち入らない'},
   {work:'擁壁工',danger:'機械との接触',action:'作業手順を確認し、全員で危険個所を共有する'},
-  {work:'擁壁工',danger:'重機と接触する',action:'作業範囲に入らない'}
+  {work:'擁壁工',danger:'重機と接触する',action:'作業範囲に入らない'},
+  // 附帯工（＝付帯工。土工も併せる）
+  {work:'附帯工',danger:'路肩が崩れて脱輪し作業員が巻き込まれる',action:'作業前に地盤状態を確認する'},
+  // 地盤改良工（土工・擁壁工・水路工も併せる）
+  {work:'地盤改良工',danger:'作業中、ぬかるみにはまって転落する',action:'足元に注意する'},
+  // 排水構造物工（土工・構造物撤去工も併せる）
+  {work:'排水構造物工',danger:'設置時に吊荷のバランスが崩れる',action:'合図、指示を大きな声で行う'},
+  {work:'排水構造物工',danger:'車両機械の死角になり接触する',action:'誘導員による合図の徹底'},
+  {work:'排水構造物工',danger:'吊り下げの際にバランスが崩れる',action:'確実に玉掛けを行い、慎重に吊り下げる'},
+  // 集水桝工
+  {work:'集水桝工',danger:'桝と掘削壁の間に手が挟まれる',action:'完全に制止するまで掘削穴に手を出さない'},
+  {work:'集水桝工',danger:'吊荷が外れて落下する',action:'玉掛け・安全装置を必ず目視確認する'},
+  // 後片付け
+  {work:'後片付け',danger:'車や通行人との接触',action:'周囲をよく確認する'}
 ];
 function getKyExamples(){
   const raw=(state.mode==='cloud'&&state.sb)?(state.cloudKyExamples||[]):localKyExamples();
@@ -1051,8 +1064,14 @@ function getKyExamples(){
   // 組み込みの例を追加（同じ組み合わせは重複させない）
   const seen=new Set(out.map(e=>e.work+'|'+e.danger+'|'+e.action));
   BUILTIN_KY_EXAMPLES.forEach(e=>{const k=e.work+'|'+e.danger+'|'+e.action;if(!seen.has(k)){seen.add(k);out.push(e);}});
-  // 一部の工種は他の工種の危険・対策も選べるようにする（擁壁工＝土工＋水路工も併せて表示）
-  const inherit={'擁壁工':['土工','水路工']};
+  // 一部の工種は他の工種の危険・対策も選べるようにする（例：擁壁工＝土工＋水路工も併せて表示）
+  const inherit={
+    '擁壁工':['土工','水路工'],
+    '附帯工':['付帯工','土工'],   // 附帯工＝付帯工。両表記で同じ内容＋土工
+    '付帯工':['附帯工','土工'],
+    '地盤改良工':['土工','水路工','擁壁工'],
+    '排水構造物工':['土工','構造物撤去工']
+  };
   for(const w in inherit){
     out.slice().forEach(e=>{
       if(inherit[w].indexOf(e.work)>=0){
