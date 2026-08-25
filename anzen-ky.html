@@ -2092,11 +2092,16 @@ async function tenkenBuildMachineFile(base64, sheetName, specs){
   const paM=wb.match(/_xlnm\.Print_Area[^>]*>([^<]*)</);
   if(paM){const rng=paM[1].split('!').pop();const c=rng.match(/\$?([A-Z]+)\$?(\d+):\$?([A-Z]+)\$?(\d+)/);if(c){paLeft=c[1];paTop=+c[2];paRight=c[3];}}
   if(!paRight)paRight=tenkenMaxCol(baseXml);
-  // 下端：まず「西暦」を含む行（点検簿の一番下の年月欄／数式でも検出）。
-  // 見つからなければ元テンプレートの印刷範囲の下端、それも無ければ最下部の「○年○月○日」行。
-  let paBottom=tenkenFindTextRow(baseXml,shared,'西暦');
-  if(!paBottom && paM){const c=paM[1].split('!').pop().match(/:\$?[A-Z]+\$?(\d+)/);if(c)paBottom=+c[1];}
-  if(!paBottom) paBottom=tenkenFindDateLineRow(baseXml,shared);
+  // 下端：玉掛は37行目に固定。それ以外は従来どおり（まず「西暦」を含む行／数式でも検出、
+  // 見つからなければ元テンプレートの印刷範囲の下端、それも無ければ最下部の「○年○月○日」行）。
+  let paBottom;
+  if(sheetName.indexOf('玉掛')>=0){
+    paBottom=37;
+  }else{
+    paBottom=tenkenFindTextRow(baseXml,shared,'西暦');
+    if(!paBottom && paM){const c=paM[1].split('!').pop().match(/:\$?[A-Z]+\$?(\d+)/);if(c)paBottom=+c[1];}
+    if(!paBottom) paBottom=tenkenFindDateLineRow(baseXml,shared);
+  }
   const sheetsXml=parts.map((p,i)=>`<sheet name="${esc(p.spec.name)}" sheetId="${i+1}" r:id="${p.rId}"/>`).join('');
   wb=wb.replace(/<sheets>[\s\S]*?<\/sheets>/,'<sheets>'+sheetsXml+'</sheets>');
   if(paBottom){
