@@ -1030,7 +1030,11 @@ const BUILTIN_KY_EXAMPLES=[
   // 水路工（追加分）
   {work:'水路工',danger:'積み荷のバランスが崩れる',action:'地上がりの確認を行う'},
   {work:'水路工',danger:'無理な体勢で作業をして怪我をする',action:'適切な体勢で作業をおこなう'},
-  {work:'水路工',danger:'急な斜面での作業でバランスを崩し転倒する',action:'足元に注意して作業をする'}
+  {work:'水路工',danger:'急な斜面での作業でバランスを崩し転倒する',action:'足元に注意して作業をする'},
+  // 付帯工の組を水路工にも追加
+  {work:'水路工',danger:'車や通行人との接触',action:'周囲をよく確認する'},
+  {work:'水路工',danger:'布設時の製品落下の危険',action:'周囲の確認と合図の徹底'},
+  {work:'水路工',danger:'現場内の段差に躓き転倒する',action:'足元をよく確認して作業をする'}
 ];
 function getKyExamples(){
   const raw=(state.mode==='cloud'&&state.sb)?(state.cloudKyExamples||[]):localKyExamples();
