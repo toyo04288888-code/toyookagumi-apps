@@ -192,6 +192,17 @@
     <div class="muted" style="margin-top:6px">※ 名前・時間は原価管理アプリで人工・労務費に使えます。</div>
   </div>
 
+  <div class="card">
+    <div class="flexsp" style="margin-bottom:8px">
+      <h2 style="margin:0"><span class="bar"></span>下請（KY日報用）</h2>
+      <button class="btn sm right" id="addSubcon">＋下請</button>
+    </div>
+    <table class="sec-tbl"><thead><tr><th style="width:22%">会社名</th><th>作業員名（複数は「、」区切り）</th>
+      <th style="width:70px">開始</th><th style="width:70px">終了</th><th style="width:26%">作業内容</th><th style="width:30px"></th></tr></thead>
+      <tbody id="subconBody"></tbody></table>
+    <div class="muted" style="margin-top:6px">※ この欄は<b>工事日報のExcel・印刷には出ません</b>。KY日報の「工事日報から取り込む」で、下請の会社名・作業員は建設作業員名簿（元請の下）に、作業内容は本日の作業に入ります（作業時間は取り込みません）。</div>
+  </div>
+
   <div class="card noprint">
     <div class="row">
       <button class="btn org" id="saveReport">この日報を保存</button>
@@ -365,7 +376,8 @@ let state={mode:'local',sb:null,reports:[],editId:null,cloudWorkers:[],cloudMach
 function newReport(){return{koji_no:'',report_date:new Date().toISOString().slice(0,10),weather:'',temp:'',
   writer:'',koji_name:'',place:'',works:[{kind:'',content:''}],machines:[{machine:'',memo:''}],meeting:'',
   purchases:[{item:'',supplier:'',qty:''}],
-  workers:[{name:'',start:'8:00',end:'17:00',off:false}]};}
+  workers:[{name:'',start:'8:00',end:'17:00',off:false}],
+  subcon:[]};}
 
 function newMaster(){return{writer:'',koji_no:'',koji_name:'',hacchusha:'',place:'',status:'active',
   sakusei_date:new Date().toISOString().slice(0,10),kouki_start:'',kouki_end:'',gaiyo:''};}
@@ -610,7 +622,25 @@ function renderWorker(){
 }
 $('addWorker').onclick=()=>{state.r.workers.push({name:'',start:'8:00',end:'17:00',off:false});renderWorker();};
 
-function renderAll(){loadBasicToForm();renderWorks();renderMachine();renderBuy();renderWorker();}
+/* ===== 下請（KY日報用・Excelには出さない） ===== */
+function renderSubcon(){
+  const tb=$('subconBody');if(!tb)return;tb.innerHTML='';
+  if(!Array.isArray(state.r.subcon))state.r.subcon=[];
+  state.r.subcon.forEach(sc=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td><input class="co"></td><td><input class="nm" placeholder="山田、田中"></td>
+      <td><input class="st" placeholder="8:00"></td><td><input class="et" placeholder="17:00"></td>
+      <td><input class="wk" placeholder="作業内容"></td>
+      <td><button class="del">×</button></td>`;
+    const set=(sel,k)=>{const el=tr.querySelector(sel);el.value=sc[k]||'';el.oninput=e=>sc[k]=e.target.value;};
+    set('.co','company');set('.nm','names');set('.st','start');set('.et','end');set('.wk','work');
+    tr.querySelector('.del').onclick=()=>{state.r.subcon.splice(state.r.subcon.indexOf(sc),1);renderSubcon();};
+    tb.appendChild(tr);
+  });
+}
+$('addSubcon').onclick=()=>{if(!Array.isArray(state.r.subcon))state.r.subcon=[];state.r.subcon.push({company:'',names:'',start:'8:00',end:'17:00',work:''});renderSubcon();};
+
+function renderAll(){loadBasicToForm();renderWorks();renderMachine();renderBuy();renderWorker();renderSubcon();}
 
 /* ===== 保存・新規・編集 ===== */
 let toastTimer=null;

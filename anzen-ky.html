@@ -1458,6 +1458,33 @@ async function importFromKantoku(){
     groups.sort((a,b)=>(a.kind==='元請'?0:1)-(b.kind==='元請'?0:1)); // 元請の会社を一番上に
     if(groups.length)state.r.workers=groups;
   }
+  // 下請（工事日報の下請欄）→ 建設作業員名簿の「元請の下」に追加、作業内容は本日の作業に追加（作業時間は取り込まない）
+  if(Array.isArray(d.subcon)&&d.subcon.length){
+    if(!Array.isArray(state.r.workers))state.r.workers=[];
+    if(!Array.isArray(state.r.works))state.r.works=[];
+    const subMap=new Map(); // 会社名 → 名前配列
+    const subWorks=[];
+    d.subcon.forEach(sc=>{
+      const co=((sc&&sc.company)||'').trim();
+      const names=((sc&&sc.names)||'').split(/[\n,、，・･]/).map(s=>s.trim()).filter(Boolean).map(nm=>matchWorkerFullName(nm));
+      if(co){
+        if(!subMap.has(co))subMap.set(co,[]);
+        const arr=subMap.get(co);
+        names.forEach(nm=>{if(nm&&!arr.includes(nm))arr.push(nm);});
+      }
+      const wk=((sc&&sc.work)||'').trim();
+      if(wk)subWorks.push({kind:'',content:wk});
+    });
+    // 下請グループを元請の下（末尾）に追加。同じ会社が既にあれば名前を統合
+    for(const [co,names] of subMap){
+      if(!co&&!names.length)continue;
+      const g=state.r.workers.find(x=>x.company===co&&x.kind==='下請');
+      if(g){names.forEach(nm=>{if(!g.names.includes(nm))g.names.push(nm);});}
+      else state.r.workers.push({company:co,kind:'下請',shokucho:'',names});
+    }
+    // 下請の作業内容を本日の作業に追加（同じ内容は重複させない）
+    subWorks.forEach(sw=>{ if(!state.r.works.some(x=>(x.content||'')===sw.content))state.r.works.push(sw); });
+  }
   syncKyContentFromWorks();
   renderAll();
   toast('工事日報から取り込みました');
