@@ -381,10 +381,10 @@ function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show')
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,8);}
 
 const LS={mode:'az_mode',url:'az_url',key:'az_key',list:'az_list',kojinames:'az_kojinames',places:'az_places',template:'az_template',workermaster:'az_workermaster',
-  companies:'az_companies',shokuchos:'az_shokuchos',workernames:'az_workernames',genbas:'az_genbas',shunins:'az_shunins',patrolpersons:'az_patrolpersons',machines:'az_machines',tenkenTemplate:'az_tenken_template',tbms:'az_tbms',dangers:'az_dangers',actions:'az_actions',kyexamples:'az_kyexamples'};
+  companies:'az_companies',shokuchos:'az_shokuchos',workernames:'az_workernames',genbas:'az_genbas',shunins:'az_shunins',patrolpersons:'az_patrolpersons',machines:'az_machines',tenkenTemplate:'az_tenken_template',tbms:'az_tbms',dangers:'az_dangers',actions:'az_actions',kyexamples:'az_kyexamples',completedkojis:'az_completedkojis'};
 
 /* ===== 状態 ===== */
-const state={mode:'local',sb:null,reports:[],r:null,editId:null,cloudKojiNames:null,cloudPlaces:null,cloudTemplate:null,cloudWorkerMaster:null,cloudMachines:null,cloudTenkenTemplate:null,cloudTbms:null,cloudDangers:null,cloudActions:null,cloudKyExamples:null};
+const state={mode:'local',sb:null,reports:[],r:null,editId:null,cloudKojiNames:null,cloudPlaces:null,cloudTemplate:null,cloudWorkerMaster:null,cloudMachines:null,cloudTenkenTemplate:null,cloudTbms:null,cloudDangers:null,cloudActions:null,cloudKyExamples:null,cloudCompletedKojis:null};
 
 function newReport(){
   return {
@@ -455,6 +455,8 @@ const Store={
           state.cloudActions=(ac.data&&Array.isArray(ac.data.value))?ac.data.value:[];}catch(e){state.cloudActions=[];}
         try{const ke=await state.sb.from('az_config').select('value').eq('id','kyexamples').maybeSingle();
           state.cloudKyExamples=(ke.data&&Array.isArray(ke.data.value))?ke.data.value:[];}catch(e){state.cloudKyExamples=[];}
+        try{const ck=await state.sb.from('az_config').select('value').eq('id','completedkojis').maybeSingle();
+          state.cloudCompletedKojis=(ck.data&&Array.isArray(ck.data.value))?ck.data.value:[];}catch(e){state.cloudCompletedKojis=[];}
         return;
       }
     }
@@ -507,6 +509,17 @@ function normWidth(s){
 /* ===== 工事名マスタ ===== */
 function localKojiNames(){const raw=localStorage.getItem(LS.kojinames);if(raw){try{const p=JSON.parse(raw);if(Array.isArray(p))return p;}catch(e){}}return [];}
 function getKojiNames(){return (state.mode==='cloud'&&state.sb)?(state.cloudKojiNames||[]):localKojiNames();}
+
+/* ===== 完了した工事（工事名の一覧）＝日報一覧で下にグレー表示 ===== */
+function localCompletedKojis(){const raw=localStorage.getItem(LS.completedkojis);if(raw){try{const p=JSON.parse(raw);if(Array.isArray(p))return p;}catch(e){}}return [];}
+function getCompletedKojis(){return (state.mode==='cloud'&&state.sb)?(state.cloudCompletedKojis||[]):localCompletedKojis();}
+async function setKojiDone(koji, done){
+  let arr=getCompletedKojis().filter(Boolean);
+  if(done){ if(!arr.includes(koji))arr.push(koji); }
+  else { arr=arr.filter(k=>k!==koji); }
+  if(state.mode==='cloud'&&state.sb){ state.cloudCompletedKojis=arr; await azUpsertConfig('completedkojis', arr); }
+  else { localStorage.setItem(LS.completedkojis, JSON.stringify(arr)); }
+}
 // 取り込んだ工事名を、登録済み工事名の中から半角全角を無視して一致するものに揃える（あれば登録済みの表記を使う）
 function canonicalKojiName(name){
   const n=normWidth(name).trim();
@@ -1543,7 +1556,7 @@ function editReport(id){
   $('editFlag').textContent='編集中：'+state.r.report_date;
   switchTab('editor');
 }
-let collapsedKoji=new Set(); // 折りたたんでいる工事名を覚える
+let expandedKoji=new Set(); // 開いている工事名を覚える（既定は閉じる）
 function renderList(){
   const box=$('reportListBody');
 
@@ -1597,26 +1610,47 @@ function renderList(){
       </div>
     </div>`;
   };
-  // 工事ごとにグループ分け（各工事内は日付の新しい順、工事は最新日報の新しい順）
+  // 完了した工事（下にグレー表示）
+  const doneKojis=new Set(getCompletedKojis());
+  // 工事ごとにグループ分け（各工事内は日付の新しい順）
   const groups=new Map();
   sorted.forEach(r=>{const key=(r.koji_name||'').trim()||'（工事名なし）';if(!groups.has(key))groups.set(key,[]);groups.get(key).push(r);});
-  const groupArr=[...groups.entries()].sort((a,b)=>((b[1][0]||{}).report_date||'').localeCompare((a[1][0]||{}).report_date||''));
+  // 未完了の工事を上、完了の工事を下。同じ状態内は最新日報の新しい順
+  const groupArr=[...groups.entries()].sort((a,b)=>{
+    const da=doneKojis.has(a[0])?1:0, db=doneKojis.has(b[0])?1:0;
+    if(da!==db)return da-db;
+    return ((b[1][0]||{}).report_date||'').localeCompare((a[1][0]||{}).report_date||'');
+  });
   box.innerHTML=groupArr.map(([koji,list])=>{
-    const collapsed=collapsedKoji.has(koji);
+    const open=expandedKoji.has(koji);           // 既定は閉じる
+    const isDone=doneKojis.has(koji);
     const doneN=list.filter(r=>(r.status||'施工中')==='完了').length;
+    const headBg=isDone?'#eceef0':'#eef2fb';
+    const headBorder=isDone?'#d5d8dc':'#d7e0f2';
+    const headColor=isDone?'color:#5f6368':'';
+    const doneBtn=isDone
+      ? `<button class="koji-done" data-koji="${esc(koji)}" data-done="0" style="font-size:12px;padding:4px 10px;border-radius:20px;border:1px solid #c7cacf;background:#fff;color:#5f6368;cursor:pointer">未完了に戻す</button>`
+      : `<button class="koji-done" data-koji="${esc(koji)}" data-done="1" style="font-size:12px;padding:4px 12px;border-radius:20px;border:1px solid #2e9e57;background:#2e9e57;color:#fff;font-weight:700;cursor:pointer">完了</button>`;
     return `
     <div style="margin-bottom:14px">
-      <div class="koji-head" data-koji="${esc(koji)}" style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:10px 12px;background:#eef2fb;border:1px solid #d7e0f2;border-radius:8px;font-weight:700">
-        <span style="width:14px;display:inline-block;color:var(--accent)">${collapsed?'▶':'▼'}</span>
-        <span style="flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(koji)}</span>
+      <div class="koji-head" data-koji="${esc(koji)}" style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:10px 12px;background:${headBg};border:1px solid ${headBorder};border-radius:8px;font-weight:700;${headColor}">
+        <span style="width:14px;display:inline-block">${open?'▼':'▶'}</span>
+        <span style="flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(koji)}${isDone?'（完了）':''}</span>
         <span class="muted" style="font-weight:600;font-size:12.5px">${list.length}件${doneN?`・完了${doneN}`:''}</span>
+        ${doneBtn}
       </div>
-      <div style="margin-top:8px;padding-left:6px;${collapsed?'display:none':''}">${list.map(rowHtml).join('')}</div>
+      <div style="margin-top:8px;padding-left:6px;${open?'':'display:none'}">${list.map(rowHtml).join('')}</div>
     </div>`;
   }).join('');
-  box.querySelectorAll('.koji-head').forEach(h=>h.onclick=()=>{
+  box.querySelectorAll('.koji-head').forEach(h=>h.onclick=(e)=>{
+    if(e.target.closest('.koji-done'))return;      // 完了ボタンは開閉に反応させない
     const koji=h.dataset.koji;
-    if(collapsedKoji.has(koji))collapsedKoji.delete(koji); else collapsedKoji.add(koji);
+    if(expandedKoji.has(koji))expandedKoji.delete(koji); else expandedKoji.add(koji);
+    renderList();
+  });
+  box.querySelectorAll('.koji-done').forEach(b=>b.onclick=async(e)=>{
+    e.stopPropagation();
+    await setKojiDone(b.dataset.koji, b.dataset.done==='1');
     renderList();
   });
   const selAll=$('listSelectAll'); if(selAll)selAll.checked=false;
