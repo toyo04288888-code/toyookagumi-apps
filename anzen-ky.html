@@ -1570,10 +1570,10 @@ function renderList(){
   box.innerHTML=sorted.map(r=>{
     const st=r.status||'施工中';
     const done=st==='完了';
-    const stripe=done?'#2e9e57':'#e8912a';      // 左の色帯（完了=緑／施工中=オレンジ）
-    const rowBg=done?'#f2faf4':'#fffaf2';        // 淡い背景
+    const stripe=done?'#9aa0a6':'#e8912a';      // 左の色帯（完了=グレー／施工中=オレンジ）
+    const rowBg=done?'#f4f5f6':'#fffaf2';        // 淡い背景
     const stStyle=done
-      ? 'background:#d8f0e0;color:#1f7a3d;border:1px solid #9fd6b1'
+      ? 'background:#e8eaed;color:#5f6368;border:1px solid #d0d3d6'
       : 'background:#ffe8cf;color:#b5651d;border:1px solid #f0c690';
     return `
     <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 12px;margin-bottom:6px;border:1px solid var(--border);border-left:6px solid ${stripe};border-radius:8px;background:${rowBg}">
