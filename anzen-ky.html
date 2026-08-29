@@ -93,7 +93,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
       <span class="muted" style="flex:1 1 240px">年月日を入れてから押すと、その日の工事日報から〔工事名・天気・工種・使用機械・作業員〕を取り込みます（クラウド共有時）。作業員は登録済みのフルネームに変換されます。</span>
     </div>
     <div class="row">
-      <div class="fld" style="flex:1 1 150px"><label>年度</label><input type="text" id="f_nendo" list="nendoList" placeholder="例：令和8年度"><datalist id="nendoList"></datalist></div>
+      <div class="fld" style="flex:1 1 150px"><label>年度（年月日から自動）</label><input type="text" id="f_nendo" readonly="" style="background:#f4f5f7" placeholder="年月日を入れると自動"></div>
       <div class="fld" style="flex:2 1 300px"><label>工事名</label><select id="f_kojiname"><option value="">選択…</option><option value="3号工事">3号工事</option></select></div>
       <div class="fld" style="flex:1 1 200px"><label>工事場所</label><select id="f_place"><option value="">選択…</option><option value="春江町">春江町</option></select></div>
     </div>
@@ -387,6 +387,18 @@ const LS={mode:'az_mode',url:'az_url',key:'az_key',list:'az_list',kojinames:'az_
 /* ===== 状態 ===== */
 const state={mode:'local',sb:null,reports:[],r:null,editId:null,cloudKojiNames:null,cloudPlaces:null,cloudTemplate:null,cloudWorkerMaster:null,cloudMachines:null,cloudTenkenTemplate:null,cloudTbms:null,cloudDangers:null,cloudActions:null,cloudKyExamples:null,cloudCompletedKojis:null};
 
+// 年月日(YYYY-MM-DD)から年度を求める（日本の年度＝4月〜翌3月／令和・平成表記）
+function nendoFromDate(ds){
+  const m=String(ds||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if(!m)return '';
+  const y=+m[1], mo=+m[2];
+  const fy=(mo>=4)?y:y-1;
+  if(fy>=2019)return `令和${fy-2018}年度`;
+  if(fy>=1989)return `平成${fy-1988}年度`;
+  return `${fy}年度`;
+}
+// 日報の年度（年月日から。取れなければ保存済みの値）
+function reportNendo(r){return nendoFromDate(r&&r.report_date)||((r&&r.nendo)||'').trim();}
 function newReport(){
   return {
     id:uid(),
@@ -1390,8 +1402,7 @@ function renderNecchusho(){
 
 /* ===== 基本情報バインド ===== */
 function bindBasic(){
-  $('f_nendo').oninput=e=>state.r.nendo=e.target.value;
-  $('f_date').oninput=e=>{state.r.report_date=e.target.value;updateYoubi();applyWeekTbm();};
+  $('f_date').oninput=e=>{state.r.report_date=e.target.value;state.r.nendo=nendoFromDate(e.target.value);$('f_nendo').value=state.r.nendo;updateYoubi();applyWeekTbm();};
   $('f_weather').onchange=e=>state.r.weather=e.target.value;
   $('f_kojiname').onchange=e=>state.r.koji_name=e.target.value;
   $('f_place').onchange=e=>state.r.place=e.target.value;
@@ -1511,10 +1522,9 @@ function loadBasicToForm(){
   renderPlaceSelect();
   renderGenbaShuninSelect();
   renderPatrolPersonSelect();
-  // 年度：既存の年度を候補に出しつつ直接入力できる
-  const nd=$('f_nendo'); if(nd){ nd.value=state.r.nendo||''; const dl=$('nendoList');
-    if(dl){const ys=[...new Set(state.reports.map(r=>r.nendo).filter(Boolean))].sort().reverse();
-      dl.innerHTML=ys.map(y=>`<option value="${esc(y)}"></option>`).join('');} }
+  // 年度：年月日から自動判別して表示（手入力不可）
+  state.r.nendo=nendoFromDate(state.r.report_date)||state.r.nendo||'';
+  if($('f_nendo'))$('f_nendo').value=state.r.nendo;
   $('f_date').value=state.r.report_date||'';
   updateYoubi();
   // 天気：選択肢に無い値（工事日報から取り込んだ「雨のち晴」等）も表示できるよう補う
@@ -1546,12 +1556,12 @@ function renderAll(){
 const MAX_NENDO=5;
 async function enforceNendoLimit(){
   const byNendo=new Map(); // 年度 → その年度の最新日付
-  state.reports.forEach(r=>{const n=(r.nendo||'').trim();if(!n)return;const cur=byNendo.get(n)||'';const d=r.report_date||'';if(d>cur)byNendo.set(n,d);});
+  state.reports.forEach(r=>{const n=reportNendo(r);if(!n)return;const cur=byNendo.get(n)||'';const d=r.report_date||'';if(d>cur)byNendo.set(n,d);});
   const nendos=[...byNendo.keys()];
   if(nendos.length<=MAX_NENDO)return;
   nendos.sort((a,b)=>(byNendo.get(b)||'').localeCompare(byNendo.get(a)||'')); // 新しい順
   const oldest=nendos[nendos.length-1]; // 最新日付が一番古い＝一番古い年度
-  const ids=state.reports.filter(r=>(r.nendo||'').trim()===oldest).map(r=>r.id);
+  const ids=state.reports.filter(r=>reportNendo(r)===oldest).map(r=>r.id);
   if(!ids.length)return;
   if(confirm(`保存できる年度は${MAX_NENDO}年度までです。\n一番古い「${oldest}」の日報 ${ids.length}件を削除しますか？\n（キャンセルすると今回は削除しません）`)){
     for(const id of ids){ await Store.deleteReport(id); }
@@ -1660,7 +1670,7 @@ function renderList(){
   };
   // 年度 → 工事 → 日報。年度は最新日報の新しい順
   const nendoGroups=new Map();
-  sorted.forEach(r=>{const key=(r.nendo||'').trim()||'（年度未設定）';if(!nendoGroups.has(key))nendoGroups.set(key,[]);nendoGroups.get(key).push(r);});
+  sorted.forEach(r=>{const key=reportNendo(r)||'（年度未設定）';if(!nendoGroups.has(key))nendoGroups.set(key,[]);nendoGroups.get(key).push(r);});
   const nendoLatest=(list)=>list.reduce((m,r)=>((r.report_date||'')>m?(r.report_date||''):m),'');
   const nendoArr=[...nendoGroups.entries()].sort((a,b)=>nendoLatest(b[1]).localeCompare(nendoLatest(a[1])));
   box.innerHTML=nendoArr.map(([nendo,nList])=>{
@@ -1703,7 +1713,7 @@ function renderList(){
   box.querySelectorAll('.koji-del').forEach(b=>b.onclick=async(e)=>{
     e.stopPropagation();
     const koji=b.dataset.koji, nendo=b.dataset.nendo;
-    const ids=state.reports.filter(r=>((r.nendo||'').trim()||'（年度未設定）')===nendo && ((r.koji_name||'').trim()||'（工事名なし）')===koji).map(r=>r.id);
+    const ids=state.reports.filter(r=>(reportNendo(r)||'（年度未設定）')===nendo && ((r.koji_name||'').trim()||'（工事名なし）')===koji).map(r=>r.id);
     if(!ids.length)return;
     if(!confirm(`「${nendo}」の「${koji}」の日報 ${ids.length}件をすべて削除します。よろしいですか？（元に戻せません）`))return;
     for(const id of ids){ await Store.deleteReport(id); }
