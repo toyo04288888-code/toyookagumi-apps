@@ -1635,12 +1635,13 @@ function renderList(){
         <span style="flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(koji)}${isDone?'（完了）':''}</span>
         <span class="muted" style="font-weight:600;font-size:12.5px">${list.length}件${doneN?`・完了${doneN}`:''}</span>
         ${doneBtn}
+        <button class="koji-del" data-koji="${esc(koji)}" title="この工事の日報をすべて削除" style="font-size:14px;padding:4px 9px;border-radius:20px;border:1px solid #e0a3a3;background:#fff;color:#c0392b;cursor:pointer">🗑</button>
       </div>
       <div style="margin-top:8px;padding-left:6px;${open?'':'display:none'}">${list.map(rowHtml).join('')}</div>
     </div>`;
   }).join('');
   box.querySelectorAll('.koji-head').forEach(h=>h.onclick=(e)=>{
-    if(e.target.closest('.koji-done'))return;      // 完了ボタンは開閉に反応させない
+    if(e.target.closest('.koji-done')||e.target.closest('.koji-del'))return; // ボタンは開閉に反応させない
     const koji=h.dataset.koji;
     if(expandedKoji.has(koji))expandedKoji.delete(koji); else expandedKoji.add(koji);
     renderList();
@@ -1648,6 +1649,16 @@ function renderList(){
   box.querySelectorAll('.koji-done').forEach(b=>b.onclick=async(e)=>{
     e.stopPropagation();
     await setKojiDone(b.dataset.koji, b.dataset.done==='1');
+    renderList();
+  });
+  box.querySelectorAll('.koji-del').forEach(b=>b.onclick=async(e)=>{
+    e.stopPropagation();
+    const koji=b.dataset.koji;
+    const ids=state.reports.filter(r=>((r.koji_name||'').trim()||'（工事名なし）')===koji).map(r=>r.id);
+    if(!ids.length)return;
+    if(!confirm(`「${koji}」の日報 ${ids.length}件をすべて削除します。よろしいですか？（元に戻せません）`))return;
+    for(const id of ids){ await Store.deleteReport(id); }
+    await setKojiDone(koji,false); // 完了リストからも外す
     renderList();
   });
   const selAll=$('listSelectAll'); if(selAll)selAll.checked=false;
