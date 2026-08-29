@@ -1569,27 +1569,29 @@ function renderList(){
   const sorted=filtered.sort((a,b)=>(b.report_date||'').localeCompare(a.report_date||''));
   box.innerHTML=sorted.map(r=>{
     const st=r.status||'施工中';
-    const stStyle=st==='完了'
-      ? 'background:#e6f4ea;color:#1f7a3d;border:1px solid #bfe3c9'
-      : 'background:#fff4e6;color:#b5651d;border:1px solid #f0d3a8';
-    const infoStyle=st==='完了'?'opacity:0.45':''; // 完了は文字を薄めに
+    const done=st==='完了';
+    const stripe=done?'#2e9e57':'#e8912a';      // 左の色帯（完了=緑／施工中=オレンジ）
+    const rowBg=done?'#f2faf4':'#fffaf2';        // 淡い背景
+    const stStyle=done
+      ? 'background:#d8f0e0;color:#1f7a3d;border:1px solid #9fd6b1'
+      : 'background:#ffe8cf;color:#b5651d;border:1px solid #f0c690';
     return `
-    <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 4px;border-bottom:1px solid var(--border)">
-      <div style="display:flex;align-items:center;gap:10px">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 12px;margin-bottom:6px;border:1px solid var(--border);border-left:6px solid ${stripe};border-radius:8px;background:${rowBg}">
+      <div style="display:flex;align-items:center;gap:10px;min-width:0">
         <input type="checkbox" class="listsel" data-id="${r.id}">
-        <div style="${infoStyle}">
-          <div style="font-weight:600">${esc(r.report_date||'（日付未設定）')}</div>
-          <div class="muted">${esc(r.koji_name||'')} ${esc(r.place?('／'+r.place):'')}</div>
+        <div style="min-width:0">
+          <div style="font-weight:700">${esc(r.report_date||'（日付未設定）')}</div>
+          <div class="muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(r.koji_name||'')} ${esc(r.place?('／'+r.place):'')}</div>
         </div>
       </div>
-      <div style="display:flex;gap:6px;align-items:center">
-        <select class="rstatus" data-id="${r.id}" style="${stStyle};border-radius:6px;padding:4px 6px;font-size:12.5px;font-weight:600">
+      <div style="display:flex;gap:6px;align-items:center;flex:none">
+        <select class="rstatus" data-id="${r.id}" style="${stStyle};border-radius:20px;padding:5px 12px;font-size:13px;font-weight:700;cursor:pointer">
           <option value="施工中" ${st==='施工中'?'selected':''}>施工中</option>
           <option value="完了" ${st==='完了'?'selected':''}>完了</option>
         </select>
         <button class="btn small ghost" data-excel="${r.id}">Excel</button>
         <button class="btn small ghost" data-edit="${r.id}">編集</button>
-        <button class="btn small danger" data-del="${r.id}">削除</button>
+        <button class="btn small danger" data-del="${r.id}" title="削除" style="font-weight:700;padding:4px 11px;line-height:1;font-size:16px">×</button>
       </div>
     </div>`;}).join('');
   const selAll=$('listSelectAll'); if(selAll)selAll.checked=false;
