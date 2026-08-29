@@ -1543,6 +1543,7 @@ function editReport(id){
   $('editFlag').textContent='編集中：'+state.r.report_date;
   switchTab('editor');
 }
+let collapsedKoji=new Set(); // 折りたたんでいる工事名を覚える
 function renderList(){
   const box=$('reportListBody');
 
@@ -1566,8 +1567,9 @@ function renderList(){
 
   if(filtered.length===0){box.innerHTML='<p class="muted">条件に一致する日報がありません。</p>';return;}
 
-  const sorted=filtered.sort((a,b)=>(b.report_date||'').localeCompare(a.report_date||''));
-  box.innerHTML=sorted.map(r=>{
+  const sorted=[...filtered].sort((a,b)=>(b.report_date||'').localeCompare(a.report_date||''));
+  // 1件分の行HTML
+  const rowHtml=(r)=>{
     const st=r.status||'施工中';
     const done=st==='完了';
     const stripe=done?'#9aa0a6':'#e8912a';      // 左の色帯（完了=グレー／施工中=オレンジ）
@@ -1581,7 +1583,7 @@ function renderList(){
         <input type="checkbox" class="listsel" data-id="${r.id}">
         <div style="min-width:0">
           <div style="font-weight:700">${esc(r.report_date||'（日付未設定）')}</div>
-          <div class="muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(r.koji_name||'')} ${esc(r.place?('／'+r.place):'')}</div>
+          ${r.place?`<div class="muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(r.place)}</div>`:''}
         </div>
       </div>
       <div style="display:flex;gap:6px;align-items:center;flex:none">
@@ -1593,7 +1595,30 @@ function renderList(){
         <button class="btn small ghost" data-edit="${r.id}">編集</button>
         <button class="btn small danger" data-del="${r.id}" title="削除" style="font-weight:700;padding:4px 11px;line-height:1;font-size:16px">×</button>
       </div>
-    </div>`;}).join('');
+    </div>`;
+  };
+  // 工事ごとにグループ分け（各工事内は日付の新しい順、工事は最新日報の新しい順）
+  const groups=new Map();
+  sorted.forEach(r=>{const key=(r.koji_name||'').trim()||'（工事名なし）';if(!groups.has(key))groups.set(key,[]);groups.get(key).push(r);});
+  const groupArr=[...groups.entries()].sort((a,b)=>((b[1][0]||{}).report_date||'').localeCompare((a[1][0]||{}).report_date||''));
+  box.innerHTML=groupArr.map(([koji,list])=>{
+    const collapsed=collapsedKoji.has(koji);
+    const doneN=list.filter(r=>(r.status||'施工中')==='完了').length;
+    return `
+    <div style="margin-bottom:14px">
+      <div class="koji-head" data-koji="${esc(koji)}" style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:10px 12px;background:#eef2fb;border:1px solid #d7e0f2;border-radius:8px;font-weight:700">
+        <span style="width:14px;display:inline-block;color:var(--accent)">${collapsed?'▶':'▼'}</span>
+        <span style="flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(koji)}</span>
+        <span class="muted" style="font-weight:600;font-size:12.5px">${list.length}件${doneN?`・完了${doneN}`:''}</span>
+      </div>
+      <div style="margin-top:8px;padding-left:6px;${collapsed?'display:none':''}">${list.map(rowHtml).join('')}</div>
+    </div>`;
+  }).join('');
+  box.querySelectorAll('.koji-head').forEach(h=>h.onclick=()=>{
+    const koji=h.dataset.koji;
+    if(collapsedKoji.has(koji))collapsedKoji.delete(koji); else collapsedKoji.add(koji);
+    renderList();
+  });
   const selAll=$('listSelectAll'); if(selAll)selAll.checked=false;
   box.querySelectorAll('.rstatus').forEach(sel=>sel.onchange=async()=>{
     const rep=state.reports.find(x=>x.id===sel.dataset.id);
