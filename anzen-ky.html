@@ -2078,6 +2078,8 @@ function refreshTenkenMachineInspectors(){
 function tenkenDecodeXml(s){return String(s).replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&apos;/g,"'").replace(/&amp;/g,'&');}
 // 列文字→列番号（A=1, B=2, …）
 function tenkenColNum(letters){let n=0;for(const ch of letters)n=n*26+(ch.charCodeAt(0)-64);return n;}
+// 列番号→列文字（1→A, 27→AA）
+function tenkenColLetter(n){let s='';while(n>0){const m=(n-1)%26;s=String.fromCharCode(65+m)+s;n=Math.floor((n-1)/26);}return s;}
 
 // ワークブック内の全シート（名前→xmlパス）を解決する
 async function resolveAllSheetPaths(zip){
@@ -2187,6 +2189,24 @@ function tenkenMarkSheet(xml, shared, days, inspectorFull, year, month, koji, ge
   const surname=tenkenStampName(inspectorFull||''); // 各日の判子は苗字のみ
   const ymCells=tenkenFindYearMonthCells(xml,dayRow+1);
   if(ymCells){xml=setCellNumberInXml(xml,ymCells.yearCell,year);xml=setCellNumberInXml(xml,ymCells.monthCell,month);}
+  // 日付列は等間隔で並ぶ前提。見つかった日から全日(1〜31)の列を推定する（31日目が空のテンプレでも列を求められる）
+  const foundDays=Object.keys(dayCols).map(Number).filter(d=>d>=1&&d<=31).sort((a,b)=>a-b);
+  let dcol=(d)=>dayCols[d]||null;
+  if(foundDays.length>=2){
+    const minD=foundDays[0], maxD=foundDays[foundDays.length-1];
+    const c0=tenkenColNum(dayCols[minD]), step=(tenkenColNum(dayCols[maxD])-c0)/(maxD-minD);
+    if(step>0 && Number.isInteger(step)) dcol=(d)=>tenkenColLetter(c0+(d-minD)*step);
+  }else if(foundDays.length===1){
+    const minD=foundDays[0], c0=tenkenColNum(dayCols[minD]);
+    dcol=(d)=>tenkenColLetter(c0+(d-minD));
+  }
+  // 月の日数（閏年対応）。日付欄はこの日数だけ表示し、超える日は空欄にする
+  const dim=(year&&month)?new Date(year,month,0).getDate():31;
+  for(let d=1;d<=31;d++){
+    const col=dcol(d); if(!col)continue;
+    if(d<=dim) xml=setCellNumberInXml(xml,col+dayRow,d); // 例：31日ある月は31まで表示
+    else xml=tenkenSetCell(xml,col+dayRow,'');           // 例：2月は29/30/31を空欄に
+  }
   // 現場名：日報の工事名で統一（値セルは Q列・「日付行の2つ上」＝標準Q2/玉掛けQ3）
   if(koji!=null) xml=tenkenSetCell(xml,'Q'+(dayRow-2), koji||'');
   // 元請負業者：現場代理人の会社で（値セルは AG列・「日付行の1つ上」＝標準AG3/玉掛けAG4）
@@ -2197,13 +2217,13 @@ function tenkenMarkSheet(xml, shared, days, inspectorFull, year, month, koji, ge
   if(inspectorRow && inspectorFull) xml=tenkenSetCell(xml,'B'+inspectorRow, '点検者　：　'+inspectorFull);
   // まず全日列の項目行・点検者行を空にする（テンプレートの記入例を消す）
   for(let d=1;d<=31;d++){
-    const col=dayCols[d];if(!col)continue;
+    const col=dcol(d);if(!col)continue;
     for(const r of itemRows)xml=tenkenSetCell(xml,col+r,'');
     if(inspectorRow)xml=tenkenSetCell(xml,col+inspectorRow,'');
   }
   // 使用日に✔と点検者の苗字（excludeRowsの行は✔を付けない＝空欄のまま）
   for(const d of days){
-    const col=dayCols[d];if(!col)continue;
+    const col=dcol(d);if(!col)continue;
     for(const r of itemRows){ if(excludeRows.indexOf(r)>=0)continue; xml=tenkenSetCell(xml,col+r,'✔'); }
     if(inspectorRow&&surname)xml=tenkenSetCell(xml,col+inspectorRow,surname);
   }
