@@ -232,7 +232,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     <div class="row" style="margin-bottom:12px">
       <div class="fld"><label>工事名で絞り込み</label><select id="list_filter_kojiname"><option value="">すべて</option><option value="3号工事">3号工事</option></select></div>
       <div class="fld"><label>日付で絞り込み</label><select id="list_filter_date"><option value="">すべて</option><option value="2026-07-29">2026-07-29</option><option value="2026-07-28">2026-07-28</option></select></div>
-      <div class="fld" style="flex:0 1 160px"><label>状態で絞り込み</label><select id="list_filter_status"><option value="">すべて</option><option value="施工中">施工中</option><option value="完了">完了</option></select></div>
+      <div class="fld" style="flex:0 1 160px"><label>状態で絞り込み</label><select id="list_filter_status"><option value="">すべて</option><option value="施工中">未完了</option><option value="完了">完了</option></select></div>
     </div>
     <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
       <label style="display:flex;align-items:center;gap:6px;font-size:13px"><input type="checkbox" id="listSelectAll"> すべて選択</label>
@@ -1588,7 +1588,7 @@ function renderList(){
       </div>
       <div style="display:flex;gap:6px;align-items:center;flex:none">
         <select class="rstatus" data-id="${r.id}" style="${stStyle};border-radius:20px;padding:5px 12px;font-size:13px;font-weight:700;cursor:pointer">
-          <option value="施工中" ${st==='施工中'?'selected':''}>施工中</option>
+          <option value="施工中" ${st==='施工中'?'selected':''}>未完了</option>
           <option value="完了" ${st==='完了'?'selected':''}>完了</option>
         </select>
         <button class="btn small ghost" data-excel="${r.id}">Excel</button>
