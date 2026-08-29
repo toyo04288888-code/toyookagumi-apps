@@ -90,7 +90,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     <h2><span class="bar"></span>基本情報</h2>
     <div style="margin-bottom:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
       <button class="btn ghost small" id="importKantokuBtn">工事日報から取り込む</button>
-      <span class="muted" style="flex:1 1 240px">年月日を入れてから押すと、その日の工事日報から〔工事名・天気・工種・使用機械・作業員〕を取り込みます（クラウド共有時）。作業員は登録済みのフルネームに変換されます。</span>
+      <span class="muted" style="flex:1 1 240px">年月日を入れてから押すと、その日の工事日報から〔工事名・天気・工種・使用機械・作業員〕を取り込みます。</span>
     </div>
     <div class="row">
       <div class="fld" style="flex:1 1 150px"><label>年度（年月日から自動）</label><input type="text" id="f_nendo" readonly="" style="background:#f4f5f7" placeholder="年月日を入れると自動"></div>
@@ -122,7 +122,6 @@ https://github.com/nodeca/pako/blob/main/LICENSE
 
   <div class="card">
     <h2><span class="bar"></span>使用機械</h2>
-    <div class="muted" style="margin-bottom:8px">「＋ 機械を追加」で使った機械をプルダウンから選べます（複数可）。候補は「設定」タブで編集できます。<br>※ この項目はKY日報のExcelには出力されません。</div>
     <table>
       <thead><tr><th>使用した機械</th><th style="width:36px"></th></tr></thead>
       <tbody id="machinesBody"></tbody>
@@ -140,7 +139,6 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     <h2><span class="bar"></span>本日のTBM（こうやって作業を進めよう！）</h2>
     <div class="fld"><select id="f_tbm"><option value="">選択…</option></select></div>
     <div class="muted" style="margin-top:6px" id="tbmWeekHint"></div>
-    <div class="muted" style="margin-top:4px">候補は「設定」タブの「TBMの管理」で登録・編集できます。TBMは月〜金は同じでOK（同じ週の日報から自動で入ります）。</div>
   </div>
 
   <div class="card">
@@ -157,7 +155,6 @@ https://github.com/nodeca/pako/blob/main/LICENSE
 
   <div class="card">
     <h2><span class="bar"></span>建設作業員名簿</h2>
-    <div class="muted" style="margin-bottom:8px">「＋ 会社を追加」で行を追加し、所属会社名・職長名・作業員はそれぞれ「設定」タブで登録した候補からプルダウンで選べます。</div>
     <table>
       <thead><tr><th style="width:20%">所属会社名</th><th style="width:14%">元請/下請</th><th style="width:16%">職長名</th><th>本日の作業員名（複数選択可）</th><th style="width:36px"></th></tr></thead>
       <tbody id="workerBody"></tbody>
@@ -220,7 +217,6 @@ https://github.com/nodeca/pako/blob/main/LICENSE
 <div id="listTab" class="hidden">
   <div class="card">
     <h2><span class="bar"></span>点検簿を出力（使用機械）</h2>
-    <div class="muted" style="margin-bottom:10px">「工事現場」を選ぶと、その現場で使った機械ごとに点検簿を作ります（1機械＝1ファイル、複数機械ならZIPでまとめてダウンロード）。その現場で使った月のシート（例：5月・6月…）を1つのExcelにまとめて出力し、使用日の列に✔が入ります。点検者は下の一覧で機械ごとに選べます（日報の作業員・職長から選択）。先に「設定」タブで点検簿テンプレートを登録してください。</div>
     <div class="row">
       <div class="fld" style="flex:1 1 260px"><label>工事現場</label><select id="tenken_koji"><option value="">すべての工事</option></select></div>
     </div>
