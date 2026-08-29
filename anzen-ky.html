@@ -1591,22 +1591,19 @@ function renderList(){
       ? 'background:#e8eaed;color:#5f6368;border:1px solid #d0d3d6'
       : 'background:#ffe8cf;color:#b5651d;border:1px solid #f0c690';
     return `
-    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 12px;margin-bottom:6px;border:1px solid var(--border);border-left:6px solid ${stripe};border-radius:8px;background:${rowBg}">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:5px 12px;margin-bottom:4px;border:1px solid var(--border);border-left:6px solid ${stripe};border-radius:8px;background:${rowBg}">
       <div style="display:flex;align-items:center;gap:10px;min-width:0">
         <input type="checkbox" class="listsel" data-id="${r.id}">
-        <div style="min-width:0">
-          <div style="font-weight:700">${esc(r.report_date||'（日付未設定）')}</div>
-          ${r.place?`<div class="muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(r.place)}</div>`:''}
-        </div>
+        <span style="font-weight:700">${esc(r.report_date||'（日付未設定）')}</span>
       </div>
       <div style="display:flex;gap:6px;align-items:center;flex:none">
-        <select class="rstatus" data-id="${r.id}" style="${stStyle};border-radius:20px;padding:5px 12px;font-size:13px;font-weight:700;cursor:pointer">
+        <select class="rstatus" data-id="${r.id}" style="${stStyle};border-radius:20px;padding:4px 12px;font-size:13px;font-weight:700;cursor:pointer">
           <option value="施工中" ${st==='施工中'?'selected':''}>未完了</option>
           <option value="完了" ${st==='完了'?'selected':''}>完了</option>
         </select>
         <button class="btn small ghost" data-excel="${r.id}">Excel</button>
         <button class="btn small ghost" data-edit="${r.id}">編集</button>
-        <button class="btn small danger" data-del="${r.id}" title="削除" style="font-weight:700;padding:4px 11px;line-height:1;font-size:16px">×</button>
+        <button class="btn small danger" data-del="${r.id}" title="削除" style="font-weight:700;padding:3px 10px;line-height:1;font-size:15px">×</button>
       </div>
     </div>`;
   };
