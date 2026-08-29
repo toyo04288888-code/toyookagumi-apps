@@ -2023,6 +2023,15 @@ function refreshTenkenExportUI(){
   refreshTenkenMachineInspectors();
 }
 // 選んだ工事現場で出力される機械名の一覧（玉掛け含む）
+// 機械名を大まかに正規化して照合するためのキー。
+// ・半角全角（英数字・カタカナ）や半角カナ⇔全角カナをNFKCで統一
+// ・空白を無視
+// ・小数を正規化（0.10→0.1）。0.1BHと0.10BHを同じ機械として扱う
+function normMachine(name){
+  let s=String(name||'');
+  try{ s=s.normalize('NFKC'); }catch(e){}
+  return s.replace(/[\s　]/g,'').replace(/\d*\.\d+/g, m=>String(parseFloat(m)));
+}
 function getTenkenTargetMachines(){
   const koji=($('tenken_koji')&&$('tenken_koji').value)||'';
   const set=new Set(); let hasReport=false;
@@ -2030,7 +2039,7 @@ function getTenkenTargetMachines(){
     if(!r.report_date)return;
     if(koji&&r.koji_name!==koji)return;
     hasReport=true;
-    (Array.isArray(r.machines)?r.machines:[]).forEach(mc=>{const n=(mc||'').trim();if(n)set.add(n);});
+    (Array.isArray(r.machines)?r.machines:[]).forEach(mc=>{const n=normMachine(mc);if(n)set.add(n);});
   });
   if(hasReport)set.add('玉掛け');
   return [...set];
@@ -2392,7 +2401,7 @@ async function exportTenken(){
     const te=ensure(tama,key,year,month);
     te.days.add(day); if(r.koji_name)te.kojis.add(r.koji_name); if(r.genba)te.genbas.add(r.genba);
     (Array.isArray(r.machines)?r.machines:[]).forEach(mc=>{
-      const name=(mc||'').trim();if(!name)return;
+      const name=normMachine(mc);if(!name)return; // 0.10BH→0.1BH に正規化して重複を1つに
       const e=ensure(mach[name]=mach[name]||{},key,year,month);
       e.days.add(day); if(r.koji_name)e.kojis.add(r.koji_name); if(r.genba)e.genbas.add(r.genba);
     });
@@ -2405,17 +2414,21 @@ async function exportTenken(){
   try{
     const probe=await JSZip.loadAsync(base64ToArrayBuffer(tpl.base64));
     const sheetNames=(await resolveAllSheetPaths(probe)).map(s=>s.name.trim());
+    // 点検簿シート名も正規化して照合（半角全角・カナ・小数の違いを無視）。normキー→実際のシート名
+    const sheetByNorm=new Map();
+    sheetNames.forEach(s=>{const n=normMachine(s);if(!sheetByNorm.has(n))sheetByNorm.set(n,s);});
     const kojiSafe=koji?koji.replace(/[\\/:*?"<>|]/g,'_'):'';
     const kojiPart=kojiSafe?`_${kojiSafe}`:''; // 工事現場を選んだらファイル名に付ける
     const files=[];const unmatched=[];
-    for(const name of names){
-      if(!sheetNames.includes(name)){unmatched.push(name);continue;}
-      const byKey=mach[name];
+    for(const normName of names){
+      const name=sheetByNorm.get(normName); // テンプレートの実際のシート名を使う
+      if(!name){unmatched.push(normName);continue;}
+      const byKey=mach[normName];
       const keys=Object.keys(byKey).sort(); // 年月の昇順
       const years=[...new Set(keys.map(k=>byKey[k].year))];
       const multiYear=years.length>1; // 複数年にまたがる場合はシート名に年を付ける
-      const inspector=tenkenInspectorMap[name]||''; // 機械ごとに選んだ点検者
-      const excludeRows=(name==='玉掛け')?[10,16,22,24]:[]; // 玉掛はこの行はチェック不要
+      const inspector=tenkenInspectorMap[normName]||''; // 機械ごとに選んだ点検者
+      const excludeRows=(normName==='玉掛け')?[10,16,22,24]:[]; // 玉掛はこの行はチェック不要
       const specs=keys.map(k=>{
         const e=byKey[k];
         const kojiName=koji || [...e.kojis].join('・'); // 現場名（選んだ工事、無ければ日報の工事名）
