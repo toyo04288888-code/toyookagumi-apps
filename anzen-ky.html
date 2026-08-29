@@ -93,7 +93,8 @@ https://github.com/nodeca/pako/blob/main/LICENSE
       <span class="muted" style="flex:1 1 240px">年月日を入れてから押すと、その日の工事日報から〔工事名・天気・工種・使用機械・作業員〕を取り込みます（クラウド共有時）。作業員は登録済みのフルネームに変換されます。</span>
     </div>
     <div class="row">
-      <div class="fld" style="flex:2 1 320px"><label>工事名</label><select id="f_kojiname"><option value="">選択…</option><option value="3号工事">3号工事</option></select></div>
+      <div class="fld" style="flex:1 1 150px"><label>年度</label><input type="text" id="f_nendo" list="nendoList" placeholder="例：令和8年度"><datalist id="nendoList"></datalist></div>
+      <div class="fld" style="flex:2 1 300px"><label>工事名</label><select id="f_kojiname"><option value="">選択…</option><option value="3号工事">3号工事</option></select></div>
       <div class="fld" style="flex:1 1 200px"><label>工事場所</label><select id="f_place"><option value="">選択…</option><option value="春江町">春江町</option></select></div>
     </div>
     <div class="row" style="margin-top:10px">
@@ -389,7 +390,7 @@ const state={mode:'local',sb:null,reports:[],r:null,editId:null,cloudKojiNames:n
 function newReport(){
   return {
     id:uid(),
-    koji_name:'', place:'', report_date:'', weather:'',
+    nendo:'', koji_name:'', place:'', report_date:'', weather:'',
     genba:'', shunin:'',
     works:[{kind:'',content:''}],
     machines:[],
@@ -1389,6 +1390,7 @@ function renderNecchusho(){
 
 /* ===== 基本情報バインド ===== */
 function bindBasic(){
+  $('f_nendo').oninput=e=>state.r.nendo=e.target.value;
   $('f_date').oninput=e=>{state.r.report_date=e.target.value;updateYoubi();applyWeekTbm();};
   $('f_weather').onchange=e=>state.r.weather=e.target.value;
   $('f_kojiname').onchange=e=>state.r.koji_name=e.target.value;
@@ -1509,6 +1511,10 @@ function loadBasicToForm(){
   renderPlaceSelect();
   renderGenbaShuninSelect();
   renderPatrolPersonSelect();
+  // 年度：既存の年度を候補に出しつつ直接入力できる
+  const nd=$('f_nendo'); if(nd){ nd.value=state.r.nendo||''; const dl=$('nendoList');
+    if(dl){const ys=[...new Set(state.reports.map(r=>r.nendo).filter(Boolean))].sort().reverse();
+      dl.innerHTML=ys.map(y=>`<option value="${esc(y)}"></option>`).join('');} }
   $('f_date').value=state.r.report_date||'';
   updateYoubi();
   // 天気：選択肢に無い値（工事日報から取り込んだ「雨のち晴」等）も表示できるよう補う
@@ -1536,10 +1542,27 @@ function renderAll(){
 }
 
 /* ===== 保存・新規・編集 ===== */
+// 年度は最大5年度まで。超えたら一番古い年度を確認のうえ削除する
+const MAX_NENDO=5;
+async function enforceNendoLimit(){
+  const byNendo=new Map(); // 年度 → その年度の最新日付
+  state.reports.forEach(r=>{const n=(r.nendo||'').trim();if(!n)return;const cur=byNendo.get(n)||'';const d=r.report_date||'';if(d>cur)byNendo.set(n,d);});
+  const nendos=[...byNendo.keys()];
+  if(nendos.length<=MAX_NENDO)return;
+  nendos.sort((a,b)=>(byNendo.get(b)||'').localeCompare(byNendo.get(a)||'')); // 新しい順
+  const oldest=nendos[nendos.length-1]; // 最新日付が一番古い＝一番古い年度
+  const ids=state.reports.filter(r=>(r.nendo||'').trim()===oldest).map(r=>r.id);
+  if(!ids.length)return;
+  if(confirm(`保存できる年度は${MAX_NENDO}年度までです。\n一番古い「${oldest}」の日報 ${ids.length}件を削除しますか？\n（キャンセルすると今回は削除しません）`)){
+    for(const id of ids){ await Store.deleteReport(id); }
+    toast(`「${oldest}」を削除しました`);
+  }
+}
 $('saveReportBtn').onclick=async()=>{
   if(!state.r.report_date){alert('年月日を入力してください');return;}
   const ok=await Store.saveReport(state.r);
   if(ok){
+    await enforceNendoLimit();
     toast('保存しました');renderList();
     // 保存したら自動で新規入力画面に切り替える
     state.editId=null;state.r=newReport();renderAll();$('editFlag').textContent='';
@@ -1556,7 +1579,8 @@ function editReport(id){
   $('editFlag').textContent='編集中：'+state.r.report_date;
   switchTab('editor');
 }
-let expandedKoji=new Set(); // 開いている工事名を覚える（既定は閉じる）
+let expandedNendo=new Set(); // 開いている年度を覚える（既定は閉じる）
+let expandedKoji=new Set(); // 開いている工事（年度+工事名）を覚える（既定は閉じる）
 function renderList(){
   const box=$('reportListBody');
 
@@ -1609,17 +1633,11 @@ function renderList(){
   };
   // 完了した工事（下にグレー表示）
   const doneKojis=new Set(getCompletedKojis());
-  // 工事ごとにグループ分け（各工事内は日付の新しい順）
-  const groups=new Map();
-  sorted.forEach(r=>{const key=(r.koji_name||'').trim()||'（工事名なし）';if(!groups.has(key))groups.set(key,[]);groups.get(key).push(r);});
-  // 未完了の工事を上、完了の工事を下。同じ状態内は最新日報の新しい順
-  const groupArr=[...groups.entries()].sort((a,b)=>{
-    const da=doneKojis.has(a[0])?1:0, db=doneKojis.has(b[0])?1:0;
-    if(da!==db)return da-db;
-    return ((b[1][0]||{}).report_date||'').localeCompare((a[1][0]||{}).report_date||'');
-  });
-  box.innerHTML=groupArr.map(([koji,list])=>{
-    const open=expandedKoji.has(koji);           // 既定は閉じる
+  const kojiKey=(nendo,koji)=>nendo+''+koji;
+  // 1工事分（見出し＋日報）のHTML
+  const kojiBlockHtml=(nendo,koji,list)=>{
+    const kk=kojiKey(nendo,koji);
+    const open=expandedKoji.has(kk);
     const isDone=doneKojis.has(koji);
     const doneN=list.filter(r=>(r.status||'施工中')==='完了').length;
     const headBg=isDone?'#eceef0':'#eef2fb';
@@ -1629,21 +1647,52 @@ function renderList(){
       ? `<button class="koji-done" data-koji="${esc(koji)}" data-done="0" style="font-size:12px;padding:4px 10px;border-radius:20px;border:1px solid #c7cacf;background:#fff;color:#5f6368;cursor:pointer">未完了に戻す</button>`
       : `<button class="koji-done" data-koji="${esc(koji)}" data-done="1" style="font-size:12px;padding:4px 12px;border-radius:20px;border:1px solid #2e9e57;background:#2e9e57;color:#fff;font-weight:700;cursor:pointer">完了</button>`;
     return `
-    <div style="margin-bottom:14px">
-      <div class="koji-head" data-koji="${esc(koji)}" style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:10px 12px;background:${headBg};border:1px solid ${headBorder};border-radius:8px;font-weight:700;${headColor}">
+    <div style="margin-bottom:10px">
+      <div class="koji-head" data-kk="${esc(kk)}" data-nendo="${esc(nendo)}" data-koji="${esc(koji)}" style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:9px 12px;background:${headBg};border:1px solid ${headBorder};border-radius:8px;font-weight:700;${headColor}">
         <span style="width:14px;display:inline-block">${open?'▼':'▶'}</span>
         <span style="flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(koji)}${isDone?'（完了）':''}</span>
         <span class="muted" style="font-weight:600;font-size:12.5px">${list.length}件${doneN?`・完了${doneN}`:''}</span>
         ${doneBtn}
-        <button class="koji-del" data-koji="${esc(koji)}" title="この工事の日報をすべて削除" style="font-size:14px;padding:4px 9px;border-radius:20px;border:1px solid #e0a3a3;background:#fff;color:#c0392b;cursor:pointer">🗑</button>
+        <button class="koji-del" data-nendo="${esc(nendo)}" data-koji="${esc(koji)}" title="この工事の日報をすべて削除" style="font-size:14px;padding:4px 9px;border-radius:20px;border:1px solid #e0a3a3;background:#fff;color:#c0392b;cursor:pointer">🗑</button>
       </div>
-      <div style="margin-top:8px;padding-left:6px;${open?'':'display:none'}">${list.map(rowHtml).join('')}</div>
+      <div style="margin-top:6px;padding-left:6px;${open?'':'display:none'}">${list.map(rowHtml).join('')}</div>
+    </div>`;
+  };
+  // 年度 → 工事 → 日報。年度は最新日報の新しい順
+  const nendoGroups=new Map();
+  sorted.forEach(r=>{const key=(r.nendo||'').trim()||'（年度未設定）';if(!nendoGroups.has(key))nendoGroups.set(key,[]);nendoGroups.get(key).push(r);});
+  const nendoLatest=(list)=>list.reduce((m,r)=>((r.report_date||'')>m?(r.report_date||''):m),'');
+  const nendoArr=[...nendoGroups.entries()].sort((a,b)=>nendoLatest(b[1]).localeCompare(nendoLatest(a[1])));
+  box.innerHTML=nendoArr.map(([nendo,nList])=>{
+    const nopen=expandedNendo.has(nendo);
+    // 年度内を工事ごとに（未完了を上、完了を下）
+    const kg=new Map();
+    nList.forEach(r=>{const k=(r.koji_name||'').trim()||'（工事名なし）';if(!kg.has(k))kg.set(k,[]);kg.get(k).push(r);});
+    const kArr=[...kg.entries()].sort((a,b)=>{
+      const da=doneKojis.has(a[0])?1:0, db=doneKojis.has(b[0])?1:0;
+      if(da!==db)return da-db;
+      return ((b[1][0]||{}).report_date||'').localeCompare((a[1][0]||{}).report_date||'');
+    });
+    const inner=kArr.map(([koji,list])=>kojiBlockHtml(nendo,koji,list)).join('');
+    return `
+    <div style="margin-bottom:16px">
+      <div class="nendo-head" data-nendo="${esc(nendo)}" style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:12px 14px;background:#2f6fed;color:#fff;border-radius:10px;font-weight:700;font-size:15px">
+        <span style="width:16px;display:inline-block">${nopen?'▼':'▶'}</span>
+        <span style="flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(nendo)}</span>
+        <span style="font-weight:600;font-size:13px;opacity:.9">${kg.size}工事・${nList.length}件</span>
+      </div>
+      <div style="margin-top:10px;padding-left:6px;${nopen?'':'display:none'}">${inner}</div>
     </div>`;
   }).join('');
+  box.querySelectorAll('.nendo-head').forEach(h=>h.onclick=()=>{
+    const n=h.dataset.nendo;
+    if(expandedNendo.has(n))expandedNendo.delete(n); else expandedNendo.add(n);
+    renderList();
+  });
   box.querySelectorAll('.koji-head').forEach(h=>h.onclick=(e)=>{
     if(e.target.closest('.koji-done')||e.target.closest('.koji-del'))return; // ボタンは開閉に反応させない
-    const koji=h.dataset.koji;
-    if(expandedKoji.has(koji))expandedKoji.delete(koji); else expandedKoji.add(koji);
+    const kk=h.dataset.kk;
+    if(expandedKoji.has(kk))expandedKoji.delete(kk); else expandedKoji.add(kk);
     renderList();
   });
   box.querySelectorAll('.koji-done').forEach(b=>b.onclick=async(e)=>{
@@ -1653,12 +1702,11 @@ function renderList(){
   });
   box.querySelectorAll('.koji-del').forEach(b=>b.onclick=async(e)=>{
     e.stopPropagation();
-    const koji=b.dataset.koji;
-    const ids=state.reports.filter(r=>((r.koji_name||'').trim()||'（工事名なし）')===koji).map(r=>r.id);
+    const koji=b.dataset.koji, nendo=b.dataset.nendo;
+    const ids=state.reports.filter(r=>((r.nendo||'').trim()||'（年度未設定）')===nendo && ((r.koji_name||'').trim()||'（工事名なし）')===koji).map(r=>r.id);
     if(!ids.length)return;
-    if(!confirm(`「${koji}」の日報 ${ids.length}件をすべて削除します。よろしいですか？（元に戻せません）`))return;
+    if(!confirm(`「${nendo}」の「${koji}」の日報 ${ids.length}件をすべて削除します。よろしいですか？（元に戻せません）`))return;
     for(const id of ids){ await Store.deleteReport(id); }
-    await setKojiDone(koji,false); // 完了リストからも外す
     renderList();
   });
   const selAll=$('listSelectAll'); if(selAll)selAll.checked=false;
