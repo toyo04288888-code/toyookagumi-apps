@@ -2037,7 +2037,9 @@ function getTenkenTargetMachines(){
     hasReport=true;
     (Array.isArray(r.machines)?r.machines:[]).forEach(mc=>{const n=normMachine(mc);if(n)set.add(n);});
   });
-  if(hasReport)set.add('玉掛け');
+  // 「すべての工事」のときは、登録済みの使用機械（マスタ）を全部表示（未使用の機械も出す）
+  if(!koji) getMachines().forEach(m=>{const n=normMachine(m);if(n)set.add(n);});
+  if(hasReport||!koji)set.add('玉掛け');
   return [...set];
 }
 // 点検者の候補（選んだ工事現場の日報に入っている作業員＋職長）
