@@ -127,6 +127,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
       <tbody id="machinesBody"></tbody>
     </table>
     <button class="btn ghost small add-row-btn" id="addMachine">＋ 機械を追加</button>
+    <datalist id="machineMasterList"></datalist>
   </div>
 
   <div class="card">
@@ -645,14 +646,14 @@ function syncKyContentFromWorks(){
 function renderMachines(){
   const tb=$('machinesBody');if(!tb)return;tb.innerHTML='';
   const master=getMachines();
+  const dl=$('machineMasterList'); if(dl)dl.innerHTML=master.map(n=>`<option value="${esc(n)}"></option>`).join('');
   if(!Array.isArray(state.r.machines))state.r.machines=[];
   state.r.machines.forEach((val,idx)=>{
-    // 保存済みの値がマスタから消えていても、その値を選択肢に含めて表示する
-    const opts=[...new Set([...master, ...(val?[val]:[])])];
     const tr=document.createElement('tr');
-    tr.innerHTML=`<td><select class="mc"><option value="">選択…</option>${opts.map(n=>`<option value="${esc(n)}" ${n===val?'selected':''}>${esc(n)}</option>`).join('')}</select></td>
+    // 選択も直接入力もできる（リース機械などマスタに無い名前も入力可）
+    tr.innerHTML=`<td><input class="mc" list="machineMasterList" value="${esc(val||'')}" placeholder="選択・入力（リース機械名も可）"></td>
       <td style="width:36px"><button class="del">×</button></td>`;
-    tr.querySelector('.mc').onchange=e=>{state.r.machines[idx]=e.target.value;};
+    tr.querySelector('.mc').oninput=e=>{state.r.machines[idx]=e.target.value;};
     tr.querySelector('.del').onclick=()=>{state.r.machines.splice(idx,1);renderMachines();};
     tb.appendChild(tr);
   });
@@ -2178,9 +2179,24 @@ function tenkenStampName(name){
 }
 
 // 1シート分のxmlに、使用日の✔と点検者・年月・現場名・現場代理人を記入する（記入前にテンプレの記入例を消す）
+// テキストに needle を含むセルを、needle部分だけ replacement に置換する（リースシートの「（機械名）」差し替え用）
+function tenkenReplaceText(xml, shared, needle, replacement){
+  let m; const cellRe=/<c r="([A-Z]+\d+)"([^>]*)>([\s\S]*?)<\/c>/g; const hits=[];
+  while((m=cellRe.exec(xml))){
+    const ref=m[1], attrs=m[2], inner=m[3]; let text='';
+    if(/t="s"/.test(attrs)){const v=inner.match(/<v>(\d+)<\/v>/);if(v)text=shared[+v[1]]||'';}
+    else{let tt,tr=/<t[^>]*>([\s\S]*?)<\/t>/g;while((tt=tr.exec(inner)))text+=tenkenDecodeXml(tt[1]);
+      const vv=inner.match(/<v>([\s\S]*?)<\/v>/);if(vv&&isNaN(+vv[1]))text+=tenkenDecodeXml(vv[1]);}
+    if(text.indexOf(needle)>=0)hits.push({ref,newText:text.split(needle).join(replacement)});
+  }
+  hits.forEach(h=>{xml=setCellTextInXml(xml,h.ref,h.newText);});
+  return xml;
+}
 // inspectorFull=選択した点検者のフルネーム。「点検者：」にはフルネーム、各日の判子には苗字を入れる。
-function tenkenMarkSheet(xml, shared, days, inspectorFull, year, month, koji, genba, motouke, excludeRows){
+// machineName=シート内の目印「（機械名）」に入れる機械名（リース機械のとき使う）
+function tenkenMarkSheet(xml, shared, days, inspectorFull, year, month, koji, genba, motouke, excludeRows, machineName){
   excludeRows=excludeRows||[]; // ✔を付けない行（玉掛の10・16・22・24行など）
+  if(machineName) xml=tenkenReplaceText(xml, shared, '（機械名）', machineName); // リースシートの機械名を差し替え
   const {map:dayCols,row:dayRow}=tenkenFindDayColumns(xml);
   if(!dayRow||Object.keys(dayCols).length===0)return {xml,ok:false};
   const {itemRows,inspectorRow}=tenkenDetectRows(xml,dayRow,shared);
@@ -2290,7 +2306,7 @@ function tenkenFitOnePage(xml){
 
 // マスタから対象機械のシートだけを残し、使った月ごとにシートを複製した単一Excel（Blob）を作る
 // specs: [{name(シート名), year, month, days:Set(使用日), koji, genba, motouke, inspector}, …] 表示順
-async function tenkenBuildMachineFile(base64, sheetName, specs){
+async function tenkenBuildMachineFile(base64, sheetName, specs, machineName){
   const zip=await JSZip.loadAsync(base64ToArrayBuffer(base64));
   const sheets=await resolveAllSheetPaths(zip);
   const shared=await tenkenLoadSharedStrings(zip);
@@ -2315,7 +2331,7 @@ async function tenkenBuildMachineFile(base64, sheetName, specs){
   // 各パートにその月のデータを記入
   for(const p of parts){
     const sp=p.spec;
-    let x=tenkenMarkSheet(baseXml,shared,[...sp.days],sp.inspector||'',sp.year,sp.month,sp.koji,sp.genba,sp.motouke,sp.excludeRows).xml;
+    let x=tenkenMarkSheet(baseXml,shared,[...sp.days],sp.inspector||'',sp.year,sp.month,sp.koji,sp.genba,sp.motouke,sp.excludeRows,machineName).xml;
     if(sheetName.indexOf('玉掛')>=0) x=tenkenFitOnePage(x); // 玉掛は1ページに収める
     zip.file(p.path,x);
     if(p.path!==keep.path && keepRelsXml){
@@ -2408,6 +2424,7 @@ async function exportTenken(){
 
   // 選んだ工事現場の日報から「機械名→{年月(YYYY-MM)→{使用日,工事名,現場代理人}}」を作る
   const mach={};
+  const machDisplay={}; // 正規化キー→元の表記（リースの機械名表示に使う）
   const tama={}; // 玉掛け用（日報がある全日）
   const ensure=(obj,key,year,month)=>obj[key]=obj[key]||{year,month,days:new Set(),kojis:new Set(),genbas:new Set()};
   state.reports.forEach(r=>{
@@ -2420,6 +2437,7 @@ async function exportTenken(){
     te.days.add(day); if(r.koji_name)te.kojis.add(r.koji_name); if(r.genba)te.genbas.add(r.genba);
     (Array.isArray(r.machines)?r.machines:[]).forEach(mc=>{
       const name=normMachine(mc);if(!name)return; // 0.10BH→0.1BH に正規化して重複を1つに
+      if(!machDisplay[name])machDisplay[name]=(mc||'').trim();
       const e=ensure(mach[name]=mach[name]||{},key,year,month);
       e.days.add(day); if(r.koji_name)e.kojis.add(r.koji_name); if(r.genba)e.genbas.add(r.genba);
     });
@@ -2435,12 +2453,19 @@ async function exportTenken(){
     // 点検簿シート名も正規化して照合（半角全角・カナ・小数の違いを無視）。normキー→実際のシート名
     const sheetByNorm=new Map();
     sheetNames.forEach(s=>{const n=normMachine(s);if(!sheetByNorm.has(n))sheetByNorm.set(n,s);});
+    const leaseSheet=sheetByNorm.get(normMachine('リース')); // リース用の汎用シート（あれば）
     const kojiSafe=koji?koji.replace(/[\\/:*?"<>|]/g,'_'):'';
     const kojiPart=kojiSafe?`_${kojiSafe}`:''; // 工事現場を選んだらファイル名に付ける
     const files=[];const unmatched=[];
     for(const normName of names){
-      const name=sheetByNorm.get(normName); // テンプレートの実際のシート名を使う
-      if(!name){unmatched.push(normName);continue;}
+      let name=sheetByNorm.get(normName); // テンプレートの実際のシート名
+      let machineName='';                  // リースのとき、シートの「（機械名）」に入れる名前
+      if(!name){
+        // テンプレに専用シートが無い機械は、リース用の汎用シートで出す（玉掛けは除く）
+        if(leaseSheet && normName!=='玉掛け'){ name=leaseSheet; machineName=machDisplay[normName]||normName; }
+        else { unmatched.push(machDisplay[normName]||normName); continue; }
+      }
+      const display=machineName||name;     // 表示・ファイル名（リースは元の機械名）
       const byKey=mach[normName];
       const keys=Object.keys(byKey).sort(); // 年月の昇順
       const years=[...new Set(keys.map(k=>byKey[k].year))];
@@ -2454,11 +2479,11 @@ async function exportTenken(){
         return {name:multiYear?`${e.year}年${e.month}月`:`${e.month}月`, year:e.year, month:e.month,
                 days:e.days, koji:kojiName, genba:genbaName, motouke:tenkenMotoukeName(genbaName), inspector, excludeRows};
       });
-      const blob=await tenkenBuildMachineFile(tpl.base64,name,specs);
-      if(!blob){unmatched.push(name);continue;}
-      const safe=name.replace(/[\\/:*?"<>|]/g,'_');
+      const blob=await tenkenBuildMachineFile(tpl.base64,name,specs,machineName);
+      if(!blob){unmatched.push(display);continue;}
+      const safe=display.replace(/[\\/:*?"<>|]/g,'_');
       const yLabel=years.length===1?`_${years[0]}年`:`_${Math.min(...years)}-${Math.max(...years)}年`;
-      files.push({fname:`点検簿${kojiPart}_${safe}${yLabel}.xlsx`,blob,machine:name,monthCount:keys.length});
+      files.push({fname:`点検簿${kojiPart}_${safe}${yLabel}.xlsx`,blob,machine:display,monthCount:keys.length});
     }
     if(!files.length){note.textContent=`点検簿にシートが無い機械のみでした：${unmatched.join('・')}`;return;}
 
