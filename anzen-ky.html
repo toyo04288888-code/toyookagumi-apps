@@ -2221,6 +2221,15 @@ function tenkenMarkSheet(xml, shared, days, inspectorFull, year, month, koji, ge
     if(d<=dim) xml=setCellNumberInXml(xml,col+dayRow,d); // 例：31日ある月は31まで表示
     else xml=tenkenSetCell(xml,col+dayRow,'');           // 例：2月は29/30/31を空欄に
   }
+  // 曜日を各日に文字で書き込む（曜日行＝日付行の1つ下）。数式の再計算に頼らず、印刷・どの環境でも曜日が出るように
+  if(ymCells && year && month){
+    const wdRow=dayRow+1, WD=['日','月','火','水','木','金','土'];
+    for(let d=1;d<=31;d++){
+      const col=dcol(d); if(!col)continue;
+      if(d<=dim) xml=tenkenSetCell(xml,col+wdRow, WD[new Date(year,month-1,d).getDay()]);
+      else xml=tenkenSetCell(xml,col+wdRow,'');
+    }
+  }
   // 現場名：日報の工事名で統一（値セルは Q列・「日付行の2つ上」＝標準Q2/玉掛けQ3）
   if(koji!=null) xml=tenkenSetCell(xml,'Q'+(dayRow-2), koji||'');
   // 元請負業者：現場代理人の会社で（値セルは AG列・「日付行の1つ上」＝標準AG3/玉掛けAG4）
