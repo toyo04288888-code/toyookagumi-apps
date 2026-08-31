@@ -2221,8 +2221,9 @@ function tenkenMarkSheet(xml, shared, days, inspectorFull, year, month, koji, ge
     if(d<=dim) xml=setCellNumberInXml(xml,col+dayRow,d); // 例：31日ある月は31まで表示
     else xml=tenkenSetCell(xml,col+dayRow,'');           // 例：2月は29/30/31を空欄に
   }
-  // 曜日を各日に文字で書き込む（曜日行＝日付行の1つ下）。数式の再計算に頼らず、印刷・どの環境でも曜日が出るように
-  if(ymCells && year && month){
+  // 曜日を各日に文字で書き込む（曜日行＝日付行の1つ下）。数式の有無・再計算に頼らず、
+  // 印刷・どの環境でも、最終日(31日)まで曜日が出るようにする
+  if(year && month){
     const wdRow=dayRow+1, WD=['日','月','火','水','木','金','土'];
     for(let d=1;d<=31;d++){
       const col=dcol(d); if(!col)continue;
