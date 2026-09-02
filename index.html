@@ -225,8 +225,6 @@
       <div class="fld" style="flex:0 1 220px"><label>作成者</label>
         <select id="m_writer"><option value="">選択…</option></select></div>
       <div id="masterWriterStamp"></div>
-      <div class="fld" style="flex:0 1 150px"><label>状態</label>
-        <select id="m_status"><option value="active">施工中</option><option value="done">完了</option></select></div>
     </div>
     <div class="row">
       <div class="fld" style="flex:1 1 150px"><label>工事番号</label><input id="m_kojino"></div>
@@ -674,7 +672,7 @@ function editReport(id){const src=state.reports.find(x=>x.id===id);if(!src)retur
 
 /* ===== 工事マスター（工事一覧） ===== */
 const M_FIELDS={m_kojino:'koji_no',m_hacchusha:'hacchusha',m_kojiname:'koji_name',m_place:'place',
-  m_status:'status',m_sakusei:'sakusei_date',m_kouki_s:'kouki_start',m_kouki_e:'kouki_end',m_gaiyo:'gaiyo'};
+  m_sakusei:'sakusei_date',m_kouki_s:'kouki_start',m_kouki_e:'kouki_end',m_gaiyo:'gaiyo'};
 function bindMaster(){
   Object.entries(M_FIELDS).forEach(([id,k])=>{
     const el=$(id);const ev=(el.tagName==='SELECT')?'onchange':'oninput';
@@ -693,7 +691,6 @@ function updateMasterWriterStamp(){
 }
 function loadMasterToForm(){
   Object.entries(M_FIELDS).forEach(([id,k])=>{$(id).value=state.m[k]||'';});
-  $('m_status').value=state.m.status||'active';
   renderMasterWriterOptions();updateMasterWriterStamp();
   $('masterFormTitle').textContent=state.masterEditId?'現場を編集':'現場を登録';
   $('saveMaster').textContent=state.masterEditId?'この現場を更新':'この現場を登録';
@@ -704,33 +701,18 @@ function koukiLabel(m){
   const a=f(m.kouki_start),b=f(m.kouki_end);
   return (a||b)?`${a}～${b}`:'';
 }
-function isDone(m){return m.status==='done';}
-function statusBadge(m){
-  return isDone(m)
-    ? '<span style="display:inline-block;padding:2px 9px;border-radius:11px;background:#eceff1;color:#78909c;font-size:12px;font-weight:700;white-space:nowrap">完了</span>'
-    : '<span style="display:inline-block;padding:2px 9px;border-radius:11px;background:#e6f4ea;color:#1a7f37;font-size:12px;font-weight:700;white-space:nowrap">施工中</span>';
-}
-async function toggleMasterStatus(id){
-  const src=state.masters.find(x=>x.id===id);if(!src)return;
-  const m=JSON.parse(JSON.stringify(src));
-  m.status=isDone(m)?'active':'done';
-  const err=await MasterStore.save(m);
-  if(err){showToast('変更できませんでした',true);alert('保存エラー：\n'+(err.message||JSON.stringify(err)));return;}
-  await MasterStore.load();buildLists();renderMaster();
-  showToast(m.status==='done'?'完了にしました':'施工中に戻しました');
-}
+/* 工事番号を新しい順（大きい順）に並べる用の比較 */
+function kojiNoCompare(a,b){return String(b.koji_no||'').localeCompare(String(a.koji_no||''),'ja',{numeric:true});}
 function renderMaster(){
   loadMasterToForm();
   const el=$('masterList');
   const errBox=state.masterError?`<div class="note" style="background:#fdecea;border-color:#e7b4ac;color:#b53;margin-bottom:10px">${esc(state.masterError)}</div>`:'';
   if(!state.masters.length){el.innerHTML=errBox+'<div class="empty">まだ現場が登録されていません</div>';return;}
   const miniHanko=w=>w?`<span style="display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;border:2px solid #c8412b;border-radius:50%;color:#c8412b;font-weight:700;font-size:11px;line-height:1.05;text-align:center;padding:2px;box-sizing:border-box;transform:rotate(-4deg)">${esc(w)}</span>`:'';
-  const doneCnt=state.masters.filter(isDone).length, actCnt=state.masters.length-doneCnt;
-  const sorted=[...state.masters].sort((a,b)=>(isDone(a)?1:0)-(isDone(b)?1:0));
-  el.innerHTML=errBox+`<div class="muted" style="margin-bottom:8px">施工中 ${actCnt}件 ／ 完了 ${doneCnt}件</div>`+
-    `<table><thead><tr><th>状態</th><th>作成者</th><th>工事番号</th><th>工事名</th><th>発注者</th><th>工事場所</th><th>工期</th><th></th></tr></thead><tbody>`+
-    sorted.map(m=>`<tr${isDone(m)?' style="opacity:.5"':''}>
-      <td style="text-align:center">${statusBadge(m)}</td>
+  const sorted=[...state.masters].sort(kojiNoCompare);
+  el.innerHTML=errBox+`<div class="muted" style="margin-bottom:8px">${sorted.length}件</div>`+
+    `<table><thead><tr><th>作成者</th><th>工事番号</th><th>工事名</th><th>発注者</th><th>工事場所</th><th>工期</th><th></th></tr></thead><tbody>`+
+    sorted.map(m=>`<tr>
       <td style="text-align:center">${miniHanko(m.writer)}</td>
       <td style="white-space:nowrap;font-weight:700">${esc(m.koji_no)}</td>
       <td>${esc(m.koji_name)}</td>
@@ -738,10 +720,8 @@ function renderMaster(){
       <td>${esc(m.place)}</td>
       <td style="white-space:nowrap">${esc(koukiLabel(m))}</td>
       <td style="white-space:nowrap">
-        <button class="ghost" data-mtoggle="${m.id}">${isDone(m)?'施工中に戻す':'完了にする'}</button>
         <button class="ghost" data-med="${m.id}">編集</button>
         <button class="del" data-mdl="${m.id}">×</button></td></tr>`).join('')+'</tbody></table>';
-  el.querySelectorAll('[data-mtoggle]').forEach(b=>b.onclick=()=>toggleMasterStatus(b.dataset.mtoggle));
   el.querySelectorAll('[data-med]').forEach(b=>b.onclick=()=>editMaster(b.dataset.med));
   el.querySelectorAll('[data-mdl]').forEach(b=>b.onclick=async()=>{
     if(confirm('この現場を一覧から削除しますか？')){await MasterStore.del(b.dataset.mdl);await MasterStore.load();buildLists();renderMaster();}});
@@ -764,8 +744,8 @@ $('saveMaster').onclick=async()=>{
 $('clearMaster').onclick=()=>{state.m=newMaster();state.masterEditId=null;loadMasterToForm();};
 $('excelMaster').onclick=()=>{
   if(!state.masters.length){alert('登録された現場がありません');return;}
-  const rows=[['状態','作成者','工事番号','工事名','発注者','工事場所','工期開始','工期終了','工事概要','作成日']];
-  state.masters.forEach(m=>rows.push([isDone(m)?'完了':'施工中',m.writer,m.koji_no,m.koji_name,m.hacchusha,m.place,
+  const rows=[['作成者','工事番号','工事名','発注者','工事場所','工期開始','工期終了','工事概要','作成日']];
+  [...state.masters].sort(kojiNoCompare).forEach(m=>rows.push([m.writer,m.koji_no,m.koji_name,m.hacchusha,m.place,
     m.kouki_start,m.kouki_end,m.gaiyo,m.sakusei_date]));
   const wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),'工事一覧');
