@@ -2366,10 +2366,10 @@ async function tenkenBuildMachineFile(base64, sheetName, specs, machineName){
   const paM=wb.match(/_xlnm\.Print_Area[^>]*>([^<]*)</);
   if(paM){const rng=paM[1].split('!').pop();const c=rng.match(/\$?([A-Z]+)\$?(\d+):\$?([A-Z]+)\$?(\d+)/);if(c){paLeft=c[1];paTop=+c[2];paRight=c[3];}}
   if(!paRight)paRight=tenkenMaxCol(baseXml);
-  // 下端：レイアウトが特殊なシートは行番号で固定（玉掛=37／1tローラー=25）。
-  // それ以外は従来どおり（まず「西暦」を含む行／数式でも検出、
+  // 下端：レイアウトが特殊な玉掛のみ行番号で固定（=37）。
+  // それ以外（1tローラー等を含む）は全機械共通で自動判定（まず「西暦」を含む行／数式でも検出、
   // 見つからなければ元テンプレートの印刷範囲の下端、それも無ければ最下部の「○年○月○日」行）。
-  const FIXED_BOTTOM=[['玉掛',37],['1tローラー',25]];
+  const FIXED_BOTTOM=[['玉掛',37]];
   const nsheet=normMachine(sheetName);
   let paBottom=null;
   for(const [k,rw] of FIXED_BOTTOM){ if(nsheet.indexOf(normMachine(k))>=0){paBottom=rw;break;} }
