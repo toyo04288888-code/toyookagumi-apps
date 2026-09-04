@@ -90,7 +90,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     <h2><span class="bar"></span>基本情報</h2>
     <div style="margin-bottom:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
       <button class="btn ghost small" id="importKantokuBtn">工事日報から取り込む</button>
-      <span class="muted" style="flex:1 1 240px">年月日を入れてから押すと、その日の工事日報から〔工事名・天気・工種・使用機械・作業員〕を取り込みます。</span>
+      <span class="muted" style="flex:1 1 240px">工事名を選んでから押すと、その工事の工事日報（取り込む日を一覧から選択）から〔天気・工種・使用機械・作業員〕を取り込みます。</span>
     </div>
     <div class="row">
       <div class="fld" style="flex:1 1 150px"><label>年度（年月日から自動）</label><input type="text" id="f_nendo" readonly="" style="background:#f4f5f7" placeholder="年月日を入れると自動"></div>
@@ -1428,30 +1428,47 @@ function bindBasic(){
   state.r.shanai_patrol='豊岡昭三'; // 実施者は固定
 }
 
-/* ===== 工事日報から取り込む（同じ日付の工事日報の内容を流用） ===== */
+/* ===== 工事日報から取り込む（工事名を選び、取り込む日を一覧から選択） ===== */
 async function importFromKantoku(){
   if(!(state.mode==='cloud'&&state.sb)){
     alert('工事日報の取り込みは「クラウドで共有」モードで使えます。設定タブでクラウドに切り替えてください。');return;
   }
-  const date=state.r.report_date;
-  if(!date){alert('先に「年月日」を入力してください。その日の工事日報を取り込みます。');return;}
-  let rows;
+  const koji=(state.r.koji_name||'').trim();
+  if(!koji){alert('先に「工事名」を選択してください。選んだ工事の工事日報から取り込みます。');return;}
+  let rows=[];
   try{
-    const {data,error}=await state.sb.from('kantoku_nippou').select('*').eq('report_date',date);
-    if(error){alert('工事日報の取り込みに失敗しました：'+(error.message||error.hint||JSON.stringify(error)));return;}
+    // まず工事名の完全一致で取得（新しい日付順）
+    const {data,error}=await state.sb.from('kantoku_nippou').select('*').eq('koji_name',koji).order('report_date',{ascending:false});
+    if(error)throw error;
     rows=data||[];
-  }catch(e){alert('工事日報の取り込みに失敗しました：'+(e.message||e));return;}
-  if(!rows.length){alert(date+' の工事日報が見つかりませんでした。工事日報アプリでその日の日報が保存されているか確認してください。');return;}
+    // 半角全角やスペースの違いで一致しないときは、広めに取得して正規化一致で絞り込む
+    if(!rows.length){
+      const res=await state.sb.from('kantoku_nippou').select('*').order('report_date',{ascending:false}).limit(1000);
+      if(res.error)throw res.error;
+      const nk=normWidth(koji).replace(/\s/g,'');
+      rows=(res.data||[]).filter(r=>{
+        const kn=(r.koji_name||(r.data&&r.data.koji_name)||'');
+        return normWidth(kn).replace(/\s/g,'')===nk;
+      });
+    }
+  }catch(e){alert('工事日報の取り込みに失敗しました：'+(e.message||e.hint||JSON.stringify(e)));return;}
+  if(!rows.length){alert('「'+koji+'」の工事日報が見つかりませんでした。工事日報アプリでこの工事の日報が保存されているか確認してください。');return;}
 
+  // 取り込む「日」を選ぶ（同じ工事に複数日ある想定）。KY日報の日付に一致する日があれば既定にする。
   let chosen=rows[0];
   if(rows.length>1){
-    const list=rows.map((r,i)=>`${i+1}: ${(r.koji_name||(r.data&&r.data.koji_name)||'(工事名なし)')}`).join('\n');
-    const ans=prompt('同じ日に複数の工事日報があります。取り込む番号を入力してください：\n'+list,'1');
+    const cur=state.r.report_date||'';
+    let defIdx=rows.findIndex(r=>r.report_date===cur); if(defIdx<0)defIdx=0;
+    const fmt=r=>{const dat=r.data||r;const w=(dat.weather||'');const wk=Array.isArray(dat.works)?dat.works.map(x=>x&&x.content).filter(Boolean).join('・'):'';return `${r.report_date||'(日付なし)'}${w?'（'+w+'）':''}${wk?' '+wk:''}`;};
+    const list=rows.map((r,i)=>`${i+1}: ${fmt(r)}`).join('\n');
+    const ans=prompt('「'+koji+'」の工事日報から取り込む日を番号で選んでください：\n'+list,String(defIdx+1));
     if(ans==null)return;
     const idx=parseInt(normWidth(ans).trim(),10)-1; // 全角数字で入力しても受け付ける
     if(isNaN(idx)||idx<0||idx>=rows.length){alert('番号が正しくありません。');return;}
     chosen=rows[idx];
   }
+  // KY日報の日付が未入力なら、取り込んだ日の日付を入れておく
+  if(!state.r.report_date && chosen.report_date) state.r.report_date=chosen.report_date;
   const d=chosen.data||chosen; // 工事日報の中身（jsonb）
   if(!confirm('工事日報の内容で〔工事名・天気・工種・使用機械・作業員〕を上書きします。よろしいですか？（KY活動・巡視などKY日報だけの項目はそのまま残ります）'))return;
 
