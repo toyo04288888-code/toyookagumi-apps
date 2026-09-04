@@ -2192,6 +2192,22 @@ function tenkenReplaceText(xml, shared, needle, replacement){
   hits.forEach(h=>{xml=setCellTextInXml(xml,h.ref,h.newText);});
   return xml;
 }
+// 土日の網掛：多くのテンプレートは条件付き書式で日曜（曜日セル="日"）の列だけを網掛する作り。
+// 同じ書式(dxfId)のまま土曜（="土"）のルールも足し、「土日のみ網掛」に揃える。
+// 既に土曜ルールがあるブロックはそのまま（二重適用しても安全）。条件付き書式が無いテンプレートは無変更。
+function tenkenShadeWeekends(xml){
+  let prio=1000;
+  return xml.replace(/<conditionalFormatting\b[^>]*>[\s\S]*?<\/conditionalFormatting>/g, block=>{
+    if(block.indexOf('"土"')>=0) return block; // 既に土曜ルールあり
+    let add='';
+    (block.match(/<cfRule\b[^>]*>[\s\S]*?<\/cfRule>/g)||[]).forEach(rule=>{
+      if(rule.indexOf('"日"')<0) return; // 日曜を参照するルールだけ複製
+      add+=rule.replace(/"日"/g,'"土"').replace(/\spriority="\d+"/,' priority="'+(prio++)+'"');
+    });
+    return add ? block.replace('</conditionalFormatting>', add+'</conditionalFormatting>') : block;
+  });
+}
+
 // inspectorFull=選択した点検者のフルネーム。「点検者：」にはフルネーム、各日の判子には苗字を入れる。
 // machineName=シート内の目印「（機械名）」に入れる機械名（リース機械のとき使う）
 function tenkenMarkSheet(xml, shared, days, inspectorFull, year, month, koji, genba, motouke, excludeRows, machineName){
@@ -2251,6 +2267,8 @@ function tenkenMarkSheet(xml, shared, days, inspectorFull, year, month, koji, ge
     for(const r of itemRows){ if(excludeRows.indexOf(r)>=0)continue; xml=tenkenSetCell(xml,col+r,'✔'); }
     if(inspectorRow&&surname)xml=tenkenSetCell(xml,col+inspectorRow,surname);
   }
+  // 土日のみ網掛（テンプレートの条件付き書式に土曜ルールを補う）
+  xml=tenkenShadeWeekends(xml);
   return {xml,ok:true};
 }
 
