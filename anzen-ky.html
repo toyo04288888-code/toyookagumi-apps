@@ -2685,7 +2685,7 @@ async function exportTenken(){
       }
       const display=machineName||name;     // 表示・ファイル名（リースは元の機械名）
       const byKey=mach[normName];
-      const keys=Object.keys(byKey).sort(); // 年月の昇順
+      const keys=Object.keys(byKey).sort().reverse(); // 年月の降順（新しい月が左、古い月が一番右）
       const years=[...new Set(keys.map(k=>byKey[k].year))];
       const multiYear=years.length>1; // 複数年にまたがる場合はシート名に年を付ける
       const inspector=tenkenInspectorMap[normName]||''; // 機械ごとに選んだ点検者
