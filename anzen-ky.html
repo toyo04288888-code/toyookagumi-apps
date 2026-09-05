@@ -1175,7 +1175,11 @@ function getKyExamples(){
     });
   }
   // すべての工種で共通で選べる危険・対策
-  const UNIVERSAL_KY=[{danger:'使用機械で怪我をする',action:'作業前に必ず点検をする'}];
+  const UNIVERSAL_KY=[
+    {danger:'使用機械で怪我をする',action:'作業前に必ず点検をする'},
+    {danger:'ワイヤーが外れて吊荷が落下する',action:'資格を持つ者が玉掛をする'},
+    {danger:'吊荷が旋回した際に衝突する',action:'吊荷の作業半径内には入らない'}
+  ];
   [...new Set(out.map(e=>e.work).filter(Boolean))].forEach(w=>{
     UNIVERSAL_KY.forEach(u=>{
       const k=w+'|'+u.danger+'|'+u.action;
