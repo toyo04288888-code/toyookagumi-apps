@@ -90,7 +90,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     <h2><span class="bar"></span>基本情報</h2>
     <div style="margin-bottom:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
       <button class="btn ghost small" id="importKantokuBtn">工事日報から取り込む</button>
-      <span class="muted" style="flex:1 1 240px">工事名を選んでから押すと、その工事の工事日報を一覧表示。取り込む日を選ぶと〔天気・工種・使用機械・作業員〕を取り込みます。複数日を選ぶと、その日数分のKY日報を1枚ずつ〔確認→保存〕で作成します。</span>
+      <span class="muted" style="flex:1 1 240px">工事名を選んでから押すと、その工事の工事日報を一覧表示します。</span>
     </div>
     <div class="row">
       <div class="fld" style="flex:1 1 150px"><label>年度（年月日から自動）</label><input type="text" id="f_nendo" readonly="" style="background:#f4f5f7" placeholder="年月日を入れると自動"></div>
@@ -230,7 +230,6 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     <div class="row">
       <div class="fld" style="flex:1 1 260px"><label>工事現場</label><select id="kikai_koji"><option value="">すべての工事</option></select></div>
     </div>
-    <div class="muted" style="margin-top:6px">選んだ工事でKY日報に使われた機械を、登録済みの〔機種・型式〕〔備考〕で一覧表に自動記入します（機種・型式は「設定」タブで登録）。</div>
     <button class="btn" id="kikaiExportBtn" style="margin-top:12px">使用機械一覧表を作成してダウンロード</button>
     <div class="muted" style="margin-top:8px" id="kikaiExportNote"></div>
   </div>
