@@ -226,6 +226,15 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     <div class="muted" style="margin-top:8px" id="tenkenExportNote"></div>
   </div>
   <div class="card">
+    <h2><span class="bar"></span>使用機械一覧表を出力（KY日報連動）</h2>
+    <div class="row">
+      <div class="fld" style="flex:1 1 260px"><label>工事現場</label><select id="kikai_koji"><option value="">すべての工事</option></select></div>
+    </div>
+    <div class="muted" style="margin-top:6px">選んだ工事でKY日報に使われた機械を、登録済みの〔機種・型式〕〔備考〕で一覧表に自動記入します（機種・型式は「設定」タブで登録）。</div>
+    <button class="btn" id="kikaiExportBtn" style="margin-top:12px">使用機械一覧表を作成してダウンロード</button>
+    <div class="muted" style="margin-top:8px" id="kikaiExportNote"></div>
+  </div>
+  <div class="card">
     <h2><span class="bar"></span>保存済みの日報</h2>
     <div class="row" style="margin-bottom:12px">
       <div class="fld"><label>工事名で絞り込み</label><select id="list_filter_kojiname"><option value="">すべて</option><option value="3号工事">3号工事</option></select></div>
@@ -326,6 +335,18 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   </div>
 
   <div class="card">
+    <h2><span class="bar"></span>使用機械一覧表：機種・型式・備考</h2>
+    <div class="muted" style="margin-bottom:8px">「使用機械一覧表」を出力するときの、機械ごとの〔機種・型式〕〔備考〕を登録します。<b>機械名はKY日報で使う名前と合わせてください</b>（例：0.1BH → 機種・型式「PC30UU-6」）。工事で使われた機械が自動でこの一覧表に入ります。</div>
+    <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px">
+      <thead><tr style="text-align:left"><th style="padding:4px 6px;min-width:120px">機械名（日報と一致）</th><th style="padding:4px 6px;min-width:150px">機種・型式</th><th style="padding:4px 6px;min-width:180px">備考</th><th style="width:34px"></th></tr></thead>
+      <tbody id="kikaiMasterBody"></tbody>
+    </table></div>
+    <div style="margin-top:8px"><button class="btn ghost small" id="kikaiAddRow">＋ 行を追加</button>
+    <button class="btn" id="saveKikaiMaster" style="margin-left:8px">保存</button></div>
+    <div class="muted" style="margin-top:8px" id="kikaiMasterNote"></div>
+  </div>
+
+  <div class="card">
     <h2><span class="bar"></span>TBMの管理</h2>
     <div class="fld"><label>本日のTBMの候補（1行に1件・プルダウンに出ます）</label><textarea id="set_tbms" rows="4" placeholder="例：作業前、周囲の安全確認の徹底&#10;重機周辺への立入禁止を徹底"></textarea></div>
     <button class="btn" id="saveTbms" style="margin-top:10px">TBMを保存</button>
@@ -361,6 +382,13 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   </div>
 
   <div class="card">
+    <h2><span class="bar"></span>使用機械一覧表テンプレート</h2>
+    <div class="muted" style="margin-bottom:8px">「使用機械一覧表.xlsx」を登録すると、「日報一覧」タブから工事ごとの使用機械一覧表を出力できます（工事名・番号・機種型式・備考がKY日報の使用機械から自動で入ります）。</div>
+    <label class="btn ghost" style="cursor:pointer;display:inline-block">一覧表Excelを選択<input type="file" id="kikaiTemplateUpload" accept=".xlsx" style="display:none"></label>
+    <div class="muted" style="margin-top:8px" id="kikaiTemplateNote"></div>
+  </div>
+
+  <div class="card">
     <h2><span class="bar"></span>バックアップ</h2>
     <button class="btn ghost" id="backupBtn">全データをJSONで書き出す</button>
     <label class="btn ghost" style="cursor:pointer;display:inline-block;margin-left:8px">JSONから復元<input type="file" id="restoreInput" accept=".json" style="display:none"></label>
@@ -379,10 +407,10 @@ function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show')
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,8);}
 
 const LS={mode:'az_mode',url:'az_url',key:'az_key',list:'az_list',kojinames:'az_kojinames',places:'az_places',template:'az_template',workermaster:'az_workermaster',
-  companies:'az_companies',shokuchos:'az_shokuchos',workernames:'az_workernames',genbas:'az_genbas',shunins:'az_shunins',patrolpersons:'az_patrolpersons',machines:'az_machines',tenkenTemplate:'az_tenken_template',tbms:'az_tbms',dangers:'az_dangers',actions:'az_actions',kyexamples:'az_kyexamples',completedkojis:'az_completedkojis'};
+  companies:'az_companies',shokuchos:'az_shokuchos',workernames:'az_workernames',genbas:'az_genbas',shunins:'az_shunins',patrolpersons:'az_patrolpersons',machines:'az_machines',tenkenTemplate:'az_tenken_template',tbms:'az_tbms',dangers:'az_dangers',actions:'az_actions',kyexamples:'az_kyexamples',completedkojis:'az_completedkojis',machineDetails:'az_machine_details',kikaiTemplate:'az_kikai_template'};
 
 /* ===== 状態 ===== */
-const state={mode:'local',sb:null,reports:[],r:null,editId:null,cloudKojiNames:null,cloudPlaces:null,cloudTemplate:null,cloudWorkerMaster:null,cloudMachines:null,cloudTenkenTemplate:null,cloudTbms:null,cloudDangers:null,cloudActions:null,cloudKyExamples:null,cloudCompletedKojis:null};
+const state={mode:'local',sb:null,reports:[],r:null,editId:null,cloudKojiNames:null,cloudPlaces:null,cloudTemplate:null,cloudWorkerMaster:null,cloudMachines:null,cloudTenkenTemplate:null,cloudTbms:null,cloudDangers:null,cloudActions:null,cloudKyExamples:null,cloudCompletedKojis:null,cloudMachineDetails:null,cloudKikaiTemplate:null};
 
 // 年月日(YYYY-MM-DD)から年度を求める（日本の年度＝4月〜翌3月／令和・平成表記）
 function nendoFromDate(ds){
@@ -467,6 +495,10 @@ const Store={
           state.cloudKyExamples=(ke.data&&Array.isArray(ke.data.value))?ke.data.value:[];}catch(e){state.cloudKyExamples=[];}
         try{const ck=await state.sb.from('az_config').select('value').eq('id','completedkojis').maybeSingle();
           state.cloudCompletedKojis=(ck.data&&Array.isArray(ck.data.value))?ck.data.value:[];}catch(e){state.cloudCompletedKojis=[];}
+        try{const md=await state.sb.from('az_config').select('value').eq('id','machine_details').maybeSingle();
+          state.cloudMachineDetails=(md.data&&Array.isArray(md.data.value))?md.data.value:[];}catch(e){state.cloudMachineDetails=[];}
+        try{const kt=await state.sb.from('az_config').select('value').eq('id','kikai_template').maybeSingle();
+          state.cloudKikaiTemplate=(kt.data&&kt.data.value)?kt.data.value:null;}catch(e){state.cloudKikaiTemplate=null;}
         return;
       }
     }
@@ -1246,6 +1278,22 @@ async function saveTenkenTemplate(obj){
   }else{localStorage.setItem(LS.tenkenTemplate,JSON.stringify(obj));}
 }
 
+/* ===== 使用機械一覧表：機械マスタ詳細（機種・型式／備考）＋テンプレート ===== */
+// machineDetails = [{name:機械名, model:機種・型式, note:備考}] の配列
+function localMachineDetails(){const raw=localStorage.getItem(LS.machineDetails);if(raw){try{const p=JSON.parse(raw);if(Array.isArray(p))return p;}catch(e){}}return [];}
+function getMachineDetails(){return (state.mode==='cloud'&&state.sb)?(state.cloudMachineDetails||[]):localMachineDetails();}
+async function saveMachineDetails(arr){
+  if(state.mode==='cloud'&&state.sb){state.cloudMachineDetails=arr;await azUpsertConfig('machine_details', arr, 'az_configテーブルが作成済みか確認してください。');}
+  else{localStorage.setItem(LS.machineDetails,JSON.stringify(arr));}
+}
+function localKikaiTemplate(){const raw=localStorage.getItem(LS.kikaiTemplate);if(raw){try{return JSON.parse(raw);}catch(e){}}return null;}
+function getKikaiTemplate(){return (state.mode==='cloud'&&state.sb)?(state.cloudKikaiTemplate||null):localKikaiTemplate();}
+async function saveKikaiTemplate(obj){
+  if(state.mode==='cloud'&&state.sb){state.cloudKikaiTemplate=obj;await azUpsertConfig('kikai_template', obj, 'ファイルサイズが大きすぎる可能性があります。');}
+  else{localStorage.setItem(LS.kikaiTemplate,JSON.stringify(obj));}
+}
+const KIKAI_DEFAULT_NOTE='排ガス対策・超低騒音・特定自主検査';
+
 /* ===== 設定タブ: マスタ編集UIの表示・保存 ===== */
 function refreshCompaniesSettings(){
   $('set_companies').value=getCompanies().join('\n');
@@ -1831,11 +1879,12 @@ function switchTab(name){
   $('editorTabs').classList.toggle('hidden',name!=='editor');
   $('listTab').classList.toggle('hidden',name!=='list');
   $('setteiTab').classList.toggle('hidden',name!=='settei');
-  if(name==='list'){renderList();refreshTenkenExportUI();}
+  if(name==='list'){renderList();refreshTenkenExportUI();refreshKikaiExportUI();}
   if(name==='settei'){
     refreshKojiNameSettings();refreshPlaceSettings();refreshTemplateSettings();refreshModeSettings();
     refreshCompaniesSettings();refreshShokuchosSettings();refreshWorkerNamesSettings();
     refreshGenbaShuninSettings();refreshMachinesSettings();refreshTemplateSettings();refreshTenkenSettings();refreshTbmsSettings();refreshDangersSettings();refreshActionsSettings();
+    refreshKikaiMasterSettings();refreshKikaiTemplateSettings();
   }
 }
 document.querySelectorAll('.tab-btn').forEach(b=>b.onclick=()=>switchTab(b.dataset.tab));
@@ -1873,6 +1922,7 @@ $('saveModeBtn').onclick=async()=>{
   await Store.load();
   renderList();refreshModeSettings();refreshKojiNameSettings();refreshPlaceSettings();refreshTemplateSettings();
   refreshCompaniesSettings();refreshShokuchosSettings();refreshWorkerNamesSettings();refreshGenbaShuninSettings();refreshMachinesSettings();refreshTenkenSettings();refreshTbmsSettings();refreshDangersSettings();refreshActionsSettings();
+  refreshKikaiMasterSettings();refreshKikaiTemplateSettings();refreshKikaiExportUI();
   renderGenbaShuninSelect();renderPatrolPersonSelect();renderMachines();
   toast('保存方法を設定しました');
 };
@@ -1924,6 +1974,64 @@ $('tenkenUpload').onchange=async(e)=>{
   }catch(err){$('tenkenNote').textContent='読み込みに失敗しました：'+(err.message||err);}
   e.target.value='';
 };
+
+/* ===== 使用機械一覧表：機械マスタ詳細の編集UI ＋ テンプレート登録 ===== */
+function kikaiMasterRowHtml(d){
+  d=d||{name:'',model:'',note:''};
+  return `<tr>
+    <td style="padding:3px 6px"><input class="km-name" value="${esc(d.name||'')}" list="machineMasterList" placeholder="例：0.1BH" style="width:100%"></td>
+    <td style="padding:3px 6px"><input class="km-model" value="${esc(d.model||'')}" placeholder="例：PC30UU-6" style="width:100%"></td>
+    <td style="padding:3px 6px"><input class="km-note" value="${esc(d.note||'')}" placeholder="${esc(KIKAI_DEFAULT_NOTE)}" style="width:100%"></td>
+    <td style="text-align:center"><button class="del km-del" type="button">×</button></td></tr>`;
+}
+function bindKikaiDel(tr){const b=tr&&tr.querySelector('.km-del');if(b)b.onclick=()=>tr.remove();}
+function renderKikaiMasterRows(list){
+  const tb=$('kikaiMasterBody'); if(!tb)return;
+  tb.innerHTML=list.map(kikaiMasterRowHtml).join('');
+  tb.querySelectorAll('tr').forEach(bindKikaiDel);
+}
+function refreshKikaiMasterSettings(){
+  if(!$('kikaiMasterBody'))return;
+  let list=getMachineDetails();
+  if(!list.length){
+    // 未登録なら使用機械マスタ(名前)から初期行を用意（備考は既定値）。保存するまで未確定。
+    list=getMachines().map(n=>({name:n,model:'',note:KIKAI_DEFAULT_NOTE}));
+    if(!list.length)list=[{name:'',model:'',note:KIKAI_DEFAULT_NOTE}];
+  }
+  renderKikaiMasterRows(list);
+  $('kikaiMasterNote').textContent=(state.mode==='cloud'&&state.sb)?'※ クラウド共有中です。':'※ この端末のみに保存されます。';
+}
+if($('kikaiAddRow'))$('kikaiAddRow').onclick=()=>{
+  $('kikaiMasterBody').insertAdjacentHTML('beforeend', kikaiMasterRowHtml({name:'',model:'',note:KIKAI_DEFAULT_NOTE}));
+  bindKikaiDel($('kikaiMasterBody').lastElementChild);
+};
+if($('saveKikaiMaster'))$('saveKikaiMaster').onclick=async()=>{
+  const rows=[...$('kikaiMasterBody').querySelectorAll('tr')].map(tr=>({
+    name:tr.querySelector('.km-name').value.trim(),
+    model:tr.querySelector('.km-model').value.trim(),
+    note:tr.querySelector('.km-note').value.trim(),
+  })).filter(d=>d.name||d.model||d.note);
+  await saveMachineDetails(rows);
+  toast('保存しました');
+};
+function refreshKikaiTemplateSettings(){
+  if(!$('kikaiTemplateNote'))return;
+  const t=getKikaiTemplate();
+  $('kikaiTemplateNote').textContent=t?`登録済み：${t.filename}`:'※ まだ使用機械一覧表テンプレートが登録されていません。';
+}
+if($('kikaiTemplateUpload'))$('kikaiTemplateUpload').onchange=async(e)=>{
+  const file=e.target.files[0];if(!file)return;
+  $('kikaiTemplateNote').textContent='読み込み中…';
+  try{
+    const buf=await file.arrayBuffer();
+    const base64=arrayBufferToBase64(buf);
+    await saveKikaiTemplate({filename:file.name,base64});
+    toast('使用機械一覧表テンプレートを登録しました');
+    refreshKikaiTemplateSettings();
+  }catch(err){$('kikaiTemplateNote').textContent='読み込みに失敗しました：'+(err.message||err);}
+  e.target.value='';
+};
+
 $('backupBtn').onclick=()=>{
   const blob=new Blob([JSON.stringify(state.reports,null,2)],{type:'application/json'});
   const url=URL.createObjectURL(blob);
@@ -2600,6 +2708,81 @@ async function exportTenken(){
 $('tenkenExportBtn').onclick=()=>exportTenken();
 // 工事現場を変えたら、機械ごとの点検者リスト（候補＝日報の作業員・職長）を作り直す
 if($('tenken_koji'))$('tenken_koji').onchange=()=>refreshTenkenMachineInspectors();
+
+/* ===== 使用機械一覧表（KY日報連動）出力 ===== */
+function refreshKikaiExportUI(){
+  const kEl=$('kikai_koji'); if(!kEl)return;
+  const curK=kEl.value;
+  const kojis=[...new Set(state.reports.map(r=>r.koji_name).filter(Boolean))].sort();
+  kEl.innerHTML='<option value="">すべての工事</option>'+kojis.map(k=>`<option value="${esc(k)}" ${k===curK?'selected':''}>${esc(k)}</option>`).join('');
+}
+// 選んだ工事で使われた機械の表示名を初出順で返す（normキー→表示名のMap）
+function getKikaiUsedMachineNames(koji){
+  const seen=new Map();
+  state.reports.forEach(r=>{
+    if(!r.report_date)return;
+    if(koji&&r.koji_name!==koji)return;
+    (Array.isArray(r.machines)?r.machines:[]).forEach(mc=>{
+      const disp=String(mc||'').trim(); if(!disp)return;
+      const k=normMachine(disp); if(k&&!seen.has(k))seen.set(k,disp);
+    });
+  });
+  return seen;
+}
+// 出力する行 [{model, note}] を作る（マスタ登録順を優先、未登録の使用機械は後ろに）
+function buildKikaiRows(koji){
+  const details=getMachineDetails();
+  if(koji){
+    const used=getKikaiUsedMachineNames(koji);
+    const usedKeys=new Set(used.keys());
+    const rows=[];
+    details.forEach(d=>{const k=normMachine(d.name); if(usedKeys.has(k)){rows.push({model:d.model||d.name,note:d.note||''}); usedKeys.delete(k);}});
+    usedKeys.forEach(k=>rows.push({model:used.get(k),note:''}));
+    return rows;
+  }
+  return details.map(d=>({model:d.model||d.name,note:d.note||''}));
+}
+async function buildKikaiFile(base64, kojiName, rows){
+  const zip=await JSZip.loadAsync(base64ToArrayBuffer(base64));
+  const sheets=await resolveAllSheetPaths(zip);
+  const target=sheets.find(s=>/一覧/.test(s.name)) || sheets[sheets.length-1];
+  let xml=await zip.file(target.path).async('string');
+  const FIRST=6, LAST=21, MAXN=LAST-FIRST+1;
+  xml=setCellTextInXml(xml,'D1', kojiName||''); // 工事名
+  const n=Math.min(rows.length,MAXN);
+  for(let i=0;i<MAXN;i++){
+    const r=FIRST+i;
+    if(i<n){
+      xml=setCellNumberInXml(xml,'A'+r, i+1);          // 番号
+      xml=setCellTextInXml(xml,'D'+r, rows[i].model||''); // 機種・型式
+      xml=setCellTextInXml(xml,'H'+r, rows[i].note||'');  // 備考
+    }else{
+      xml=setCellTextInXml(xml,'A'+r,''); xml=setCellTextInXml(xml,'D'+r,''); xml=setCellTextInXml(xml,'H'+r,'');
+    }
+  }
+  zip.file(target.path,xml);
+  const blob=await zip.generateAsync({type:'blob'});
+  return {blob, written:n, overflow:rows.length>MAXN, maxn:MAXN};
+}
+async function exportKikai(){
+  const tpl=getKikaiTemplate();
+  const note=$('kikaiExportNote');
+  if(!tpl){alert('先に「設定」タブで「使用機械一覧表テンプレート」を登録してください。');return;}
+  if(typeof JSZip==='undefined'){alert('ZIPライブラリの読み込みに失敗しています。');return;}
+  const koji=($('kikai_koji')&&$('kikai_koji').value)||'';
+  const rows=buildKikaiRows(koji);
+  if(!rows.length){note.textContent='出力する機械がありません。「設定」タブで機種・型式を登録するか、日報に使用機械を入れてください。';return;}
+  try{
+    note.textContent='作成中…';
+    const {blob,written,overflow,maxn}=await buildKikaiFile(tpl.base64, koji, rows);
+    const safe=(koji||'すべての工事').replace(/[\\/:*?"<>|]/g,'_');
+    tenkenDownload(blob, `使用機械一覧表_${safe}.xlsx`);
+    let msg=`使用機械一覧表を出力しました（機械${written}件）。`;
+    if(overflow)msg+=` ※テンプレートの行数(${maxn})を超えたため一部のみ記入しました。`;
+    note.textContent=msg; toast('使用機械一覧表を出力しました');
+  }catch(err){note.textContent='出力に失敗しました：'+(err.message||err);alert('使用機械一覧表の出力に失敗しました：'+(err.message||err));}
+}
+if($('kikaiExportBtn'))$('kikaiExportBtn').onclick=()=>exportKikai();
 
 const KY_WORKER_AVAILABLE_ROWS=[19,20,21,22,23];
 // 会社名セルを中央揃えにするスタイルを、作業員名簿の各行ぶん用意する（styles.xmlに追加。1回だけ計算して使い回す）
