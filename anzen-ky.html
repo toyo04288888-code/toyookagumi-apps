@@ -241,11 +241,11 @@ https://github.com/nodeca/pako/blob/main/LICENSE
       <div class="fld"><label>日付で絞り込み</label><select id="list_filter_date"><option value="">すべて</option><option value="2026-07-29">2026-07-29</option><option value="2026-07-28">2026-07-28</option></select></div>
       <div class="fld" style="flex:0 1 160px"><label>状態で絞り込み</label><select id="list_filter_status"><option value="">すべて</option><option value="施工中">未完了</option><option value="完了">完了</option></select></div>
     </div>
-    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
-      <label style="display:flex;align-items:center;gap:6px;font-size:13px"><input type="checkbox" id="listSelectAll"> すべて選択</label>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:6px">
       <button class="btn small" id="batchExcelBtn">選択した日報を1つのExcel（日付順の別シート）で出力</button>
       <span class="muted" id="batchExcelNote"></span>
     </div>
+    <div class="muted" style="margin-bottom:8px;font-size:12px">※ 選択は工事ごとです。工事の見出しを開くと「この工事をすべて選択」が使えます。</div>
     <div id="reportListBody">
     <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 4px;border-bottom:1px solid var(--border)">
       <div>
@@ -1790,7 +1790,10 @@ function renderList(){
         ${doneBtn}
         <button class="koji-del" data-nendo="${esc(nendo)}" data-koji="${esc(koji)}" title="この工事の日報をすべて削除" style="font-size:14px;padding:4px 9px;border-radius:20px;border:1px solid #e0a3a3;background:#fff;color:#c0392b;cursor:pointer">🗑</button>
       </div>
-      <div style="margin-top:6px;padding-left:6px;${open?'':'display:none'}">${list.map(rowHtml).join('')}</div>
+      <div class="koji-reports" data-kk="${esc(kk)}" style="margin-top:6px;padding-left:6px;${open?'':'display:none'}">
+        <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--text-sub);padding:2px 0 6px 4px"><input type="checkbox" class="koji-selall"> この工事をすべて選択</label>
+        ${list.map(rowHtml).join('')}
+      </div>
     </div>`;
   };
   // 年度 → 工事 → 日報。年度は最新日報の新しい順
@@ -1844,7 +1847,11 @@ function renderList(){
     for(const id of ids){ await Store.deleteReport(id); }
     renderList();
   });
-  const selAll=$('listSelectAll'); if(selAll)selAll.checked=false;
+  // 工事ごとの「この工事をすべて選択」：その工事内の日報チェックだけを一括切替
+  box.querySelectorAll('.koji-selall').forEach(cb=>cb.onchange=e=>{
+    const cont=e.target.closest('.koji-reports'); if(!cont)return;
+    cont.querySelectorAll('.listsel').forEach(x=>{x.checked=e.target.checked;});
+  });
   box.querySelectorAll('.rstatus').forEach(sel=>sel.onchange=async()=>{
     const rep=state.reports.find(x=>x.id===sel.dataset.id);
     if(!rep)return;
@@ -1865,7 +1872,6 @@ function renderList(){
 $('list_filter_kojiname').onchange=()=>renderList();
 $('list_filter_date').onchange=()=>renderList();
 $('list_filter_status').onchange=()=>renderList();
-$('listSelectAll').onchange=e=>{document.querySelectorAll('#reportListBody .listsel').forEach(cb=>cb.checked=e.target.checked);};
 $('batchExcelBtn').onclick=async()=>{
   const ids=[...document.querySelectorAll('#reportListBody .listsel:checked')].map(cb=>cb.dataset.id);
   const note=$('batchExcelNote');
