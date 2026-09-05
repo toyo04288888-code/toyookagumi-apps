@@ -245,7 +245,6 @@ https://github.com/nodeca/pako/blob/main/LICENSE
       <button class="btn small" id="batchExcelBtn">選択した日報を1つのExcel（日付順の別シート）で出力</button>
       <span class="muted" id="batchExcelNote"></span>
     </div>
-    <div class="muted" style="margin-bottom:8px;font-size:12px">※ 選択は工事ごとです。工事の見出しを開くと「この工事をすべて選択」が使えます。</div>
     <div id="reportListBody">
     <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 4px;border-bottom:1px solid var(--border)">
       <div>
@@ -324,7 +323,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     <h2><span class="bar"></span>現場代理人の管理</h2>
     <div class="fld"><label>現場代理人の一覧（1行に1件）</label><textarea id="set_genbas" rows="3"></textarea></div>
     <button class="btn" id="saveGenbaShunin" style="margin-top:10px">保存</button>
-    <div class="muted" style="margin-top:8px" id="genbaShuninNote">※ 主任技術者・安全巡視員は、日報で現場代理人を選ぶと自動で同じ人が入ります。</div>
+    <div class="muted" style="margin-top:8px" id="genbaShuninNote"></div>
   </div>
 
   <div class="card">
@@ -336,7 +335,6 @@ https://github.com/nodeca/pako/blob/main/LICENSE
 
   <div class="card">
     <h2><span class="bar"></span>使用機械一覧表：機種・型式・備考</h2>
-    <div class="muted" style="margin-bottom:8px">「使用機械一覧表」を出力するときの、機械ごとの〔機種・型式〕〔備考〕を登録します。<b>機械名はKY日報で使う名前と合わせてください</b>（例：0.1BH → 機種・型式「PC30UU-6」）。工事で使われた機械が自動でこの一覧表に入ります。</div>
     <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px">
       <thead><tr style="text-align:left"><th style="padding:4px 6px;min-width:120px">機械名（日報と一致）</th><th style="padding:4px 6px;min-width:150px">機種・型式</th><th style="padding:4px 6px;min-width:180px">備考</th><th style="width:34px"></th></tr></thead>
       <tbody id="kikaiMasterBody"></tbody>
@@ -369,21 +367,18 @@ https://github.com/nodeca/pako/blob/main/LICENSE
 
   <div class="card">
     <h2><span class="bar"></span>Excelテンプレート</h2>
-    <div class="muted" style="margin-bottom:8px">「作業日報マザー.xlsx」のようなテンプレートを登録すると、日報を出力する際にそのレイアウトのまま出力できます。</div>
     <label class="btn ghost" style="cursor:pointer;display:inline-block">テンプレートExcelを選択<input type="file" id="templateUpload" accept=".xlsx" style="display:none"></label>
     <div class="muted" style="margin-top:8px" id="templateNote"></div>
   </div>
 
   <div class="card">
     <h2><span class="bar"></span>点検簿テンプレート（使用機械用）</h2>
-    <div class="muted" style="margin-bottom:8px">機械ごとのシートが入った「点検簿.xlsx」を登録すると、「日報一覧」タブから、機械ごとに使った月のシートをまとめた点検簿を出力できます（使った日に✔が入ります）。<br>※ 使用機械の名前は、点検簿のシート名と合わせてください。登録時に、空欄なら自動でシート名から候補を作ります。</div>
     <label class="btn ghost" style="cursor:pointer;display:inline-block">点検簿Excelを選択<input type="file" id="tenkenUpload" accept=".xlsx" style="display:none"></label>
     <div class="muted" style="margin-top:8px" id="tenkenNote"></div>
   </div>
 
   <div class="card">
     <h2><span class="bar"></span>使用機械一覧表テンプレート</h2>
-    <div class="muted" style="margin-bottom:8px">「使用機械一覧表.xlsx」を登録すると、「日報一覧」タブから工事ごとの使用機械一覧表を出力できます（工事名・番号・機種型式・備考がKY日報の使用機械から自動で入ります）。</div>
     <label class="btn ghost" style="cursor:pointer;display:inline-block">一覧表Excelを選択<input type="file" id="kikaiTemplateUpload" accept=".xlsx" style="display:none"></label>
     <div class="muted" style="margin-top:8px" id="kikaiTemplateNote"></div>
   </div>
@@ -1335,7 +1330,7 @@ $('saveWorkerNames').onclick=async()=>{
 function refreshGenbaShuninSettings(){
   $('set_genbas').value=getGenbas().join('\n');
   const cloud=(state.mode==='cloud'&&state.sb);
-  $('genbaShuninNote').textContent='※ 主任技術者・安全巡視員は、日報で現場代理人を選ぶと自動で同じ人が入ります。'+(cloud?'（クラウド共有中）':'（この端末のみ）');
+  $('genbaShuninNote').textContent=cloud?'※ クラウド共有中です。':'※ この端末のみに保存されます。';
 }
 $('saveGenbaShunin').onclick=async()=>{
   const g=$('set_genbas').value.split(/[\n,、，]/).map(s=>s.trim()).filter(Boolean);
@@ -1791,7 +1786,7 @@ function renderList(){
         <button class="koji-del" data-nendo="${esc(nendo)}" data-koji="${esc(koji)}" title="この工事の日報をすべて削除" style="font-size:14px;padding:4px 9px;border-radius:20px;border:1px solid #e0a3a3;background:#fff;color:#c0392b;cursor:pointer">🗑</button>
       </div>
       <div class="koji-reports" data-kk="${esc(kk)}" style="margin-top:6px;padding-left:6px;${open?'':'display:none'}">
-        <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--text-sub);padding:2px 0 6px 4px"><input type="checkbox" class="koji-selall"> この工事をすべて選択</label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--text-sub);padding:2px 0 6px 4px"><input type="checkbox" class="koji-selall"> この日報をすべて選択</label>
         ${list.map(rowHtml).join('')}
       </div>
     </div>`;
