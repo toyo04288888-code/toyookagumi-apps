@@ -634,7 +634,9 @@ function updateYoubi(){
 /* ===== 工事名・工事場所プルダウン ===== */
 function renderKojiNameSelect(){
   const cur=state.r.koji_name||'';
-  const names=getKojiNames();
+  const done=new Set(getCompletedKojis());              // 「完了」にした工事は選択肢から除外
+  const names=getKojiNames().filter(n=>!done.has(n));
+  // 編集中の日報の工事名は、完了済みでも選択肢に残す（表示が消えないように）
   const all=[...new Set([...names, ...(cur?[cur]:[])])];
   $('f_kojiname').innerHTML='<option value="">選択…</option>'+
     all.map(n=>`<option value="${esc(n)}" ${n===cur?'selected':''}>${esc(n)}</option>`).join('');
@@ -645,6 +647,17 @@ function renderPlaceSelect(){
   const all=[...new Set([...places, ...(cur?[cur]:[])])];
   $('f_place').innerHTML='<option value="">選択…</option>'+
     all.map(n=>`<option value="${esc(n)}" ${n===cur?'selected':''}>${esc(n)}</option>`).join('');
+}
+// 工事名 → 工事場所 の紐づけ。保存済み日報のうち、同じ工事名で場所が入っている
+// 一番新しいものの場所を返す（state.reportsは新しい順）。半角全角・スペースの違いは無視。
+function kojiToPlace(koji){
+  if(!koji)return '';
+  const nk=normWidth(koji).replace(/\s/g,'');
+  for(const r of state.reports){
+    const pl=(r.place||'').trim();
+    if(pl && normWidth(r.koji_name||'').replace(/\s/g,'')===nk) return r.place;
+  }
+  return '';
 }
 
 /* ===== 本日の作業（工種） ===== */
@@ -1449,7 +1462,11 @@ function renderNecchusho(){
 function bindBasic(){
   $('f_date').oninput=e=>{state.r.report_date=e.target.value;state.r.nendo=nendoFromDate(e.target.value);$('f_nendo').value=state.r.nendo;updateYoubi();applyWeekTbm();};
   $('f_weather').onchange=e=>state.r.weather=e.target.value;
-  $('f_kojiname').onchange=e=>state.r.koji_name=e.target.value;
+  $('f_kojiname').onchange=e=>{
+    state.r.koji_name=e.target.value;
+    const pl=kojiToPlace(state.r.koji_name); // 紐づく工事場所を自動で入れる
+    if(pl){ state.r.place=pl; renderPlaceSelect(); }
+  };
   $('f_place').onchange=e=>state.r.place=e.target.value;
   // 現場代理人を選ぶと、主任技術者・安全巡視員も同じ人を自動セット
   $('f_genba').onchange=e=>{
