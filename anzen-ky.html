@@ -285,17 +285,14 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   </div>
 
   <div class="card">
-    <h2><span class="bar"></span>工事名の管理</h2>
-    <div class="fld"><label>工事名の一覧（1行に1件）</label><textarea id="set_kojinames" rows="6"></textarea></div>
-    <button class="btn" id="saveKojiNames" style="margin-top:10px">工事名一覧を保存</button>
-    <div class="muted" style="margin-top:8px" id="kojiNameNote"></div>
-  </div>
-
-  <div class="card">
-    <h2><span class="bar"></span>工事場所の管理</h2>
-    <div class="fld"><label>工事場所の一覧（1行に1件）</label><textarea id="set_places" rows="6"></textarea></div>
-    <button class="btn" id="savePlaces" style="margin-top:10px">工事場所一覧を保存</button>
-    <div class="muted" style="margin-top:8px" id="placeNote"></div>
+    <h2><span class="bar"></span>工事名・工事場所の管理</h2>
+    <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px">
+      <thead><tr style="text-align:left"><th style="padding:4px 6px;min-width:160px">工事名</th><th style="padding:4px 6px;min-width:160px">工事場所</th><th style="width:34px"></th></tr></thead>
+      <tbody id="kojiPlaceBody"></tbody>
+    </table></div>
+    <div style="margin-top:8px"><button class="btn ghost small" id="kojiPlaceAddRow">＋ 行を追加</button>
+    <button class="btn" id="saveKojiPlaces" style="margin-left:8px">保存</button></div>
+    <div class="muted" style="margin-top:8px" id="kojiPlaceNote"></div>
   </div>
 
   <div class="card">
@@ -401,11 +398,11 @@ function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'
 function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1800);}
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,8);}
 
-const LS={mode:'az_mode',url:'az_url',key:'az_key',list:'az_list',kojinames:'az_kojinames',places:'az_places',template:'az_template',workermaster:'az_workermaster',
+const LS={mode:'az_mode',url:'az_url',key:'az_key',list:'az_list',kojinames:'az_kojinames',places:'az_places',kojiplaces:'az_kojiplaces',template:'az_template',workermaster:'az_workermaster',
   companies:'az_companies',shokuchos:'az_shokuchos',workernames:'az_workernames',genbas:'az_genbas',shunins:'az_shunins',patrolpersons:'az_patrolpersons',machines:'az_machines',tenkenTemplate:'az_tenken_template',tbms:'az_tbms',dangers:'az_dangers',actions:'az_actions',kyexamples:'az_kyexamples',completedkojis:'az_completedkojis',machineDetails:'az_machine_details',kikaiTemplate:'az_kikai_template'};
 
 /* ===== 状態 ===== */
-const state={mode:'local',sb:null,reports:[],r:null,editId:null,cloudKojiNames:null,cloudPlaces:null,cloudTemplate:null,cloudWorkerMaster:null,cloudMachines:null,cloudTenkenTemplate:null,cloudTbms:null,cloudDangers:null,cloudActions:null,cloudKyExamples:null,cloudCompletedKojis:null,cloudMachineDetails:null,cloudKikaiTemplate:null};
+const state={mode:'local',sb:null,reports:[],r:null,editId:null,cloudKojiNames:null,cloudPlaces:null,cloudKojiPlaces:null,cloudTemplate:null,cloudWorkerMaster:null,cloudMachines:null,cloudTenkenTemplate:null,cloudTbms:null,cloudDangers:null,cloudActions:null,cloudKyExamples:null,cloudCompletedKojis:null,cloudMachineDetails:null,cloudKikaiTemplate:null};
 
 // 年月日(YYYY-MM-DD)から年度を求める（日本の年度＝4月〜翌3月／令和・平成表記）
 function nendoFromDate(ds){
@@ -460,6 +457,8 @@ const Store={
           state.cloudKojiNames=(k.data&&Array.isArray(k.data.value))?k.data.value:[];}catch(e){state.cloudKojiNames=[];}
         try{const p=await state.sb.from('az_config').select('value').eq('id','places').maybeSingle();
           state.cloudPlaces=(p.data&&Array.isArray(p.data.value))?p.data.value:[];}catch(e){state.cloudPlaces=[];}
+        try{const kp=await state.sb.from('az_config').select('value').eq('id','kojiplaces').maybeSingle();
+          state.cloudKojiPlaces=(kp.data&&Array.isArray(kp.data.value))?kp.data.value:[];}catch(e){state.cloudKojiPlaces=[];}
         try{const t=await state.sb.from('az_config').select('value').eq('id','template').maybeSingle();
           state.cloudTemplate=(t.data&&t.data.value)?t.data.value:null;}catch(e){state.cloudTemplate=null;}
         try{const w=await state.sb.from('az_config').select('value').eq('id','workermaster').maybeSingle();
@@ -545,7 +544,35 @@ function normWidth(s){
 
 /* ===== 工事名マスタ ===== */
 function localKojiNames(){const raw=localStorage.getItem(LS.kojinames);if(raw){try{const p=JSON.parse(raw);if(Array.isArray(p))return p;}catch(e){}}return [];}
-function getKojiNames(){return (state.mode==='cloud'&&state.sb)?(state.cloudKojiNames||[]):localKojiNames();}
+// ---- 工事名・工事場所（ペアで管理） ----
+function localKojiPlaces(){const raw=localStorage.getItem(LS.kojiplaces);if(raw){try{const p=JSON.parse(raw);if(Array.isArray(p))return p;}catch(e){}}return [];}
+function rawKojiPlaces(){return (state.mode==='cloud'&&state.sb)?(state.cloudKojiPlaces||[]):localKojiPlaces();}
+// 保存済み日報から、その工事名の場所を推定（新しい順で最初に見つかった場所）。半角全角・スペースは無視。
+function placeFromReports(koji){
+  if(!koji)return '';
+  const nk=normWidth(koji).replace(/\s/g,'');
+  for(const r of state.reports){
+    const pl=(r.place||'').trim();
+    if(pl && normWidth(r.koji_name||'').replace(/\s/g,'')===nk) return r.place;
+  }
+  return '';
+}
+// ペア一覧を返す。新形式が未登録なら旧「工事名一覧」＋日報から推定した場所で作る（保存するまで未確定）。
+function getKojiPlaces(){
+  const arr=rawKojiPlaces().filter(x=>x&&((x.name||'').trim()||(x.place||'').trim()));
+  if(arr.length)return arr;
+  const legacy=(state.mode==='cloud'&&state.sb)?(state.cloudKojiNames||[]):localKojiNames();
+  return legacy.filter(Boolean).map(n=>({name:n, place:placeFromReports(n)||''}));
+}
+async function saveKojiPlaces(arr){
+  arr=arr.filter(x=>x&&((x.name||'').trim()||(x.place||'').trim()));
+  if(state.mode==='cloud'&&state.sb){
+    state.cloudKojiPlaces=arr;
+    await azUpsertConfig('kojiplaces', arr, 'az_configテーブルが作成済みか確認してください。');
+  }else{localStorage.setItem(LS.kojiplaces,JSON.stringify(arr));}
+}
+// 工事名の一覧は、工事名・工事場所ペアの「工事名」から作る
+function getKojiNames(){return [...new Set(getKojiPlaces().map(x=>(x.name||'').trim()).filter(Boolean))];}
 
 /* ===== 完了した工事（工事名の一覧）＝日報一覧で下にグレー表示 ===== */
 function localCompletedKojis(){const raw=localStorage.getItem(LS.completedkojis);if(raw){try{const p=JSON.parse(raw);if(Array.isArray(p))return p;}catch(e){}}return [];}
@@ -574,7 +601,12 @@ async function saveKojiNames(arr){
 
 /* ===== 工事場所マスタ ===== */
 function localPlaces(){const raw=localStorage.getItem(LS.places);if(raw){try{const p=JSON.parse(raw);if(Array.isArray(p))return p;}catch(e){}}return [];}
-function getPlaces(){return (state.mode==='cloud'&&state.sb)?(state.cloudPlaces||[]):localPlaces();}
+// 工事場所の候補は、ペアの「工事場所」＋旧「工事場所一覧」をあわせて返す
+function getPlaces(){
+  const fromPairs=getKojiPlaces().map(x=>(x.place||'').trim()).filter(Boolean);
+  const legacy=(state.mode==='cloud'&&state.sb)?(state.cloudPlaces||[]):localPlaces();
+  return [...new Set([...fromPairs, ...legacy.filter(Boolean)])];
+}
 async function savePlaces(arr){
   arr=[...new Set(arr.filter(Boolean))];
   if(state.mode==='cloud'&&state.sb){
@@ -643,16 +675,14 @@ function renderPlaceSelect(){
   $('f_place').innerHTML='<option value="">選択…</option>'+
     all.map(n=>`<option value="${esc(n)}" ${n===cur?'selected':''}>${esc(n)}</option>`).join('');
 }
-// 工事名 → 工事場所 の紐づけ。保存済み日報のうち、同じ工事名で場所が入っている
-// 一番新しいものの場所を返す（state.reportsは新しい順）。半角全角・スペースの違いは無視。
+// 工事名 → 工事場所 の紐づけ。まず「工事名・工事場所の管理」で登録したペアを優先し、
+// 無ければ保存済み日報から推定する。半角全角・スペースの違いは無視。
 function kojiToPlace(koji){
   if(!koji)return '';
   const nk=normWidth(koji).replace(/\s/g,'');
-  for(const r of state.reports){
-    const pl=(r.place||'').trim();
-    if(pl && normWidth(r.koji_name||'').replace(/\s/g,'')===nk) return r.place;
-  }
-  return '';
+  const hit=rawKojiPlaces().find(x=>x&&(x.place||'').trim()&&normWidth(x.name||'').replace(/\s/g,'')===nk);
+  if(hit)return hit.place;
+  return placeFromReports(koji);
 }
 
 /* ===== 本日の作業（工種） ===== */
@@ -1899,7 +1929,7 @@ function switchTab(name){
   $('setteiTab').classList.toggle('hidden',name!=='settei');
   if(name==='list'){renderList();refreshTenkenExportUI();refreshKikaiExportUI();}
   if(name==='settei'){
-    refreshKojiNameSettings();refreshPlaceSettings();refreshTemplateSettings();refreshModeSettings();
+    refreshKojiPlaceSettings();refreshTemplateSettings();refreshModeSettings();
     refreshCompaniesSettings();refreshShokuchosSettings();refreshWorkerNamesSettings();
     refreshGenbaShuninSettings();refreshMachinesSettings();refreshTemplateSettings();refreshTenkenSettings();refreshTbmsSettings();refreshDangersSettings();refreshActionsSettings();
     refreshKikaiMasterSettings();refreshKikaiTemplateSettings();
@@ -1908,15 +1938,22 @@ function switchTab(name){
 document.querySelectorAll('.tab-btn').forEach(b=>b.onclick=()=>switchTab(b.dataset.tab));
 
 /* ===== 設定タブ ===== */
-function refreshKojiNameSettings(){
-  $('set_kojinames').value=getKojiNames().join('\n');
-  const cloud=(state.mode==='cloud'&&state.sb);
-  $('kojiNameNote').textContent=cloud?'※ クラウド共有中。全端末に反映されます。':'※ この端末のみに保存されます。';
+function kojiPlaceRowHtml(d){
+  d=d||{name:'',place:''};
+  return `<tr>
+    <td style="padding:3px 6px"><input class="kp-name" value="${esc(d.name||'')}" placeholder="例：3号工事" style="width:100%"></td>
+    <td style="padding:3px 6px"><input class="kp-place" value="${esc(d.place||'')}" placeholder="例：春江町" style="width:100%"></td>
+    <td style="text-align:center"><button class="del kp-del" type="button">×</button></td></tr>`;
 }
-function refreshPlaceSettings(){
-  $('set_places').value=getPlaces().join('\n');
+function bindKpDel(tr){const b=tr&&tr.querySelector('.kp-del');if(b)b.onclick=()=>tr.remove();}
+function refreshKojiPlaceSettings(){
+  const tb=$('kojiPlaceBody'); if(!tb)return;
+  let list=getKojiPlaces();
+  if(!list.length)list=[{name:'',place:''}];
+  tb.innerHTML=list.map(kojiPlaceRowHtml).join('');
+  tb.querySelectorAll('tr').forEach(bindKpDel);
   const cloud=(state.mode==='cloud'&&state.sb);
-  $('placeNote').textContent=cloud?'※ クラウド共有中。全端末に反映されます。':'※ この端末のみに保存されます。';
+  $('kojiPlaceNote').textContent=cloud?'※ クラウド共有中。全端末に反映されます。':'※ この端末のみに保存されます。';
 }
 function refreshTemplateSettings(){
   const t=getTemplate();
@@ -1938,19 +1975,24 @@ $('saveModeBtn').onclick=async()=>{
     localStorage.setItem(LS.key,$('sbKey').value.trim());
   }
   await Store.load();
-  renderList();refreshModeSettings();refreshKojiNameSettings();refreshPlaceSettings();refreshTemplateSettings();
+  renderList();refreshModeSettings();refreshKojiPlaceSettings();refreshTemplateSettings();
   refreshCompaniesSettings();refreshShokuchosSettings();refreshWorkerNamesSettings();refreshGenbaShuninSettings();refreshMachinesSettings();refreshTenkenSettings();refreshTbmsSettings();refreshDangersSettings();refreshActionsSettings();
   refreshKikaiMasterSettings();refreshKikaiTemplateSettings();refreshKikaiExportUI();
   renderGenbaShuninSelect();renderPatrolPersonSelect();renderMachines();
   toast('保存方法を設定しました');
 };
-$('saveKojiNames').onclick=async()=>{
-  const a=$('set_kojinames').value.split(/[\n,、，]/).map(s=>s.trim()).filter(Boolean);
-  await saveKojiNames(a);renderKojiNameSelect();toast('保存しました');
+if($('kojiPlaceAddRow'))$('kojiPlaceAddRow').onclick=()=>{
+  $('kojiPlaceBody').insertAdjacentHTML('beforeend', kojiPlaceRowHtml({name:'',place:''}));
+  bindKpDel($('kojiPlaceBody').lastElementChild);
 };
-$('savePlaces').onclick=async()=>{
-  const a=$('set_places').value.split(/[\n,、，]/).map(s=>s.trim()).filter(Boolean);
-  await savePlaces(a);renderPlaceSelect();toast('保存しました');
+if($('saveKojiPlaces'))$('saveKojiPlaces').onclick=async()=>{
+  const rows=[...$('kojiPlaceBody').querySelectorAll('tr')].map(tr=>({
+    name:tr.querySelector('.kp-name').value.trim(),
+    place:tr.querySelector('.kp-place').value.trim(),
+  })).filter(d=>d.name||d.place);
+  await saveKojiPlaces(rows);
+  renderKojiNameSelect();renderPlaceSelect();refreshKojiPlaceSettings();
+  toast('保存しました');
 };
 $('templateUpload').onchange=async(e)=>{
   const file=e.target.files[0];if(!file)return;
