@@ -2736,11 +2736,13 @@ function buildKikaiRows(koji){
     const used=getKikaiUsedMachineNames(koji);
     const usedKeys=new Set(used.keys());
     const rows=[];
-    details.forEach(d=>{const k=normMachine(d.name); if(usedKeys.has(k)){rows.push({model:d.model||d.name,note:d.note||''}); usedKeys.delete(k);}});
-    usedKeys.forEach(k=>rows.push({model:used.get(k),note:''}));
-    return rows;
+    // 一覧表には機械名は出さない。機種・型式を登録済みの機械だけを〔機種・型式／備考〕で出す
+    details.forEach(d=>{const k=normMachine(d.name); if(usedKeys.has(k)){rows.push({model:d.model||'',note:d.note||''}); usedKeys.delete(k);}});
+    // マスタに無い（機種・型式が分からない）使用機械は、機械名を出さず「未登録」として返す
+    const unmatched=[...usedKeys].map(k=>used.get(k));
+    return {rows, unmatched};
   }
-  return details.map(d=>({model:d.model||d.name,note:d.note||''}));
+  return {rows:details.map(d=>({model:d.model||'',note:d.note||''})), unmatched:[]};
 }
 async function buildKikaiFile(base64, kojiName, rows){
   const zip=await JSZip.loadAsync(base64ToArrayBuffer(base64));
@@ -2770,8 +2772,8 @@ async function exportKikai(){
   if(!tpl){alert('先に「設定」タブで「使用機械一覧表テンプレート」を登録してください。');return;}
   if(typeof JSZip==='undefined'){alert('ZIPライブラリの読み込みに失敗しています。');return;}
   const koji=($('kikai_koji')&&$('kikai_koji').value)||'';
-  const rows=buildKikaiRows(koji);
-  if(!rows.length){note.textContent='出力する機械がありません。「設定」タブで機種・型式を登録するか、日報に使用機械を入れてください。';return;}
+  const {rows,unmatched}=buildKikaiRows(koji);
+  if(!rows.length){note.textContent='出力する機械がありません。「設定」タブで機種・型式を登録するか、日報に使用機械を入れてください。'+((unmatched&&unmatched.length)?` ※機種・型式が未登録：${unmatched.join('・')}`:'');return;}
   try{
     note.textContent='作成中…';
     const {blob,written,overflow,maxn}=await buildKikaiFile(tpl.base64, koji, rows);
@@ -2779,6 +2781,7 @@ async function exportKikai(){
     tenkenDownload(blob, `使用機械一覧表_${safe}.xlsx`);
     let msg=`使用機械一覧表を出力しました（機械${written}件）。`;
     if(overflow)msg+=` ※テンプレートの行数(${maxn})を超えたため一部のみ記入しました。`;
+    if(unmatched&&unmatched.length)msg+=` ※機種・型式が未登録のため一覧に出せなかった機械：${unmatched.join('・')}（「設定」で登録してください）`;
     note.textContent=msg; toast('使用機械一覧表を出力しました');
   }catch(err){note.textContent='出力に失敗しました：'+(err.message||err);alert('使用機械一覧表の出力に失敗しました：'+(err.message||err));}
 }
