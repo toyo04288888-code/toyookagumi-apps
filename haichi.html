@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="人員配置表">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1c7ed6">
+<link rel="manifest" href='data:application/json,{"id":"/haichi.html","name":"豊岡組 人員配置表","short_name":"人員配置表","start_url":"/haichi.html","scope":"/haichi.html","display":"standalone","background_color":"#f4f1ea","theme_color":"#1c7ed6","icons":[{"src":"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjIyIiBmaWxsPSIjMWM3ZWQ2Ii8+PGNpcmNsZSBjeD0iMzciIGN5PSIzOSIgcj0iMTMiIGZpbGw9IiNmZmYiLz48Y2lyY2xlIGN4PSI2NyIgY3k9IjQzIiByPSIxMCIgZmlsbD0iI2ZmZiIvPjxwYXRoIGQ9Ik0xNyA3OWMwLTEzIDEwLTIyIDIyLTIyczIyIDkgMjIgMjJ6IiBmaWxsPSIjZmZmIi8+PHBhdGggZD0iTTUzIDc5YzEtMTAgOC0xNyAxNi0xN3MxNSA3IDE2IDE3eiIgZmlsbD0iI2ZmZiIgb3BhY2l0eT0iLjgyIi8+PC9zdmc+","sizes":"any","type":"image/svg+xml"}]}'>
+<link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjIyIiBmaWxsPSIjMWM3ZWQ2Ii8+PGNpcmNsZSBjeD0iMzciIGN5PSIzOSIgcj0iMTMiIGZpbGw9IiNmZmYiLz48Y2lyY2xlIGN4PSI2NyIgY3k9IjQzIiByPSIxMCIgZmlsbD0iI2ZmZiIvPjxwYXRoIGQ9Ik0xNyA3OWMwLTEzIDEwLTIyIDIyLTIyczIyIDkgMjIgMjJ6IiBmaWxsPSIjZmZmIi8+PHBhdGggZD0iTTUzIDc5YzEtMTAgOC0xNyAxNi0xN3MxNSA3IDE2IDE3eiIgZmlsbD0iI2ZmZiIgb3BhY2l0eT0iLjgyIi8+PC9zdmc+">
+<title>人員配置表</title>
+<style>
+  :root{
+    --bg:#f4f1ea;
+    --panel:#ffffff;
+    --ink:#1f2421;
+    --ink-soft:#6b6f6a;
+    --line:#e4e0d6;
+    --accent:#1c7ed6;
+    --accent-dark:#1868b5;
+    --sat:#e9f3fb;         /* 土曜セル */
+    --sun:#fdeeee;         /* 日曜セル */
+    --shadow:0 1px 2px rgba(31,36,33,.06),0 6px 18px rgba(31,36,33,.07);
+    --radius:16px;
+    font-size:16px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic UI","Yu Gothic",Meiryo,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    line-height:1.5;
+    min-height:100vh;
+    overscroll-behavior:none;
+  }
+
+  /* ===== ヘッダー ===== */
+  header{
+    background:var(--panel);
+    border-bottom:1px solid var(--line);
+    padding:12px 14px 10px;
+  }
+  .title-row{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;}
+  h1{font-size:1.2rem;margin:0;font-weight:800;letter-spacing:.02em;display:flex;align-items:center;gap:8px;}
+  h1 .ico{width:26px;height:26px;flex:0 0 auto;}
+  .month-nav{display:flex;align-items:center;gap:4px;}
+  .month-nav button{
+    border:1.5px solid var(--line);background:var(--panel);color:var(--ink);
+    width:36px;height:36px;border-radius:10px;font-size:1.1rem;font-weight:800;
+    cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;
+  }
+  .month-nav .label{font-size:1.02rem;font-weight:800;min-width:118px;text-align:center;}
+  .month-nav button:active{background:var(--bg);}
+
+  /* ===== 人員プール ===== */
+  .pool-wrap{
+    background:var(--panel);border-bottom:1px solid var(--line);
+    padding:9px 12px 11px;position:sticky;top:0;z-index:20;
+  }
+  .pool-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px;}
+  .pool-head .lbl{font-size:.78rem;font-weight:800;color:var(--ink-soft);letter-spacing:.04em;}
+  .pool-head .hint{font-size:.72rem;color:var(--ink-soft);}
+  .pool{
+    display:flex;flex-wrap:wrap;gap:7px;min-height:44px;
+    border-radius:12px;transition:.12s;padding:2px;
+  }
+  .pool.trash-on{background:#fdeeee;box-shadow:inset 0 0 0 2px #e03131;}
+  .pool.trash-on::after{
+    content:"ここに離すと外す";position:absolute;
+  }
+
+  /* ===== マグネット（名前カード） ===== */
+  .mag{
+    --c:#495057;
+    display:inline-flex;align-items:center;gap:5px;
+    background:var(--c);color:#fff;
+    border-radius:10px;padding:8px 11px;font-size:.92rem;font-weight:800;
+    box-shadow:0 2px 0 rgba(0,0,0,.18),0 3px 6px rgba(0,0,0,.16);
+    cursor:grab;user-select:none;-webkit-user-select:none;
+    touch-action:none;white-space:nowrap;line-height:1.1;
+    border:1.5px solid rgba(255,255,255,.35);
+    position:relative;
+  }
+  .mag.small{padding:6px 9px;font-size:.86rem;border-radius:9px;}
+  .mag.dragging{opacity:.32;}
+  .mag.conflict{box-shadow:0 0 0 2.5px #e03131,0 2px 0 rgba(0,0,0,.18);}
+  .mag .x{
+    display:none;
+  }
+
+  /* 追加ボタン（プール内） */
+  .add-person{
+    display:inline-flex;align-items:center;gap:4px;
+    background:var(--bg);color:var(--accent);border:1.5px dashed var(--accent);
+    border-radius:10px;padding:7px 11px;font-size:.88rem;font-weight:800;
+    cursor:pointer;font-family:inherit;
+  }
+
+  /* ===== ボード（現場×日付） ===== */
+  .board-scroll{
+    overflow:auto;
+    height:calc(100vh - 168px);
+    -webkit-overflow-scrolling:touch;
+  }
+  table.board{border-collapse:separate;border-spacing:0;}
+  table.board th,table.board td{border-right:1px solid var(--line);border-bottom:1px solid var(--line);}
+
+  /* 左上の角 */
+  .corner{
+    position:sticky;left:0;top:0;z-index:15;
+    background:var(--panel);
+    min-width:104px;max-width:104px;
+    font-size:.74rem;font-weight:800;color:var(--ink-soft);
+    padding:6px 8px;text-align:left;
+  }
+  /* 日付ヘッダー行 */
+  thead th.day{
+    position:sticky;top:0;z-index:12;background:var(--panel);
+    min-width:96px;max-width:96px;
+    padding:4px 2px;text-align:center;font-weight:800;
+  }
+  thead th.day .d{font-size:1.0rem;line-height:1.1;}
+  thead th.day .w{font-size:.68rem;color:var(--ink-soft);font-weight:700;}
+  thead th.day.sat .w{color:#1c7ed6;}
+  thead th.day.sun .w{color:#e03131;}
+  thead th.day.today{box-shadow:inset 0 -3px 0 var(--accent);}
+
+  /* 現場名（左列） */
+  th.site{
+    position:sticky;left:0;z-index:10;background:var(--panel);
+    min-width:104px;max-width:104px;
+    padding:6px 8px;text-align:left;vertical-align:top;
+  }
+  th.site .sname{font-size:.9rem;font-weight:800;word-break:break-word;line-height:1.25;}
+  th.site .srm{
+    margin-top:5px;font-size:.68rem;color:var(--ink-soft);
+    background:none;border:none;cursor:pointer;padding:0;font-family:inherit;text-decoration:underline;
+  }
+
+  /* 配置セル */
+  td.cell{
+    min-width:96px;max-width:96px;vertical-align:top;
+    padding:4px;background:var(--panel);
+  }
+  td.cell.sat{background:var(--sat);}
+  td.cell.sun{background:var(--sun);}
+  td.cell .stack{display:flex;flex-wrap:wrap;gap:4px;min-height:34px;}
+  td.cell.drop-on{outline:2.5px solid var(--accent);outline-offset:-2px;background:#eaf4fd;}
+
+  /* 現場追加行 */
+  .addsite-row td{padding:8px;background:var(--bg);}
+  .add-site{
+    display:inline-flex;align-items:center;gap:5px;
+    background:var(--panel);color:var(--accent);border:1.5px dashed var(--accent);
+    border-radius:10px;padding:8px 13px;font-size:.9rem;font-weight:800;
+    cursor:pointer;font-family:inherit;
+  }
+
+  /* ===== ドラッグ中の浮遊クローン ===== */
+  #ghost{
+    position:fixed;z-index:9999;pointer-events:none;
+    transform:translate(-50%,-50%) rotate(-3deg) scale(1.06);
+    box-shadow:0 6px 0 rgba(0,0,0,.2),0 10px 22px rgba(0,0,0,.28);
+    display:none;
+  }
+
+  /* ===== フッター操作 ===== */
+  footer{
+    position:fixed;bottom:0;left:0;right:0;z-index:25;
+    background:var(--panel);border-top:1px solid var(--line);
+    padding:8px 12px;display:flex;gap:8px;justify-content:center;
+  }
+  footer button{
+    border:1.5px solid var(--line);background:var(--panel);color:var(--ink-soft);
+    border-radius:10px;padding:9px 14px;font-size:.86rem;font-weight:800;
+    cursor:pointer;font-family:inherit;
+  }
+  footer button.warn{color:#e03131;border-color:#f3c7c7;}
+
+  .empty-hint{padding:40px 20px;text-align:center;color:var(--ink-soft);font-weight:600;}
+
+  /* モーダル */
+  .mask{position:fixed;inset:0;background:rgba(31,36,33,.4);z-index:9000;display:none;align-items:center;justify-content:center;padding:20px;}
+  .mask.on{display:flex;}
+  .modal{background:var(--panel);border-radius:16px;padding:18px;width:100%;max-width:340px;box-shadow:var(--shadow);}
+  .modal h3{margin:0 0 12px;font-size:1.05rem;}
+  .modal input{width:100%;border:1.5px solid var(--line);border-radius:10px;padding:11px;font-size:1rem;font-family:inherit;}
+  .modal .row{display:flex;gap:8px;margin-top:14px;}
+  .modal .row button{flex:1;border:none;border-radius:10px;padding:11px;font-size:.95rem;font-weight:800;cursor:pointer;font-family:inherit;}
+  .modal .ok{background:var(--accent);color:#fff;}
+  .modal .cancel{background:var(--bg);color:var(--ink-soft);}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="title-row">
+    <h1>
+      <svg class="ico" viewBox="0 0 100 100"><rect width="100" height="100" rx="22" fill="#1c7ed6"/><circle cx="37" cy="39" r="13" fill="#fff"/><circle cx="67" cy="43" r="10" fill="#fff"/><path d="M17 79c0-13 10-22 22-22s22 9 22 22z" fill="#fff"/><path d="M53 79c1-10 8-17 16-17s15 7 16 17z" fill="#fff" opacity=".82"/></svg>
+      人員配置表
+    </h1>
+    <div class="month-nav">
+      <button id="prevM" aria-label="前の月">‹</button>
+      <div class="label" id="mLabel">—</div>
+      <button id="nextM" aria-label="次の月">›</button>
+    </div>
+  </div>
+</header>
+
+<div class="pool-wrap">
+  <div class="pool-head">
+    <span class="lbl">人員（ドラッグで現場へ配置）</span>
+    <span class="hint">名前を長押しで移動 / 削除</span>
+  </div>
+  <div class="pool" id="pool"></div>
+</div>
+
+<div class="board-scroll" id="boardScroll">
+  <table class="board" id="board"></table>
+</div>
+
+<footer>
+  <button id="btnClearMonth" class="warn">この月の配置をクリア</button>
+  <button id="btnManage">人員を編集</button>
+</footer>
+
+<div id="ghost"></div>
+
+<!-- 名前入力モーダル -->
+<div class="mask" id="mask">
+  <div class="modal">
+    <h3 id="mkTitle">追加</h3>
+    <input id="mkInput" type="text" placeholder="名前を入力" autocomplete="off">
+    <div class="row">
+      <button class="cancel" id="mkCancel">キャンセル</button>
+      <button class="ok" id="mkOk">追加</button>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* ============================================================
+   人員配置表（たたき台）
+   - データは端末のlocalStorageに自動保存
+   - マグネット（名前カード）を現場×日付のセルにドラッグ配置
+   ============================================================ */
+
+const LS_KEY = "toyooka_haichi_v1";
+const PALETTE = ["#1c7ed6","#e8590c","#2f9e44","#9c36b5","#e03131","#0c8599",
+                 "#f08c00","#5c940d","#c2255c","#495057","#7048e8","#d6336c"];
+const WEEK = ["日","月","火","水","木","金","土"];
+
+/* ---------- 状態 ---------- */
+let state = load();
+let curYM;                 // "YYYY-MM"
+{
+  const t = new Date();
+  curYM = t.getFullYear() + "-" + String(t.getMonth()+1).padStart(2,"0");
+}
+
+function load(){
+  try{
+    const raw = localStorage.getItem(LS_KEY);
+    if(raw) return JSON.parse(raw);
+  }catch(e){}
+  // 初期サンプル
+  return {
+    workers: [
+      {id:w(), name:"山田"}, {id:w(), name:"田中"}, {id:w(), name:"佐藤"},
+      {id:w(), name:"鈴木"}, {id:w(), name:"高橋"}
+    ],
+    sites: [
+      {id:w(), name:"A現場"}, {id:w(), name:"B現場"}, {id:w(), name:"C現場"}
+    ],
+    // placements[YM][siteId] = { day(1..31): [workerId,...] }
+    placements: {}
+  };
+}
+function save(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(state)); }catch(e){} }
+function w(){ return Math.random().toString(36).slice(2,9); }
+
+function colorOf(id){
+  const i = state.workers.findIndex(x=>x.id===id);
+  return PALETTE[(i<0?0:i) % PALETTE.length];
+}
+function workerName(id){ const x=state.workers.find(v=>v.id===id); return x?x.name:"?"; }
+
+function daysInMonth(ym){
+  const [y,m]=ym.split("-").map(Number);
+  return new Date(y,m,0).getDate();
+}
+function dowOf(ym,day){
+  const [y,m]=ym.split("-").map(Number);
+  return new Date(y,m-1,day).getDay();
+}
+function placeMap(){
+  if(!state.placements[curYM]) state.placements[curYM]={};
+  return state.placements[curYM];
+}
+function cellArr(siteId,day,create){
+  const pm=placeMap();
+  if(!pm[siteId]){ if(!create) return []; pm[siteId]={}; }
+  if(!pm[siteId][day]){ if(!create) return []; pm[siteId][day]=[]; }
+  return pm[siteId][day];
+}
+
+/* ---------- 描画 ---------- */
+function render(){
+  renderMonthLabel();
+  renderPool();
+  renderBoard();
+  save();
+}
+
+function renderMonthLabel(){
+  const [y,m]=curYM.split("-");
+  document.getElementById("mLabel").textContent = `${y}年${Number(m)}月`;
+}
+
+function renderPool(){
+  const pool=document.getElementById("pool");
+  pool.innerHTML="";
+  state.workers.forEach(wk=>{
+    const el=magEl(wk.id,false);
+    el.dataset.src="pool";
+    pool.appendChild(el);
+  });
+  const add=document.createElement("button");
+  add.className="add-person";
+  add.textContent="＋ 人を追加";
+  add.onclick=()=>openModal("人を追加","",(name)=>{
+    state.workers.push({id:w(),name});
+    render();
+  });
+  pool.appendChild(add);
+}
+
+function magEl(workerId, small){
+  const el=document.createElement("div");
+  el.className="mag"+(small?" small":"");
+  el.style.setProperty("--c", colorOf(workerId));
+  el.dataset.wid=workerId;
+  el.textContent=workerName(workerId);
+  attachDrag(el);
+  return el;
+}
+
+function renderBoard(){
+  const board=document.getElementById("board");
+  const nDays=daysInMonth(curYM);
+  const today=new Date();
+  const todayYM=today.getFullYear()+"-"+String(today.getMonth()+1).padStart(2,"0");
+  const todayD=today.getDate();
+
+  // ヘッダー
+  let html="<thead><tr>";
+  html+=`<th class="corner">現場＼日</th>`;
+  for(let d=1; d<=nDays; d++){
+    const dow=dowOf(curYM,d);
+    const cls = dow===0?"sun":dow===6?"sat":"";
+    const isToday = (curYM===todayYM && d===todayD)?"today":"";
+    html+=`<th class="day ${cls} ${isToday}"><div class="d">${d}</div><div class="w">${WEEK[dow]}</div></th>`;
+  }
+  html+="</tr></thead><tbody>";
+
+  // 現場ごとの行
+  state.sites.forEach(site=>{
+    html+="<tr>";
+    html+=`<th class="site"><div class="sname">${esc(site.name)}</div><button class="srm" data-rm="${site.id}">削除</button></th>`;
+    for(let d=1; d<=nDays; d++){
+      const dow=dowOf(curYM,d);
+      const cls = dow===0?"sun":dow===6?"sat":"";
+      html+=`<td class="cell ${cls}" data-site="${site.id}" data-day="${d}"><div class="stack"></div></td>`;
+    }
+    html+="</tr>";
+  });
+
+  // 現場追加行
+  html+=`<tr class="addsite-row"><td><button class="add-site" id="addSiteBtn">＋ 現場</button></td><td colspan="${nDays}"></td></tr>`;
+  html+="</tbody>";
+  board.innerHTML=html;
+
+  // マグネットを各セルに配置
+  const dupCount=conflictSet();
+  state.sites.forEach(site=>{
+    for(let d=1; d<=nDays; d++){
+      const arr=cellArr(site.id,d,false);
+      if(!arr.length) continue;
+      const cell=board.querySelector(`td[data-site="${site.id}"][data-day="${d}"] .stack`);
+      arr.forEach(wid=>{
+        const el=magEl(wid,true);
+        el.dataset.src="cell";
+        el.dataset.cellSite=site.id;
+        el.dataset.cellDay=d;
+        if(dupCount.has(d+"|"+wid)) el.classList.add("conflict");
+        cell.appendChild(el);
+      });
+    }
+  });
+
+  // イベント
+  board.querySelectorAll("[data-rm]").forEach(b=>{
+    b.onclick=()=>{
+      const s=state.sites.find(x=>x.id===b.dataset.rm);
+      if(confirm(`現場「${s?s.name:""}」を削除しますか？\n（この現場の配置も消えます）`)){
+        state.sites=state.sites.filter(x=>x.id!==b.dataset.rm);
+        Object.values(state.placements).forEach(pm=>{ delete pm[b.dataset.rm]; });
+        render();
+      }
+    };
+  });
+  const addBtn=document.getElementById("addSiteBtn");
+  if(addBtn) addBtn.onclick=()=>openModal("現場を追加","",(name)=>{
+    state.sites.push({id:w(),name});
+    render();
+  });
+}
+
+// 同じ日に2か所以上へ配置された人（ダブり）を検出
+function conflictSet(){
+  const seen={};          // key: day|wid -> count
+  const nDays=daysInMonth(curYM);
+  state.sites.forEach(site=>{
+    for(let d=1; d<=nDays; d++){
+      cellArr(site.id,d,false).forEach(wid=>{
+        const k=d+"|"+wid;
+        seen[k]=(seen[k]||0)+1;
+      });
+    }
+  });
+  const dup=new Set();
+  Object.keys(seen).forEach(k=>{ if(seen[k]>=2) dup.add(k); });
+  return dup;
+}
+
+/* ---------- ドラッグ（ポインタ方式：マウス＋タッチ両対応） ---------- */
+let drag=null;   // {wid, srcType, srcSite, srcDay, ghost, started}
+const ghost=document.getElementById("ghost");
+
+function attachDrag(el){
+  el.addEventListener("pointerdown", onDown);
+}
+
+function onDown(e){
+  if(e.button!==undefined && e.button!==0) return;
+  const el=e.currentTarget;
+  const startX=e.clientX, startY=e.clientY;
+  drag={
+    el,
+    wid: el.dataset.wid,
+    srcType: el.dataset.src,          // "pool" | "cell"
+    srcSite: el.dataset.cellSite||null,
+    srcDay: el.dataset.cellDay?Number(el.dataset.cellDay):null,
+    started:false, startX, startY
+  };
+  el.setPointerCapture(e.pointerId);
+  el.addEventListener("pointermove", onMove);
+  el.addEventListener("pointerup", onUp);
+  el.addEventListener("pointercancel", onUp);
+}
+
+function onMove(e){
+  if(!drag) return;
+  const dx=e.clientX-drag.startX, dy=e.clientY-drag.startY;
+  if(!drag.started){
+    if(Math.hypot(dx,dy) < 6) return;  // しきい値
+    drag.started=true;
+    drag.el.classList.add("dragging");
+    // ゴースト作成
+    ghost.className="mag";
+    ghost.style.setProperty("--c", colorOf(drag.wid));
+    ghost.textContent=workerName(drag.wid);
+    ghost.style.display="block";
+    // プールをゴミ箱化（配置済みマグネットのとき）
+    if(drag.srcType==="cell") document.getElementById("pool").classList.add("trash-on");
+  }
+  ghost.style.left=e.clientX+"px";
+  ghost.style.top=e.clientY+"px";
+  highlightTarget(e.clientX,e.clientY);
+  autoScroll(e.clientX,e.clientY);
+}
+
+let curTarget=null;
+function highlightTarget(x,y){
+  const el=document.elementFromPoint(x,y);
+  const cell=el?el.closest("td.cell"):null;
+  if(cell!==curTarget){
+    if(curTarget) curTarget.classList.remove("drop-on");
+    curTarget=cell;
+    if(curTarget) curTarget.classList.add("drop-on");
+  }
+}
+
+function autoScroll(x,y){
+  const sc=document.getElementById("boardScroll");
+  const r=sc.getBoundingClientRect();
+  const edge=48, step=18;
+  if(x>r.right-edge) sc.scrollLeft+=step;
+  else if(x<r.left+edge) sc.scrollLeft-=step;
+  if(y>r.bottom-edge) sc.scrollTop+=step;
+  else if(y<r.top+edge) sc.scrollTop-=step;
+}
+
+function onUp(e){
+  if(!drag) return;
+  const el=drag.el;
+  el.releasePointerCapture&&el.releasePointerCapture(e.pointerId);
+  el.removeEventListener("pointermove", onMove);
+  el.removeEventListener("pointerup", onUp);
+  el.removeEventListener("pointercancel", onUp);
+
+  if(drag.started){
+    const dropEl=document.elementFromPoint(e.clientX,e.clientY);
+    const targetCell=dropEl?dropEl.closest("td.cell"):null;
+    const onPool=dropEl?dropEl.closest("#pool"):null;
+
+    if(targetCell){
+      const site=targetCell.dataset.site, day=Number(targetCell.dataset.day);
+      // 元が配置済みなら取り除く（移動）
+      if(drag.srcType==="cell") removeFromCell(drag.srcSite,drag.srcDay,drag.wid);
+      // 追加（同一セル重複は防ぐ）
+      const arr=cellArr(site,day,true);
+      if(!arr.includes(drag.wid)) arr.push(drag.wid);
+      render();
+    } else if(onPool && drag.srcType==="cell"){
+      // プールに戻す＝配置解除
+      removeFromCell(drag.srcSite,drag.srcDay,drag.wid);
+      render();
+    }
+  }
+  // 後片付け
+  if(curTarget){ curTarget.classList.remove("drop-on"); curTarget=null; }
+  document.getElementById("pool").classList.remove("trash-on");
+  ghost.style.display="none";
+  el.classList.remove("dragging");
+  drag=null;
+}
+
+function removeFromCell(siteId,day,wid){
+  const arr=cellArr(siteId,day,false);
+  const i=arr.indexOf(wid);
+  if(i>=0) arr.splice(i,1);
+}
+
+/* ---------- モーダル ---------- */
+let modalCb=null;
+function openModal(title, val, cb){
+  document.getElementById("mkTitle").textContent=title;
+  const inp=document.getElementById("mkInput");
+  inp.value=val||"";
+  modalCb=cb;
+  document.getElementById("mask").classList.add("on");
+  setTimeout(()=>inp.focus(),50);
+}
+function closeModal(){ document.getElementById("mask").classList.remove("on"); modalCb=null; }
+document.getElementById("mkCancel").onclick=closeModal;
+document.getElementById("mask").onclick=(e)=>{ if(e.target.id==="mask") closeModal(); };
+document.getElementById("mkOk").onclick=()=>{
+  const v=document.getElementById("mkInput").value.trim();
+  if(!v){ closeModal(); return; }
+  const cb=modalCb; closeModal(); if(cb) cb(v);
+};
+document.getElementById("mkInput").addEventListener("keydown",e=>{ if(e.key==="Enter") document.getElementById("mkOk").click(); });
+
+/* ---------- 人員の編集（並び／削除） ---------- */
+document.getElementById("btnManage").onclick=()=>{
+  if(!state.workers.length){ alert("人員がいません。プールの「＋人を追加」で登録してください。"); return; }
+  const names=state.workers.map((x,i)=>`${i+1}. ${x.name}`).join("\n");
+  const ans=prompt("削除する人の番号を入力（例: 2）。\n何もせず閉じるにはキャンセル。\n\n"+names,"");
+  if(ans===null) return;
+  const idx=Number(ans)-1;
+  if(idx>=0 && idx<state.workers.length){
+    const wk=state.workers[idx];
+    if(confirm(`「${wk.name}」を人員リストから削除しますか？\n（配置済みの分も消えます）`)){
+      state.workers.splice(idx,1);
+      // 配置からも除去
+      Object.values(state.placements).forEach(pm=>{
+        Object.values(pm).forEach(days=>{
+          Object.keys(days).forEach(d=>{ days[d]=days[d].filter(id=>id!==wk.id); });
+        });
+      });
+      render();
+    }
+  }
+};
+
+/* ---------- 月移動 / クリア ---------- */
+document.getElementById("prevM").onclick=()=>{ curYM=shiftMonth(curYM,-1); render(); };
+document.getElementById("nextM").onclick=()=>{ curYM=shiftMonth(curYM,1); render(); };
+function shiftMonth(ym,delta){
+  let [y,m]=ym.split("-").map(Number);
+  m+=delta;
+  if(m<1){ m=12; y--; } else if(m>12){ m=1; y++; }
+  return y+"-"+String(m).padStart(2,"0");
+}
+document.getElementById("btnClearMonth").onclick=()=>{
+  if(confirm("表示中の月の配置をすべて消しますか？\n（人員・現場のリストは残ります）")){
+    delete state.placements[curYM];
+    render();
+  }
+};
+
+/* ---------- ユーティリティ ---------- */
+function esc(s){ return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+
+render();
+</script>
+</body>
+</html>
