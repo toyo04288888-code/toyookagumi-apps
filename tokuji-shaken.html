@@ -1165,7 +1165,6 @@ function openLedgerPrint(title,colgroup,headRow,bodyRows,count,fontPx){
     td .sub2{color:#555;font-size:.88em}</style></head>
     <body onload="window.focus();window.print()">
     <div class="hdr"><h1>${esc(title)}</h1><div class="pdate">${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}</div></div>
-    <div class="sub">株式会社豊岡組　${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日 現在（${count}台）</div>
     <table>${colgroup}<thead><tr>${headRow}</tr></thead><tbody>${bodyRows}</tbody></table>
     </body></html>`;
   const w=window.open("","_blank");if(!w){toast("ポップアップを許可すると開きます");return;}
