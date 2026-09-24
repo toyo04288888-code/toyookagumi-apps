@@ -1420,9 +1420,12 @@ function printLedgerMeasure(){
     .rd{white-space:nowrap;text-align:right;padding-bottom:1px;font-size:.85em;letter-spacing:-.04em}
     .blank{display:inline-block;padding-left:1em}
     .rc{font-size:.85em;padding-top:1px;white-space:nowrap;overflow:hidden}
-    .rcl{color:#666;font-size:.85em;margin-right:3px}</style></head>
+    .rcl{color:#666;font-size:.85em;margin-right:3px}
+    tfoot td.foot{border:none;height:auto;padding:3px 1px 11mm;font-size:${fs+1.5}pt}
+    .foot-in{display:flex;justify-content:space-between}
+    .company{position:fixed;left:0;right:0;bottom:1mm;text-align:center;font-size:${fs+4}pt;font-weight:700;letter-spacing:.1em}</style></head>
     <body onload="window.focus();window.print()">
-    <div class="hdr"><h1>測定機器管理台帳</h1><div class="pdate">${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日</div></div>
+    <div class="hdr"><h1>測定機器管理台帳</h1><div class="pdate">${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日 作成</div></div>
     <table>${colgroup}
     <thead>
       <tr>
@@ -1435,7 +1438,10 @@ function printLedgerMeasure(){
         <th class="lo">用途</th><th class="lo">メーカー</th><th class="lo">機械No.</th><th class="lo">保管責任者</th><th class="lo">有効期限</th>
         <th colspan="9">校正記録</th>
       </tr>
-    </thead>${body}</table></body></html>`;
+    </thead>
+    <tfoot><tr><td class="foot" colspan="20"><div class="foot-in"><span>保管は5年</span><span>書式番号　F　ー　測　ー　2</span></div></td></tr></tfoot>
+    ${body}</table>
+    <div class="company">株式会社 豊 岡 組</div></body></html>`;
   const w=window.open("","_blank");if(!w){toast("ポップアップを許可すると開きます");return;}
   w.document.write(html);w.document.close();
 }
