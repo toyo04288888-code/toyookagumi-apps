@@ -1354,7 +1354,7 @@ function printLedgerMachine(){
 function printLedgerMeasure(){
   const list=data.filter(v=>kindOf(v)==="measure").sort((a,b)=>(a.kanri||"").localeCompare(b.kanri||"","ja",{numeric:true}));
   if(!list.length){toast("測定機器が登録されていません");return;}
-  const fs=7.4;
+  const fs=8.2;
   const jd=s=>{const t=toDate(s);return t?`<span class="nw">${t.getFullYear()}年</span><wbr><span class="nw">${t.getMonth()+1}月${t.getDate()}日</span>`:"";};
   const c=s=>esc(s)||"";
   const jym=s=>{const t=toDate(s);return t?`${t.getFullYear()}年${t.getMonth()+1}月`:"";};
@@ -1393,29 +1393,30 @@ function printLedgerMeasure(){
   const html=`<html><head><meta charset="utf-8"><title>測定機器管理台帳</title>
     <style>@page{size:A4 landscape;margin:6mm}*{box-sizing:border-box}
     body{font-family:"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;color:#111;margin:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-    .hdr{display:flex;justify-content:space-between;align-items:flex-end;margin:0 0 5px}
-    h1{font-size:18px;margin:0;letter-spacing:.15em}
+    .hdr{display:grid;grid-template-columns:1fr auto 1fr;align-items:end;margin:0 0 3px}
+    h1{font-size:22px;margin:0;letter-spacing:.2em;text-align:center}
+    .pdate{text-align:right}
     .pdate{font-size:${fs+3}px;font-weight:700}
     table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:${fs}pt}
     thead{display:table-header-group}
     tbody.dev{break-inside:avoid;page-break-inside:avoid}
     th,td{border:1px solid #333;padding:2px 3px;vertical-align:middle;overflow-wrap:anywhere;line-height:1.3}
     th{background:#e6e6e6;font-weight:700;text-align:center}
-    th.up,td.up{border-bottom:1px dashed #888}
-    th.lo,td.lo{border-top:1px dashed #888}
+    th.up,td.up{border-bottom:1px dashed #888;text-align:center}
+    th.lo,td.lo{border-top:1px dashed #888;text-align:center}
     th.note{font-size:${fs-.5}pt;font-weight:700;background:#f3f3f3}
-    td{height:9mm}
+    td{height:8.8mm}
     .ctr{text-align:center}.nw{white-space:nowrap;overflow-wrap:normal}
     td.rec{padding:3px 5px;vertical-align:middle}
     .rd{white-space:nowrap;text-align:right;padding-bottom:4mm}
     .blank{display:inline-block;padding-left:2.2em}
     .rc{white-space:nowrap;border-bottom:1px solid #999;padding-bottom:1px}
     .rcl{color:#666;font-size:.85em;margin-right:3px}
-    tfoot td.foot{border:none;height:auto;padding:3px 1px 11mm;font-size:${fs+1.5}pt}
+    tfoot td.foot{border:none;height:auto;padding:2px 1px 5.5mm;font-size:${fs+1.5}pt}
     .foot-in{display:flex;justify-content:space-between}
     .company{position:fixed;left:0;right:0;bottom:1mm;text-align:center;font-size:${fs+4}pt;font-weight:700;letter-spacing:.1em}</style></head>
     <body onload="window.focus();window.print()">
-    <div class="hdr"><h1>測定機器管理台帳</h1><div class="pdate">${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日 作成</div></div>
+    <div class="hdr"><div></div><h1>測定機器管理台帳</h1><div class="pdate">${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日 作成</div></div>
     <table>${colgroup}
     <thead>
       <tr>
