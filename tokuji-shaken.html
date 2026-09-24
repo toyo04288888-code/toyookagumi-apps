@@ -396,11 +396,34 @@
     </div>
     <div class="grid2">
       <div class="field"><label>管理番号</label><input id="f_kanri" placeholder="例：C-01"></div>
-      <div class="field"><label id="l_bangou">ナンバー / 車台番号</label><input id="f_bangou" placeholder="例：福井 800 あ 12-34"></div>
+      <div class="field" id="bangouField"><label>ナンバー / 車台番号</label><input id="f_bangou" placeholder="例：福井 800 あ 12-34"></div>
     </div>
-    <div class="field"><label>メーカー・型式</label><input id="f_maker" placeholder="例：コマツ PC30MR-5"></div>
-    <div class="field"><label id="l_name">車両名 / 機械名（任意）</label><input id="f_name" placeholder="例：3号機・○○現場ダンプ"></div>
-    <div class="grid2">
+    <div id="measFields">
+      <div class="grid2">
+        <div class="field"><label>測定器名</label><input id="f_mName" placeholder="例：トータルステーション"></div>
+        <div class="field"><label>用途</label><input id="f_youto" placeholder="例：測量・丁張り"></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label>型式</label><input id="f_mModel" placeholder="例：GM-52"></div>
+        <div class="field"><label>メーカー</label><input id="f_mfr" placeholder="例：トプコン"></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label>購入先</label><input id="f_buyFrom" placeholder="例：○○測器"></div>
+        <div class="field"><label>機械No.</label><input id="f_kikaiNo" placeholder="例：K12345"></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label>購入日</label><input type="date" id="f_buyDate"></div>
+        <div class="field"><label>始業前点検</label><input id="f_shigyou" placeholder="取扱説明書に基づく"></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label>保管方法</label><input id="f_hokanHow" placeholder="例：専用ケースに入れ本社倉庫"></div>
+        <div class="field"><label>保管責任者</label><input id="f_hokanSek" placeholder="例：工事部 田中"></div>
+      </div>
+      <div class="field"><label>作成者</label><input id="f_sakusei" placeholder="例：豊岡"></div>
+    </div>
+    <div class="field" id="makerField"><label>メーカー・型式</label><input id="f_maker" placeholder="例：コマツ PC30MR-5"></div>
+    <div class="field" id="nameField"><label>車両名 / 機械名（任意）</label><input id="f_name" placeholder="例：3号機・○○現場ダンプ"></div>
+    <div class="grid2" id="hokanRow">
       <div class="field"><label>保管場所</label><input id="f_hokan" placeholder="例：本社車庫"></div>
       <div class="field"><label>取得日</label><input type="date" id="f_shutoku"></div>
     </div>
@@ -444,14 +467,15 @@
       <div class="info-line">測定機器の精度確認。校正証明書は「📎 書類」に添付できます。</div>
       <div class="sec-body">
         <div class="grid2">
-          <div class="field"><label>前回の校正日</label><input type="date" id="f_calLast"></div>
-          <div class="field"><label>校正の周期</label>
-            <select id="f_calInt"><option value="12">12か月（年1回）</option><option value="6">6か月</option><option value="24">24か月（2年）</option><option value="36">36か月（3年）</option></select>
+          <div class="field"><label>校正日（直近）</label><input type="date" id="f_calLast"></div>
+          <div class="field"><label>校正間隔</label>
+            <select id="f_calInt"><option value="12">1年</option><option value="24">2年</option><option value="36">3年</option><option value="48">4年</option><option value="60">5年</option></select>
           </div>
         </div>
-        <div class="grid2">
-          <div class="field"><label>校正業者</label><input id="f_calGyo" placeholder="例：○○測器"></div>
-          <div class="field"><label>使用者・担当</label><input id="f_calUser" placeholder="例：工事部 田中"></div>
+        <div class="info-line" id="calPreview"></div>
+        <div class="grid2" style="margin-top:12px">
+          <div class="field"><label>廃棄日</label><input type="date" id="f_mHaiki"></div>
+          <div class="field"><label>社長（廃棄承認）</label><input id="f_mShachou" placeholder="例：承認済・○"></div>
         </div>
       </div>
     </div>
@@ -472,7 +496,7 @@
     <h2 id="recTitle">検査完了を記録</h2>
     <p class="hint" id="recHint"></p>
     <div class="field"><label id="recDateLabel">検査を実施した日</label><input type="date" id="rec_date"></div>
-    <div class="field"><label>実施者 / 業者（任意）</label><input id="rec_by" placeholder="例：○○リース 田中"></div>
+    <div class="field"><label id="recByLabel">実施者 / 業者（任意）</label><input id="rec_by" placeholder="例：○○リース 田中"></div>
     <div class="field"><label>メモ（任意）</label><input id="rec_note" placeholder="例：異常なし"></div>
     <div class="info-line" id="recPreview"></div>
     <div class="modal-foot">
@@ -527,10 +551,10 @@
       <button class="btn" id="expIcs" style="justify-content:flex-start;padding:13px">🗓 カレンダーに登録（1回書き出し）</button>
       <button class="btn" id="subCal" style="justify-content:flex-start;padding:13px">🔔 カレンダーを購読（自動更新）</button>
       <div style="border:1px solid var(--line);border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:8px">
-        <div style="font-size:12.5px;color:var(--muted);font-weight:600;padding-left:2px">🖨 検査台帳を印刷（提出用一覧・A4縦）</div>
+        <div style="font-size:12.5px;color:var(--muted);font-weight:600;padding-left:2px">🖨 検査台帳を印刷（提出用一覧）</div>
         <button class="btn" id="printMachine" style="justify-content:flex-start;padding:12px">重機一覧表を印刷</button>
         <button class="btn" id="printVehicle" style="justify-content:flex-start;padding:12px">車両一覧表を印刷</button>
-        <button class="btn" id="printMeasure" style="justify-content:flex-start;padding:12px">測定機器一覧表を印刷</button>
+        <button class="btn" id="printMeasure" style="justify-content:flex-start;padding:12px">測定機器管理台帳を印刷（A4横）</button>
       </div>
       <button class="btn" id="expJson" style="justify-content:flex-start;padding:13px">📦 バックアップを保存（JSON）</button>
       <button class="btn" id="expCsv" style="justify-content:flex-start;padding:13px">📊 一覧をExcel用に書き出し（CSV）</button>
@@ -708,7 +732,7 @@ function renderAlert(){
     const dd=i.days<0?`${-i.days}日超過`:`あと${i.days}日`;
     return `<div class="alert-item">
       <span class="dot" style="background:${COLOR[st.k]}"></span>
-      <span class="nm">${esc(i.v.maker)||esc(i.v.name)||"（未登録）"}</span>
+      <span class="nm">${esc(dispName(i.v))}</span>
       <span class="tp">${i.label}</span>
       <span class="dd" style="color:${COLOR[st.k]}">${dd}</span>
       <button class="rec" onclick="openRec('${i.v.id}','${i.type}')">記録</button>
@@ -745,7 +769,7 @@ function maybeNotify(){
   if(!("Notification"in window)||Notification.permission!=="granted")return;
   const items=dueItems();if(!items.length)return;
   const over=items.filter(i=>i.days<0).length;
-  const body=items.slice(0,4).map(i=>`${i.v.maker||i.v.name||"（未登録）"}／${i.label} ${i.days<0?(-i.days)+"日超過":"あと"+i.days+"日"}`).join("\n");
+  const body=items.slice(0,4).map(i=>`${dispName(i.v)}／${i.label} ${i.days<0?(-i.days)+"日超過":"あと"+i.days+"日"}`).join("\n");
   try{new Notification("定検ナビ：期限のお知らせ",{body:(over?`期限切れ ${over}件を含む `:"")+`${items.length}件\n`+body});}catch(e){}
 }
 
@@ -804,7 +828,7 @@ function render(){
   // filter
   let list=data.slice();
   const q=search.trim().toLowerCase();
-  if(q)list=list.filter(v=>[v.name,v.kanri,v.maker,v.bangou,v.calGyo,v.calUser].join(" ").toLowerCase().includes(q));
+  if(q)list=list.filter(v=>[v.name,v.kanri,v.maker,v.bangou,v.buyFrom,v.hokanSek].join(" ").toLowerCase().includes(q));
   if(filter==="vehicle")list=list.filter(v=>kindOf(v)==="vehicle");
   if(filter==="machine")list=list.filter(v=>kindOf(v)==="machine");
   if(filter==="paving")list=list.filter(v=>kindOf(v)==="paving");
@@ -917,16 +941,19 @@ function card(v){
     </div>
   </div>`;
 }
+// 表示名：測定機器は「測定器名」、それ以外は「メーカー・型式」を優先
+function dispName(v){return (kindOf(v)==="measure"?(v.name||v.maker):(v.maker||v.name))||"（未登録）";}
 function measureCard(v,kindLabel){
   return `<div class="card">
     <div class="card-head">
       <div style="flex:1;min-width:0">
         <div class="kind-tag kind-measure">${kindLabel}</div>
-        <div class="veh-maker">${esc(v.maker)||esc(v.name)||"（未登録）"}</div>
-        ${(v.maker&&v.name)?`<div class="veh-name">${esc(v.name)}</div>`:""}
+        <div class="veh-maker">${esc(dispName(v))}</div>
+        ${(v.maker&&v.name)?`<div class="veh-name">${esc(v.maker)}</div>`:""}
         <div class="veh-ids">
           <span class="idpair"><span class="idk">管理番号</span><span class="idv">${esc(v.kanri)||"—"}</span></span>
-          <span class="idpair"><span class="idk">製造番号</span><span class="idv">${esc(v.bangou)||"—"}</span></span>
+          <span class="idpair"><span class="idk">保管責任者</span><span class="idv">${esc(v.hokanSek)||"—"}</span></span>
+          <span class="idpair"><span class="idk">校正周期</span><span class="idv">${v.calInt||12}か月</span></span>
         </div>
       </div>
       <button class="edit" onclick="openEdit('${v.id}')" title="編集">
@@ -961,16 +988,12 @@ function syncKind(){
   $("tokSec").style.display=(isVeh||isMea)?"none":"";
   $("keishinRow").style.display=(isVeh||isMea)?"none":"";
   $("shkAlsoRow").style.display=(isVeh||isMea)?"none":"";
-  $("tourokuRow").style.display=isMea?"none":"";
+  ["tourokuRow","bangouField","makerField","nameField","hokanRow"].forEach(id=>$(id).style.display=isMea?"none":"");
+  $("measFields").style.display=isMea?"":"none";
   $("calSec").style.display=isMea?"":"none";
   // 車検セクション：車両は常に表示、機械は「車検も管理する」にチェック時のみ表示
   $("shkSec").style.display=(isVeh||(!isMea&&$("f_shkAlso").checked))?"":"none";
   if(isVeh||isMea)$("f_keishin").checked=false;
-  $("l_bangou").textContent=isMea?"製造番号（シリアル）":"ナンバー / 車台番号";
-  $("f_bangou").placeholder=isMea?"例：K12345":"例：福井 800 あ 12-34";
-  $("l_name").textContent=isMea?"機器名（任意）":"車両名 / 機械名（任意）";
-  $("f_name").placeholder=isMea?"例：トータルステーション1号":"例：3号機・○○現場ダンプ";
-  $("f_maker").placeholder=isMea?"例：トプコン GM-52":"例：コマツ PC30MR-5";
   $("f_kanri").placeholder=isVeh?"例：C-01":(editKind==="paving"?"例：P-01":(isMea?"例：M-01":"例：D-03"));
   $("editTitle").textContent=(editId?"編集":"追加")+"（"+(KIND_JA[editKind]||"車両")+"）";
 }
@@ -999,29 +1022,53 @@ function openEdit(id){
   $("f_driver").value=v?.driver||"";
   $("f_calLast").value=v?.calLast||"";
   $("f_calInt").value=v?.calInt||12;
-  $("f_calGyo").value=v?.calGyo||"";
-  $("f_calUser").value=v?.calUser||"";
+  $("f_mName").value=v?.name||"";
+  $("f_mModel").value=v?.maker||"";
+  $("f_buyFrom").value=v?.buyFrom||"";
+  $("f_buyDate").value=v?.shutoku||"";
+  $("f_hokanHow").value=v?.hokan||"";
+  $("f_hokanSek").value=v?.hokanSek||"";
+  $("f_youto").value=v?.youto||"";
+  $("f_mfr").value=v?.mfr||"";
+  $("f_kikaiNo").value=v?.bangou||"";
+  $("f_shigyou").value=v?.shigyou||SHIGYOU_DEFAULT;
+  $("f_sakusei").value=v?.sakusei||"";
+  $("f_mHaiki").value=v?.haisha||"";
+  $("f_mShachou").value=v?.haishaOk||"";
   $("f_memo").value=v?.memo||"";
-  syncKind();
+  syncKind();updateCalPreview();
   $("editOverlay").classList.add("on");
 }
 document.querySelectorAll(".kind-btn").forEach(b=>b.onclick=()=>{editKind=b.dataset.kind;syncKind();});
 $("f_shkAlso").onchange=syncKind;
+const SHIGYOU_DEFAULT="取扱説明書に基づく";
+function calIntLabel(m){m=Number(m)||12;return m%12===0?`${m/12}年`:`${m}か月`;}
+function updateCalPreview(){
+  const d=$("f_calLast").value;
+  $("calPreview").innerHTML=d?`有効期限 → <b style="color:var(--amber-soft)">${fmt(addMonths(toDate(d),Number($("f_calInt").value)||12))}</b>（自動計算）`:"校正日を入れると有効期限を自動で計算します。";
+}
+$("f_calLast").addEventListener("input",updateCalPreview);
+$("f_calInt").onchange=updateCalPreview;
 
 $("btnSave").onclick=()=>{
-  const maker=$("f_maker").value.trim();
-  const name=$("f_name").value.trim();
-  if(!maker){toast("メーカー・型式を入力してください");return;}
-  const kind=editKind;
+  const kind=editKind, isMea=kind==="measure";
+  const maker=(isMea?$("f_mModel"):$("f_maker")).value.trim();
+  const name=(isMea?$("f_mName"):$("f_name")).value.trim();
+  if(isMea&&!name){toast("測定器名を入力してください");return;}
+  if(!isMea&&!maker){toast("メーカー・型式を入力してください");return;}
+  const old=editId?(data.find(x=>x.id===editId)||{}):{};
   const rec={
+    ...old,
     id:editId||uid(),
     kind,
     kanri:$("f_kanri").value.trim(),
     name,
     maker,
     bangou:$("f_bangou").value.trim(),
-    hokan:$("f_hokan").value.trim(),
-    shutoku:$("f_shutoku").value,
+    hokan:(isMea?$("f_hokanHow"):$("f_hokan")).value.trim(),
+    shutoku:(isMea?$("f_buyDate"):$("f_shutoku")).value,
+    buyFrom:isMea?$("f_buyFrom").value.trim():(old.buyFrom||""),
+    hokanSek:isMea?$("f_hokanSek").value.trim():(old.hokanSek||""),
     touroku:$("f_touroku").value.trim(),
     tokTarget:kind==="machine"||kind==="paving",
     tokLast:$("f_tokLast").value,
@@ -1038,11 +1085,20 @@ $("btnSave").onclick=()=>{
     calTarget:kind==="measure",
     calLast:$("f_calLast").value,
     calInt:Number($("f_calInt").value),
-    calGyo:$("f_calGyo").value.trim(),
-    calUser:$("f_calUser").value.trim(),
     memo:$("f_memo").value.trim(),
-    history:editId?(data.find(x=>x.id===editId)?.history||[]):[]
+    history:old.history||[]
   };
+  if(isMea){
+    Object.assign(rec,{
+      youto:$("f_youto").value.trim(),
+      mfr:$("f_mfr").value.trim(),
+      bangou:$("f_kikaiNo").value.trim(),
+      shigyou:$("f_shigyou").value.trim(),
+      sakusei:$("f_sakusei").value.trim(),
+      haisha:$("f_mHaiki").value,
+      haishaOk:$("f_mShachou").value.trim()
+    });
+  }
   if(editId){const i=data.findIndex(x=>x.id===editId);data[i]=rec;}
   else data.push(rec);
   save();render();closeAll();
@@ -1067,6 +1123,9 @@ function openRec(id,type){
   $("recDateLabel").textContent=isCal?"校正を実施した日":(isTok?"検査を実施した日":"新しい車検満了日");
   $("rec_date").value=(isTok||isCal)?fmtInput(today()):"";
   $("rec_by").value="";$("rec_note").value="";
+  $("recByLabel").textContent=isCal?"確認者（管理台帳の校正記録欄に載ります）":"実施者 / 業者（任意）";
+  $("rec_by").placeholder=isCal?"例：田中":"例：○○リース 田中";
+  $("rec_note").placeholder=isCal?"例：校正外れなし":"例：異常なし";
   updateRecPreview();
   $("recOverlay").classList.add("on");
 }
@@ -1097,6 +1156,9 @@ $("recSave").onclick=()=>{
     v.tokLast=d;
     v.history.unshift({type:"特定自主検査",date:d,by:$("rec_by").value.trim(),note:$("rec_note").value.trim(),ts:Date.now()});
   }else if(recCtx.type==="cal"){
+    // 登録時に入れた校正日が履歴に無ければ、上書き前に履歴へ残す（管理台帳の校正記録欄用）
+    if(v.calLast&&!v.history.some(x=>x.type==="校正"&&x.date===v.calLast))
+      v.history.push({type:"校正",date:v.calLast,by:"",note:"",ts:0});
     v.calLast=d;
     v.history.unshift({type:"校正",date:d,by:$("rec_by").value.trim(),note:$("rec_note").value.trim(),ts:Date.now()});
   }else{
@@ -1289,18 +1351,89 @@ function printLedgerMachine(){
 function printLedgerMeasure(){
   const list=data.filter(v=>kindOf(v)==="measure").sort((a,b)=>(a.kanri||"").localeCompare(b.kanri||"","ja",{numeric:true}));
   if(!list.length){toast("測定機器が登録されていません");return;}
-  const head=`<th class="nw">管理番号</th><th>メーカー・型式／機器名</th><th>製造番号</th><th>保管場所</th><th>使用者・担当</th><th>前回校正日</th><th>次回校正期限</th><th>校正業者</th>`;
-  const rows=list.map(v=>`<tr>
-    <td class="nw">${esc(v.kanri)||"—"}</td>
-    <td>${esc(v.maker)||"—"}${v.name?`<br><span class="sub2">${esc(v.name)}</span>`:""}</td>
-    <td>${esc(v.bangou)||"—"}</td>
-    <td>${esc(v.hokan)||"—"}</td>
-    <td>${esc(v.calUser)||"—"}</td>
-    <td class="nw">${ledgerFd(v.calLast)}</td>
-    <td class="nw">${calNext(v)?fmt(calNext(v)):"—"}</td>
-    <td>${esc(v.calGyo)||"—"}</td>
-  </tr>`).join("");
-  openLedgerPrint("測定機器一覧表","",head,rows,list.length,12);
+  const fs=6.8;
+  const jd=s=>{const t=toDate(s);return t?`<span class="nw">${t.getFullYear()}年</span><wbr><span class="nw">${t.getMonth()+1}月${t.getDate()}日</span>`:"";};
+  const c=s=>esc(s)||"";
+  // 校正記録（18枠）：アプリで記録した校正の履歴＋登録時の校正日を古い順に
+  const calRecs=v=>{
+    const h=(v.history||[]).filter(x=>x.type==="校正").map(x=>({date:x.date,by:x.by||""}));
+    if(v.calLast&&!h.some(x=>x.date===v.calLast))h.push({date:v.calLast,by:""});
+    h.sort((a,b)=>a.date.localeCompare(b.date));
+    return h.slice(-18);
+  };
+  const jd2=s=>{const t=toDate(s);return t?`${String(t.getFullYear()).slice(2)}年${t.getMonth()+1}月${t.getDate()}日`:"";};
+  const recCell=r=>`<td class="rec"><div class="rd">${r?jd2(r.date):"<span class='blank'>年</span><span class='blank'>月</span><span class='blank'>日</span>"}</div><div class="rc"><span class="rcl">確認者</span>${r?c(r.by):""}</div></td>`;
+  const body=list.map(v=>{
+    const recs=calRecs(v);
+    const slots=Array.from({length:18},(_,i)=>recs[i]);
+    const nx=calNext(v);
+    return `<tbody class="dev">
+    <tr>
+      <td rowspan="2" class="ctr">${c(v.kanri)}</td>
+      <td class="up">${c(v.name)}</td>
+      <td class="up">${c(v.maker)}</td>
+      <td class="up">${c(v.buyFrom)}</td>
+      <td rowspan="2" class="ctr">${jd(v.shutoku)}</td>
+      <td class="up">${c(v.hokan)}</td>
+      <td rowspan="2" class="ctr">${v.calTarget?calIntLabel(v.calInt):""}</td>
+      <td rowspan="2" class="ctr">${c(v.shigyou||SHIGYOU_DEFAULT)}</td>
+      <td class="up ctr">${jd(v.calLast)}</td>
+      <td rowspan="2" class="ctr">${c(v.sakusei)}</td>
+      <td class="up ctr">${jd(v.haisha)}</td>
+      ${slots.slice(0,9).map(recCell).join("")}
+    </tr>
+    <tr>
+      <td class="lo">${c(v.youto)}</td>
+      <td class="lo">${c(v.mfr)}</td>
+      <td class="lo">${c(v.bangou)}</td>
+      <td class="lo">${c(v.hokanSek)}</td>
+      <td class="lo ctr">${nx?jd(fmtInput(nx)):""}</td>
+      <td class="lo ctr">${c(v.haishaOk)}</td>
+      ${slots.slice(9,18).map(recCell).join("")}
+    </tr></tbody>`;
+  }).join("");
+  const W=[4,8,6.3,6.7,6,6.6,3.2,4,6.4,3.1,3.0];
+  const recW=(100-W.reduce((a,b)=>a+b,0))/9;
+  const colgroup=`<colgroup>${W.map(w=>`<col style="width:${w}%">`).join("")}${`<col style="width:${recW}%">`.repeat(9)}</colgroup>`;
+  const d=new Date();
+  const html=`<html><head><meta charset="utf-8"><title>測定機器管理台帳</title>
+    <style>@page{size:A4 landscape;margin:6mm}*{box-sizing:border-box}
+    body{font-family:"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;color:#111;margin:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .hdr{display:flex;justify-content:space-between;align-items:flex-end;margin:0 0 5px}
+    h1{font-size:18px;margin:0;letter-spacing:.15em}
+    .pdate{font-size:${fs+3}px;font-weight:700}
+    table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:${fs}pt}
+    thead{display:table-header-group}
+    tbody.dev{break-inside:avoid;page-break-inside:avoid}
+    th,td{border:1px solid #333;padding:2px 3px;vertical-align:middle;overflow-wrap:anywhere;line-height:1.3}
+    th{background:#e6e6e6;font-weight:700;text-align:center}
+    th.up,td.up{border-bottom:1px dashed #888}
+    th.lo,td.lo{border-top:1px dashed #888}
+    th.note{font-size:${fs-.5}pt;font-weight:700;background:#f3f3f3}
+    td{height:9mm}
+    .ctr{text-align:center}.nw{white-space:nowrap;overflow-wrap:normal}
+    td.rec{padding:1px 1px;vertical-align:top}
+    .rd{white-space:nowrap;text-align:right;border-bottom:1px dotted #aaa;padding-bottom:1px;font-size:.85em;letter-spacing:-.04em}
+    .blank{display:inline-block;padding-left:1em}
+    .rc{font-size:.85em;padding-top:1px;white-space:nowrap;overflow:hidden}
+    .rcl{color:#666;font-size:.85em;margin-right:3px}</style></head>
+    <body onload="window.focus();window.print()">
+    <div class="hdr"><h1>測定機器管理台帳</h1><div class="pdate">${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日</div></div>
+    <table>${colgroup}
+    <thead>
+      <tr>
+        <th rowspan="2">管理番号</th><th class="up">測定器名</th><th class="up">型式</th><th class="up">購入先</th>
+        <th rowspan="2">購入日</th><th class="up">保管方法</th><th rowspan="2">校正<br>間隔</th><th rowspan="2">始業前<br>点検</th>
+        <th class="up">校正日</th><th rowspan="2">作成者</th><th rowspan="2">廃棄<br>社長</th>
+        <th colspan="9" class="note">校正の結果、校正外れがあった時は妥当性の確認後是正予防処置をおこなう</th>
+      </tr>
+      <tr>
+        <th class="lo">用途</th><th class="lo">メーカー</th><th class="lo">機械No.</th><th class="lo">保管責任者</th><th class="lo">有効期限</th>
+        <th colspan="9">校正記録</th>
+      </tr>
+    </thead>${body}</table></body></html>`;
+  const w=window.open("","_blank");if(!w){toast("ポップアップを許可すると開きます");return;}
+  w.document.write(html);w.document.close();
 }
 
 /* ---------- Data menu ---------- */
@@ -1325,14 +1458,14 @@ $("expJson").onclick=async ()=>{
   toast(`バックアップを保存しました（書類 ${files.length} 件を含む）`);
 };
 $("expCsv").onclick=()=>{
-  const head=["種類","管理番号","ナンバー／製造番号","メーカー・型式","名称","特定自主検査_前回","特定自主検査_次回","車検満了日","校正_前回","校正_次回","校正業者","メモ"];
-  const rows=data.map(v=>[KIND_JA[kindOf(v)]||"",v.kanri,v.bangou,v.maker,v.name,
+  const head=["種類","管理番号","ナンバー／機械No.","メーカー・型式（測定機器は型式）","メーカー（測定機器）","名称","特定自主検査_前回","特定自主検査_次回","車検満了日","校正_前回","校正_次回","校正周期(月)","購入先","購入日","保管方法・場所","保管責任者","用途","始業前点検","作成者","メモ"];
+  const rows=data.map(v=>[KIND_JA[kindOf(v)]||"",v.kanri,v.bangou,v.maker,v.mfr||"",v.name,
     v.tokTarget?(v.tokLast||""):"対象外",
     v.tokTarget?fmt(tokuteiNext(v)):"対象外",
     v.shkTarget?(v.shkExp||""):"対象外",
     v.calTarget?(v.calLast||""):"対象外",
     v.calTarget?fmt(calNext(v)):"対象外",
-    v.calGyo||"",v.memo]
+    v.calTarget?(v.calInt||12):"",v.buyFrom||"",v.shutoku||"",v.hokan||"",v.hokanSek||"",v.youto||"",v.shigyou||"",v.sakusei||"",v.memo]
     .map(c=>`"${String(c==null?"":c).replace(/"/g,'""')}"`).join(","));
   dl("\uFEFF"+[head.join(","),...rows].join("\r\n"),`検査一覧_${stamp()}.csv`,"text/csv");
   toast("CSVを書き出しました");
