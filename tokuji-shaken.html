@@ -1126,7 +1126,7 @@ function openRec(id,type){
   $("recDateLabel").textContent=isCal?"校正を実施した年月":(isTok?"検査を実施した日":"新しい車検満了日");
   $("rec_date").value=isCal?fmtInput(today()).slice(0,7):(isTok?fmtInput(today()):"");
   $("rec_by").value="";$("rec_note").value="";
-  $("recByLabel").textContent=isCal?"確認者（管理台帳の校正記録欄に載ります）":"実施者 / 業者（任意）";
+  $("recByLabel").textContent=isCal?"確認者":"実施者 / 業者（任意）";
   $("rec_by").placeholder=isCal?"例：田中":"例：○○リース 田中";
   $("rec_note").placeholder=isCal?"例：校正外れなし":"例：異常なし";
   updateRecPreview();
@@ -1354,22 +1354,13 @@ function printLedgerMachine(){
 function printLedgerMeasure(){
   const list=data.filter(v=>kindOf(v)==="measure").sort((a,b)=>(a.kanri||"").localeCompare(b.kanri||"","ja",{numeric:true}));
   if(!list.length){toast("測定機器が登録されていません");return;}
-  const fs=6.8;
+  const fs=7.4;
   const jd=s=>{const t=toDate(s);return t?`<span class="nw">${t.getFullYear()}年</span><wbr><span class="nw">${t.getMonth()+1}月${t.getDate()}日</span>`:"";};
   const c=s=>esc(s)||"";
-  // 校正記録（18枠）：アプリで記録した校正の履歴＋登録時の校正日を古い順に
-  const calRecs=v=>{
-    const h=(v.history||[]).filter(x=>x.type==="校正").map(x=>({date:x.date,by:x.by||""}));
-    if(v.calLast&&!h.some(x=>x.date===v.calLast))h.push({date:v.calLast,by:""});
-    h.sort((a,b)=>a.date.localeCompare(b.date));
-    return h.slice(-18);
-  };
   const jym=s=>{const t=toDate(s);return t?`${t.getFullYear()}年${t.getMonth()+1}月`:"";};
-  const jd2=s=>{const t=toDate(s);return t?`${String(t.getFullYear()).slice(2)}年${t.getMonth()+1}月`:"";};
-  const recCell=r=>`<td class="rec"><div class="rd">${r?jd2(r.date):"<span class='blank'>年</span><span class='blank'>月</span>"}</div><div class="rc"><span class="rcl">確認者</span>${r?c(r.by):""}</div></td>`;
+  // 校正記録：1台につき2欄（手書き用。年月日・確認者の枠だけで、日付は入れない）
+  const recCell=`<td rowspan="2" class="rec"><div class="rd"><span class="blank">年</span><span class="blank">月</span><span class="blank">日</span></div><div class="rc">確認者</div></td>`;
   const body=list.map(v=>{
-    const recs=calRecs(v);
-    const slots=Array.from({length:18},(_,i)=>recs[i]);
     const nx=calNext(v);
     return `<tbody class="dev">
     <tr>
@@ -1384,7 +1375,7 @@ function printLedgerMeasure(){
       <td class="up ctr">${jym(v.calLast)}</td>
       <td rowspan="2" class="ctr">${c(v.sakusei)}</td>
       <td class="up ctr">${jd(v.haisha)}</td>
-      ${slots.slice(0,9).map(recCell).join("")}
+      ${recCell}${recCell}
     </tr>
     <tr>
       <td class="lo">${c(v.youto)}</td>
@@ -1393,12 +1384,11 @@ function printLedgerMeasure(){
       <td class="lo">${c(v.hokanSek)}</td>
       <td class="lo ctr">${nx?jym(fmtInput(nx)):""}</td>
       <td class="lo ctr">${c(v.haishaOk)}</td>
-      ${slots.slice(9,18).map(recCell).join("")}
     </tr></tbody>`;
   }).join("");
-  const W=[4,8,6.3,6.7,6,6.6,3.2,4,6.4,3.1,3.0];
-  const recW=(100-W.reduce((a,b)=>a+b,0))/9;
-  const colgroup=`<colgroup>${W.map(w=>`<col style="width:${w}%">`).join("")}${`<col style="width:${recW}%">`.repeat(9)}</colgroup>`;
+  const W=[5.2,10.5,8.3,8.8,7.9,8.7,4.2,5.4,8.4,4.1,4.1];
+  const recW=(100-W.reduce((a,b)=>a+b,0))/2;
+  const colgroup=`<colgroup>${W.map(w=>`<col style="width:${w}%">`).join("")}${`<col style="width:${recW}%">`.repeat(2)}</colgroup>`;
   const d=new Date();
   const html=`<html><head><meta charset="utf-8"><title>測定機器管理台帳</title>
     <style>@page{size:A4 landscape;margin:6mm}*{box-sizing:border-box}
@@ -1416,10 +1406,10 @@ function printLedgerMeasure(){
     th.note{font-size:${fs-.5}pt;font-weight:700;background:#f3f3f3}
     td{height:9mm}
     .ctr{text-align:center}.nw{white-space:nowrap;overflow-wrap:normal}
-    td.rec{padding:1px 1px;vertical-align:top}
-    .rd{white-space:nowrap;text-align:right;padding-bottom:1px;font-size:.85em;letter-spacing:-.04em}
-    .blank{display:inline-block;padding-left:1em}
-    .rc{font-size:.85em;padding-top:1px;white-space:nowrap;overflow:hidden}
+    td.rec{padding:3px 5px;vertical-align:middle}
+    .rd{white-space:nowrap;text-align:right;padding-bottom:4mm}
+    .blank{display:inline-block;padding-left:2.2em}
+    .rc{white-space:nowrap;border-bottom:1px solid #999;padding-bottom:1px}
     .rcl{color:#666;font-size:.85em;margin-right:3px}
     tfoot td.foot{border:none;height:auto;padding:3px 1px 11mm;font-size:${fs+1.5}pt}
     .foot-in{display:flex;justify-content:space-between}
@@ -1432,14 +1422,14 @@ function printLedgerMeasure(){
         <th rowspan="2">管理番号</th><th class="up">測定器名</th><th class="up">型式</th><th class="up">購入先</th>
         <th rowspan="2">購入日</th><th class="up">保管方法</th><th rowspan="2">校正<br>間隔</th><th rowspan="2">始業前<br>点検</th>
         <th class="up">校正日</th><th rowspan="2">作成者</th><th rowspan="2">廃棄<br>社長</th>
-        <th colspan="9" class="note">校正の結果、校正外れがあった時は妥当性の確認後是正予防処置をおこなう</th>
+        <th colspan="2" class="note">校正の結果、校正外れがあった時は妥当性の確認後是正予防処置をおこなう</th>
       </tr>
       <tr>
         <th class="lo">用途</th><th class="lo">メーカー</th><th class="lo">機械No.</th><th class="lo">保管責任者</th><th class="lo">有効期限</th>
-        <th colspan="9">校正記録</th>
+        <th colspan="2">校正記録</th>
       </tr>
     </thead>
-    <tfoot><tr><td class="foot" colspan="20"><div class="foot-in"><span>保管は5年</span><span>書式番号　F　ー　測　ー　2</span></div></td></tr></tfoot>
+    <tfoot><tr><td class="foot" colspan="13"><div class="foot-in"><span>保管期間は5年</span><span>書式番号　F　ー　測　ー　2</span></div></td></tr></tfoot>
     ${body}</table>
     <div class="company">株式会社 豊 岡 組</div></body></html>`;
   const w=window.open("","_blank");if(!w){toast("ポップアップを許可すると開きます");return;}

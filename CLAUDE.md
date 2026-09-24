@@ -13,7 +13,7 @@
 | `mitsumori.html` | 現場見積アプリ | 工事項目の単価・複合単価から見積作成 | React + Tailwind（ビルド済みインライン） |
 | `tokuji-shaken.html` | 定検ナビ（旧：特自・車検管理） | 車両の車検・機械の特定自主検査・測定機器の校正の期限管理 | 素のJS + Supabase（`kensa_vehicles` / `kensa_files`） |
 
-※ 定検ナビはURL・PWA維持のためファイル名を`tokuji-shaken.html`のまま据え置き。測定機器は`kind:"measure"`・`calTarget/calLast/calInt`で同じ`kensa_vehicles`テーブルに保存。項目の対応：測定器名=`name`、型式=`maker`、購入日=`shutoku`、保管方法=`hokan`、購入先=`buyFrom`、保管責任者=`hokanSek`、用途=`youto`、メーカー=`mfr`、機械No.=`bangou`、始業前点検=`shigyou`、作成者=`sakusei`、廃棄日=`haisha`、社長=`haishaOk`。「測定機器管理台帳」印刷（A3/A4横）は`printLedgerMeasure`。校正記録18枠は履歴(type:"校正")の日付・確認者(by)から自動記入。
+※ 定検ナビはURL・PWA維持のためファイル名を`tokuji-shaken.html`のまま据え置き。測定機器は`kind:"measure"`・`calTarget/calLast/calInt`で同じ`kensa_vehicles`テーブルに保存。項目の対応：測定器名=`name`、型式=`maker`、購入日=`shutoku`、保管方法=`hokan`、購入先=`buyFrom`、保管責任者=`hokanSek`、用途=`youto`、メーカー=`mfr`、機械No.=`bangou`、始業前点検=`shigyou`、作成者=`sakusei`、廃棄日=`haisha`、社長=`haishaOk`。「測定機器管理台帳」印刷（A3/A4横）は`printLedgerMeasure`。校正記録欄は1台2欄の手書き用（自動記入なし）。
 
 ## 公開URL（本番）
 
