@@ -468,7 +468,7 @@
       <div class="info-line">測定機器の精度確認。校正証明書は「📎 書類」に添付できます。</div>
       <div class="sec-body">
         <div class="grid2">
-          <div class="field"><label>校正日（直近）</label><input type="date" id="f_calLast"></div>
+          <div class="field"><label>校正日（直近・年月）</label><input type="month" id="f_calLast"></div>
           <div class="field"><label>校正間隔</label>
             <select id="f_calInt"><option value="12">1年</option><option value="24">2年</option><option value="36">3年</option><option value="48">4年</option><option value="60">5年</option></select>
           </div>
@@ -687,10 +687,11 @@ async function removeDoc(vehicleId,docId){
 }
 
 /* ---------- Date helpers ---------- */
-function toDate(s){if(!s)return null;const[y,m,d]=s.split("-").map(Number);return new Date(y,m-1,d)}
+function toDate(s){if(!s)return null;const[y,m,d]=s.split("-").map(Number);return new Date(y,m-1,d||1)} // "YYYY-MM"（年月のみ）は1日扱い
 function today(){const t=new Date();return new Date(t.getFullYear(),t.getMonth(),t.getDate())}
 function addMonths(dt,m){const d=new Date(dt);const day=d.getDate();d.setMonth(d.getMonth()+m);if(d.getDate()<day)d.setDate(0);return d}
 function fmt(dt){if(!dt)return"—";return`${dt.getFullYear()}.${String(dt.getMonth()+1).padStart(2,"0")}.${String(dt.getDate()).padStart(2,"0")}`}
+function fmtYM(dt){if(!dt)return"—";return`${dt.getFullYear()}.${String(dt.getMonth()+1).padStart(2,"0")}`}
 function daysLeft(dt){if(!dt)return null;return Math.round((dt-today())/86400000)}
 
 function tokuteiNext(v){if(!v.tokTarget||!v.tokLast)return null;return addMonths(toDate(v.tokLast),v.tokInt||12)}
@@ -887,7 +888,7 @@ function inspBlock(v,type){
   const label=isCal?"校正 期限":(isTok?"特定自主検査":"車検 満了");
   if(!on)return `<div class="insp off"><div style="flex:1"><div class="insp-label">${label}</div><div class="insp-sub">対象外</div></div></div>`;
   const sub = isCal
-    ? (v.calLast?`前回 ${fmt(toDate(v.calLast))}`:"前回未入力")
+    ? (v.calLast?`前回 ${fmtYM(toDate(v.calLast))}`:"前回未入力")
     : isTok
     ? (v.tokLast?`前回 ${fmt(toDate(v.tokLast))}`:"前回未入力")
     : (v.shkExp?"満了日":"未入力");
@@ -897,7 +898,7 @@ function inspBlock(v,type){
       ${gaugeSVG(days)}
       <div style="flex:1;min-width:0">
         <div class="insp-label">${label}</div>
-        <div class="insp-date">${fmt(nd)}</div>
+        <div class="insp-date">${isCal?fmtYM(nd):fmt(nd)}</div>
         <div class="insp-sub">${sub}</div>
       </div>
     </div>
@@ -1021,7 +1022,7 @@ function openEdit(id){
   $("f_jibai").value=v?.jibai||"";
   $("f_shakenGyo").value=v?.shakenGyo||"";
   $("f_driver").value=v?.driver||"";
-  $("f_calLast").value=v?.calLast||"";
+  $("f_calLast").value=(v?.calLast||"").slice(0,7);
   $("f_calInt").value=v?.calInt||12;
   $("f_mName").value=v?.name||"";
   $("f_mModel").value=v?.maker||"";
@@ -1046,7 +1047,7 @@ const SHIGYOU_DEFAULT="取扱説明書に基づく";
 function calIntLabel(m){m=Number(m)||12;return m%12===0?`${m/12}年`:`${m}か月`;}
 function updateCalPreview(){
   const d=$("f_calLast").value;
-  $("calPreview").innerHTML=d?`有効期限 → <b style="color:var(--amber-soft)">${fmt(addMonths(toDate(d),Number($("f_calInt").value)||12))}</b>（自動計算）`:"校正日を入れると有効期限を自動で計算します。";
+  $("calPreview").innerHTML=d?`有効期限 → <b style="color:var(--amber-soft)">${fmtYM(addMonths(toDate(d),Number($("f_calInt").value)||12))}</b>（自動計算）`:"校正日を入れると有効期限を自動で計算します。";
 }
 $("f_calLast").addEventListener("input",updateCalPreview);
 $("f_calInt").onchange=updateCalPreview;
@@ -1084,7 +1085,7 @@ $("btnSave").onclick=()=>{
     shakenGyo:$("f_shakenGyo").value.trim(),
     driver:$("f_driver").value.trim(),
     calTarget:kind==="measure",
-    calLast:$("f_calLast").value,
+    calLast:$("f_calLast").value.slice(0,7),
     calInt:Number($("f_calInt").value),
     memo:$("f_memo").value.trim(),
     history:old.history||[]
@@ -1121,8 +1122,9 @@ function openRec(id,type){
   const isTok=type==="tok", isCal=type==="cal";
   $("recTitle").textContent=isCal?"校正を記録":(isTok?"特定自主検査を記録":"車検を記録");
   $("recHint").textContent=`${v.maker||""}${v.name?"　"+v.name:""}`;
-  $("recDateLabel").textContent=isCal?"校正を実施した日":(isTok?"検査を実施した日":"新しい車検満了日");
-  $("rec_date").value=(isTok||isCal)?fmtInput(today()):"";
+  $("rec_date").type=isCal?"month":"date";
+  $("recDateLabel").textContent=isCal?"校正を実施した年月":(isTok?"検査を実施した日":"新しい車検満了日");
+  $("rec_date").value=isCal?fmtInput(today()).slice(0,7):(isTok?fmtInput(today()):"");
   $("rec_by").value="";$("rec_note").value="";
   $("recByLabel").textContent=isCal?"確認者（管理台帳の校正記録欄に載ります）":"実施者 / 業者（任意）";
   $("rec_by").placeholder=isCal?"例：田中":"例：○○リース 田中";
@@ -1142,7 +1144,7 @@ function updateRecPreview(){
     $("recPreview").innerHTML=`次回検査期限 → <b style="color:var(--amber-soft)">${fmt(next)}</b>`;
   }else if(recCtx.type==="cal"){
     const next=addMonths(toDate(d),v.calInt||12);
-    $("recPreview").innerHTML=`次回校正期限 → <b style="color:var(--amber-soft)">${fmt(next)}</b>`;
+    $("recPreview").innerHTML=`次回校正期限 → <b style="color:var(--amber-soft)">${fmtYM(next)}</b>`;
   }else{
     $("recPreview").innerHTML=`車検満了日 → <b style="color:var(--amber-soft)">${fmt(toDate(d))}</b>`;
   }
@@ -1176,7 +1178,7 @@ function openDetail(id){
   $("detSub").textContent=`${v.name&&v.maker?v.name+"　":""}${[v.kanri,v.bangou].filter(Boolean).join("　/　")}${v.memo?"　／　"+v.memo:""}`;
   const h=(v.history||[]);
   $("detHist").innerHTML=h.length
-    ? h.map(x=>`<li><span class="hd">${fmt(toDate(x.date))}</span><span class="ht">${x.type}</span><span class="hn">${esc(x.by)||"—"}${x.note?"　"+esc(x.note):""}</span></li>`).join("")
+    ? h.map(x=>`<li><span class="hd">${x.type==="校正"?fmtYM(toDate(x.date)):fmt(toDate(x.date))}</span><span class="ht">${x.type}</span><span class="hn">${esc(x.by)||"—"}${x.note?"　"+esc(x.note):""}</span></li>`).join("")
     : `<div class="no-hist">まだ履歴がありません。「〇〇を記録」ボタンから追加できます。</div>`;
   $("detOverlay").classList.add("on");
 }
@@ -1362,8 +1364,9 @@ function printLedgerMeasure(){
     h.sort((a,b)=>a.date.localeCompare(b.date));
     return h.slice(-18);
   };
-  const jd2=s=>{const t=toDate(s);return t?`${String(t.getFullYear()).slice(2)}年${t.getMonth()+1}月${t.getDate()}日`:"";};
-  const recCell=r=>`<td class="rec"><div class="rd">${r?jd2(r.date):"<span class='blank'>年</span><span class='blank'>月</span><span class='blank'>日</span>"}</div><div class="rc"><span class="rcl">確認者</span>${r?c(r.by):""}</div></td>`;
+  const jym=s=>{const t=toDate(s);return t?`${t.getFullYear()}年${t.getMonth()+1}月`:"";};
+  const jd2=s=>{const t=toDate(s);return t?`${String(t.getFullYear()).slice(2)}年${t.getMonth()+1}月`:"";};
+  const recCell=r=>`<td class="rec"><div class="rd">${r?jd2(r.date):"<span class='blank'>年</span><span class='blank'>月</span>"}</div><div class="rc"><span class="rcl">確認者</span>${r?c(r.by):""}</div></td>`;
   const body=list.map(v=>{
     const recs=calRecs(v);
     const slots=Array.from({length:18},(_,i)=>recs[i]);
@@ -1378,7 +1381,7 @@ function printLedgerMeasure(){
       <td class="up">${c(v.hokan)}</td>
       <td rowspan="2" class="ctr">${v.calTarget?calIntLabel(v.calInt):""}</td>
       <td rowspan="2" class="ctr">${c(v.shigyou||SHIGYOU_DEFAULT)}</td>
-      <td class="up ctr">${jd(v.calLast)}</td>
+      <td class="up ctr">${jym(v.calLast)}</td>
       <td rowspan="2" class="ctr">${c(v.sakusei)}</td>
       <td class="up ctr">${jd(v.haisha)}</td>
       ${slots.slice(0,9).map(recCell).join("")}
@@ -1388,7 +1391,7 @@ function printLedgerMeasure(){
       <td class="lo">${c(v.mfr)}</td>
       <td class="lo">${c(v.bangou)}</td>
       <td class="lo">${c(v.hokanSek)}</td>
-      <td class="lo ctr">${nx?jd(fmtInput(nx)):""}</td>
+      <td class="lo ctr">${nx?jym(fmtInput(nx)):""}</td>
       <td class="lo ctr">${c(v.haishaOk)}</td>
       ${slots.slice(9,18).map(recCell).join("")}
     </tr></tbody>`;
@@ -1464,7 +1467,7 @@ $("expCsv").onclick=()=>{
     v.tokTarget?(v.tokLast||""):"対象外",
     v.tokTarget?fmt(tokuteiNext(v)):"対象外",
     v.shkTarget?(v.shkExp||""):"対象外",
-    v.calTarget?(v.calLast||""):"対象外",
+    v.calTarget?(v.calLast||"").slice(0,7):"対象外",
     v.calTarget?fmt(calNext(v)):"対象外",
     v.calTarget?(v.calInt||12):"",v.buyFrom||"",v.shutoku||"",v.hokan||"",v.hokanSek||"",v.youto||"",v.shigyou||"",v.sakusei||"",v.memo]
     .map(c=>`"${String(c==null?"":c).replace(/"/g,'""')}"`).join(","));
