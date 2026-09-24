@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#0d1826">
-<title>特自・車検管理</title>
+<title>定検ナビ</title>
 <link rel="manifest" href="/tokuji.webmanifest">
 <link rel="apple-touch-icon" href="/icon-192.png">
 <style>
@@ -140,8 +140,9 @@
   .kind-tag.kind-vehicle{background:rgba(88,166,255,.16);color:#6cb0ff}
   .kind-tag.kind-machine{background:rgba(245,166,35,.16);color:var(--amber-soft)}
   .kind-tag.kind-paving{background:rgba(180,142,240,.18);color:#c3a6ff}
-  .kind-seg{display:flex;gap:8px;margin:4px 0 16px}
-  .kind-btn{flex:1;padding:13px 10px;border-radius:12px;border:1.5px solid var(--line);background:var(--navy-900);color:var(--muted);font-size:14px;font-weight:700;cursor:pointer;transition:.12s;font-family:inherit}
+  .kind-tag.kind-measure{background:rgba(57,192,160,.16);color:#5fd6b8}
+  .kind-seg{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 16px}
+  .kind-btn{flex:1 1 calc(50% - 4px);padding:13px 10px;border-radius:12px;border:1.5px solid var(--line);background:var(--navy-900);color:var(--muted);font-size:14px;font-weight:700;cursor:pointer;transition:.12s;font-family:inherit}
   .kind-btn.on{border-color:var(--amber);background:rgba(245,166,35,.12);color:var(--amber-soft)}
   .card{
     background:var(--navy-800);border:1px solid var(--line);border-radius:16px;
@@ -333,8 +334,8 @@
     <div class="wrap head-in">
       <div class="logo">豊</div>
       <div class="title">
-        <h1>特自・車検管理</h1>
-        <span>TOKUTEI-JISHU-KENSA ／ SHAKEN</span>
+        <h1>定検ナビ</h1>
+        <span>特自 ／ 車検 ／ 測定機器校正</span>
       </div>
       <div class="head-actions">
         <span id="netDot" class="net-dot" title="オンライン（同期中）"></span>
@@ -347,7 +348,7 @@
         </button>
         <button class="btn primary" id="btnAdd">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>
-          <span>車両・機械を追加</span>
+          <span>追加</span>
         </button>
       </div>
     </div>
@@ -360,13 +361,14 @@
     <div class="controls">
       <div class="search">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>
-        <input id="search" placeholder="メーカー・型式・管理番号・ナンバーで検索">
+        <input id="search" placeholder="メーカー・型式・管理番号・ナンバー・製造番号で検索">
       </div>
       <div class="tabs" id="tabs">
         <button class="tab on" data-f="all">すべて</button>
         <button class="tab" data-f="vehicle">🚚 車両</button>
         <button class="tab" data-f="machine">🚜 機械</button>
         <button class="tab" data-f="paving">🛣 舗装機械</button>
+        <button class="tab" data-f="measure">📏 測定機器</button>
         <button class="tab" data-f="keishin">🧾 経審</button>
         <button class="tab" data-f="due">要対応</button>
       </div>
@@ -385,23 +387,24 @@
 <div class="overlay" id="editOverlay">
   <div class="modal">
     <h2 id="editTitle">追加</h2>
-    <p class="hint">まず「車両」か「機械」を選んでください。</p>
+    <p class="hint">まず種類を選んでください。</p>
     <div class="kind-seg">
       <button type="button" class="kind-btn" data-kind="vehicle">🚚 車両</button>
       <button type="button" class="kind-btn" data-kind="machine">🚜 機械</button>
       <button type="button" class="kind-btn" data-kind="paving">🛣 舗装機械</button>
+      <button type="button" class="kind-btn" data-kind="measure">📏 測定機器</button>
     </div>
     <div class="grid2">
       <div class="field"><label>管理番号</label><input id="f_kanri" placeholder="例：C-01"></div>
-      <div class="field"><label>ナンバー / 車台番号</label><input id="f_bangou" placeholder="例：福井 800 あ 12-34"></div>
+      <div class="field"><label id="l_bangou">ナンバー / 車台番号</label><input id="f_bangou" placeholder="例：福井 800 あ 12-34"></div>
     </div>
     <div class="field"><label>メーカー・型式</label><input id="f_maker" placeholder="例：コマツ PC30MR-5"></div>
-    <div class="field"><label>車両名 / 機械名（任意）</label><input id="f_name" placeholder="例：3号機・○○現場ダンプ"></div>
+    <div class="field"><label id="l_name">車両名 / 機械名（任意）</label><input id="f_name" placeholder="例：3号機・○○現場ダンプ"></div>
     <div class="grid2">
       <div class="field"><label>保管場所</label><input id="f_hokan" placeholder="例：本社車庫"></div>
       <div class="field"><label>取得日</label><input type="date" id="f_shutoku"></div>
     </div>
-    <div class="field"><label>登録承認</label><input id="f_touroku" placeholder="例：承認者名や ○"></div>
+    <div class="field" id="tourokuRow"><label>登録承認</label><input id="f_touroku" placeholder="例：承認者名や ○"></div>
     <label class="check-row" id="keishinRow"><input type="checkbox" id="f_keishin"><span>経審に提出する</span></label>
     <label class="check-row" id="shkAlsoRow"><input type="checkbox" id="f_shkAlso"><span>車検も管理する（この機械は車検の対象）</span></label>
 
@@ -433,6 +436,23 @@
           <div class="field"><label>車検業者</label><input id="f_shakenGyo" placeholder="例：○○モータース"></div>
         </div>
         <div class="field"><label>運転者</label><input id="f_driver" placeholder="例：坂本"></div>
+      </div>
+    </div>
+
+    <div class="toggle-sec" id="calSec">
+      <div class="toggle-head"><b>校正（キャリブレーション）</b></div>
+      <div class="info-line">測定機器の精度確認。校正証明書は「📎 書類」に添付できます。</div>
+      <div class="sec-body">
+        <div class="grid2">
+          <div class="field"><label>前回の校正日</label><input type="date" id="f_calLast"></div>
+          <div class="field"><label>校正の周期</label>
+            <select id="f_calInt"><option value="12">12か月（年1回）</option><option value="6">6か月</option><option value="24">24か月（2年）</option><option value="36">36か月（3年）</option></select>
+          </div>
+        </div>
+        <div class="grid2">
+          <div class="field"><label>校正業者</label><input id="f_calGyo" placeholder="例：○○測器"></div>
+          <div class="field"><label>使用者・担当</label><input id="f_calUser" placeholder="例：工事部 田中"></div>
+        </div>
       </div>
     </div>
 
@@ -479,11 +499,12 @@
 <div class="overlay" id="docOverlay">
   <div class="modal">
     <h2 id="docTitle"></h2>
-    <p class="hint">車検証・特定自主検査記録表などを添付します。写真(JPEG/PNG)・PDFに対応。</p>
+    <p class="hint">車検証・特定自主検査記録表・校正証明書などを添付します。写真(JPEG/PNG)・PDFに対応。</p>
     <div class="doc-add">
       <select id="docCat">
         <option value="特定自主検査">特定自主検査</option>
         <option value="車検">車検</option>
+        <option value="校正">校正</option>
         <option value="その他">その他</option>
       </select>
       <label class="btn primary" for="docFile" style="padding:10px 14px;cursor:pointer">＋ ファイルを添付</label>
@@ -509,6 +530,7 @@
         <div style="font-size:12.5px;color:var(--muted);font-weight:600;padding-left:2px">🖨 検査台帳を印刷（提出用一覧・A4縦）</div>
         <button class="btn" id="printMachine" style="justify-content:flex-start;padding:12px">重機一覧表を印刷</button>
         <button class="btn" id="printVehicle" style="justify-content:flex-start;padding:12px">車両一覧表を印刷</button>
+        <button class="btn" id="printMeasure" style="justify-content:flex-start;padding:12px">測定機器一覧表を印刷</button>
       </div>
       <button class="btn" id="expJson" style="justify-content:flex-start;padding:13px">📦 バックアップを保存（JSON）</button>
       <button class="btn" id="expCsv" style="justify-content:flex-start;padding:13px">📊 一覧をExcel用に書き出し（CSV）</button>
@@ -648,6 +670,7 @@ function daysLeft(dt){if(!dt)return null;return Math.round((dt-today())/86400000
 
 function tokuteiNext(v){if(!v.tokTarget||!v.tokLast)return null;return addMonths(toDate(v.tokLast),v.tokInt||12)}
 function shakenNext(v){if(!v.shkTarget||!v.shkExp)return null;return toDate(v.shkExp)}
+function calNext(v){if(!v.calTarget||!v.calLast)return null;return addMonths(toDate(v.calLast),v.calInt||12)}
 
 function statusOf(days){
   if(days===null)return{k:"off",t:"未設定"};
@@ -660,7 +683,7 @@ const COLOR={red:"var(--red)",org:"var(--orange)",yel:"var(--yellow)",grn:"var(-
 
 // worst (most urgent) days across both inspections
 function urgency(v){
-  const arr=[daysLeft(tokuteiNext(v)),daysLeft(shakenNext(v))].filter(x=>x!==null);
+  const arr=[daysLeft(tokuteiNext(v)),daysLeft(shakenNext(v)),daysLeft(calNext(v))].filter(x=>x!==null);
   return arr.length?Math.min(...arr):9999;
 }
 
@@ -670,6 +693,7 @@ function dueItems(){
   data.forEach(v=>{
     if(v.tokTarget){const d=daysLeft(tokuteiNext(v));if(d!==null&&d<=30)out.push({v,type:"tok",label:"特定自主検査",days:d});}
     if(v.shkTarget){const d=daysLeft(shakenNext(v));if(d!==null&&d<=30)out.push({v,type:"shk",label:"車検",days:d});}
+    if(v.calTarget){const d=daysLeft(calNext(v));if(d!==null&&d<=30)out.push({v,type:"cal",label:"校正",days:d});}
   });
   return out.sort((a,b)=>a.days-b.days);
 }
@@ -690,7 +714,7 @@ function renderAlert(){
       <button class="rec" onclick="openRec('${i.v.id}','${i.type}')">記録</button>
     </div>`;
   };
-  const groups=[["vehicle","🚚 車両"],["machine","🚜 機械"],["paving","🛣 舗装機械"]];
+  const groups=[["vehicle","🚚 車両"],["machine","🚜 機械"],["paving","🛣 舗装機械"],["measure","📏 測定機器"]];
   const groupHtml=groups.map(([k,label])=>{
     const gi=items.filter(i=>kindOf(i.v)===k);
     if(!gi.length)return "";
@@ -699,7 +723,7 @@ function renderAlert(){
   bar.innerHTML=`
     <div class="alert-top">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.3 3.9l-8 14A2 2 0 004 21h16a2 2 0 001.7-3l-8-14a2 2 0 00-3.4 0zM12 9v4M12 17h.01"/></svg>
-      <b>期限が近い検査が ${items.length} 件あります</b>
+      <b>期限が近い検査・校正が ${items.length} 件あります</b>
       <span class="push">${pushTxt}</span>
     </div>
     ${groupHtml}`;
@@ -722,7 +746,7 @@ function maybeNotify(){
   const items=dueItems();if(!items.length)return;
   const over=items.filter(i=>i.days<0).length;
   const body=items.slice(0,4).map(i=>`${i.v.maker||i.v.name||"（未登録）"}／${i.label} ${i.days<0?(-i.days)+"日超過":"あと"+i.days+"日"}`).join("\n");
-  try{new Notification("検査期限のお知らせ",{body:(over?`期限切れ ${over}件を含む `:"")+`${items.length}件\n`+body});}catch(e){}
+  try{new Notification("定検ナビ：期限のお知らせ",{body:(over?`期限切れ ${over}件を含む `:"")+`${items.length}件\n`+body});}catch(e){}
 }
 
 /* ---------- Calendar (.ics) ---------- */
@@ -744,6 +768,7 @@ function buildICS(){
     const items=[];
     if(v.tokTarget&&tokuteiNext(v))items.push(["特定自主検査",tokuteiNext(v)]);
     if(v.shkTarget&&shakenNext(v))items.push(["車検満了",shakenNext(v)]);
+    if(v.calTarget&&calNext(v))items.push(["校正",calNext(v)]);
     items.forEach(([label,dt])=>{
       const lead=label.includes("車検")?3:1;
       const nm=v.name||v.maker||"";
@@ -765,13 +790,13 @@ function render(){
   // summary
   let over=0,soon=0,ok=0;
   data.forEach(v=>{
-    [tokuteiNext(v),shakenNext(v)].forEach(nd=>{
+    [tokuteiNext(v),shakenNext(v),calNext(v)].forEach(nd=>{
       const d=daysLeft(nd);if(d===null)return;
       if(d<0)over++;else if(d<=30)soon++;else ok++;
     });
   });
   $("summary").innerHTML=`
-    <div class="stat all"><div class="n">${data.length}</div><div class="l">登録台数</div></div>
+    <div class="stat all"><div class="n">${data.length}</div><div class="l">登録数</div></div>
     <div class="stat red"><div class="n">${over}</div><div class="l">期限切れ</div></div>
     <div class="stat org"><div class="n">${soon}</div><div class="l">30日以内</div></div>
     <div class="stat grn"><div class="n">${ok}</div><div class="l">期限内</div></div>`;
@@ -779,10 +804,11 @@ function render(){
   // filter
   let list=data.slice();
   const q=search.trim().toLowerCase();
-  if(q)list=list.filter(v=>[v.name,v.kanri,v.maker,v.bangou].join(" ").toLowerCase().includes(q));
+  if(q)list=list.filter(v=>[v.name,v.kanri,v.maker,v.bangou,v.calGyo,v.calUser].join(" ").toLowerCase().includes(q));
   if(filter==="vehicle")list=list.filter(v=>kindOf(v)==="vehicle");
   if(filter==="machine")list=list.filter(v=>kindOf(v)==="machine");
   if(filter==="paving")list=list.filter(v=>kindOf(v)==="paving");
+  if(filter==="measure")list=list.filter(v=>kindOf(v)==="measure");
   if(filter==="keishin")list=list.filter(v=>v.keishin);
   if(filter==="due")list=list.filter(v=>urgency(v)<=30);
 
@@ -795,7 +821,7 @@ function render(){
   if(!list.length){
     grid.innerHTML=`<div class="empty">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 13l2-5h14l2 5M5 13h14v5a1 1 0 01-1 1h-1a2 2 0 01-4 0H9a2 2 0 01-4 0H5a1 1 0 01-1-1v-5z"/><circle cx="7.5" cy="18.5" r="1.5"/><circle cx="16.5" cy="18.5" r="1.5"/></svg>
-      <h3>${data.length?"該当する登録がありません":"車両・機械が未登録です"}</h3>
+      <h3>${data.length?"該当する登録がありません":"車両・機械・測定機器が未登録です"}</h3>
       <p>${data.length?"検索条件やフィルターを変えてみてください":"右上の「追加」から登録を始めましょう"}</p>
     </div>`;
     return;
@@ -803,8 +829,9 @@ function render(){
   const veh=list.filter(v=>kindOf(v)==="vehicle");
   const mac=list.filter(v=>kindOf(v)==="machine");
   const pav=list.filter(v=>kindOf(v)==="paving");
+  const mea=list.filter(v=>kindOf(v)==="measure");
   const section=(title,arr)=>arr.length?`<div class="group-head">${title}<span class="cnt">${arr.length}台</span></div><div class="grid-inner">${arr.map(card).join("")}</div>`:"";
-  grid.innerHTML=section("🚚 車両（車検）",veh)+section("🚜 機械（特定自主検査）",mac)+section("🛣 舗装機械（特定自主検査）",pav);
+  grid.innerHTML=section("🚚 車両（車検）",veh)+section("🚜 機械（特定自主検査）",mac)+section("🛣 舗装機械（特定自主検査）",pav)+section("📏 測定機器（校正）",mea);
 }
 
 function gaugeSVG(days){
@@ -827,14 +854,16 @@ function gaugeSVG(days){
 }
 
 function inspBlock(v,type){
-  const isTok=type==="tok";
-  const on = isTok?v.tokTarget:v.shkTarget;
-  const nd = isTok?tokuteiNext(v):shakenNext(v);
+  const isTok=type==="tok", isCal=type==="cal";
+  const on = isCal?v.calTarget:(isTok?v.tokTarget:v.shkTarget);
+  const nd = isCal?calNext(v):(isTok?tokuteiNext(v):shakenNext(v));
   const days=daysLeft(nd);
   const st=statusOf(on?days:null);
-  const label=isTok?"特定自主検査":"車検 満了";
+  const label=isCal?"校正 期限":(isTok?"特定自主検査":"車検 満了");
   if(!on)return `<div class="insp off"><div style="flex:1"><div class="insp-label">${label}</div><div class="insp-sub">対象外</div></div></div>`;
-  const sub = isTok
+  const sub = isCal
+    ? (v.calLast?`前回 ${fmt(toDate(v.calLast))}`:"前回未入力")
+    : isTok
     ? (v.tokLast?`前回 ${fmt(toDate(v.tokLast))}`:"前回未入力")
     : (v.shkExp?"満了日":"未入力");
   return `<div class="insp">
@@ -854,6 +883,7 @@ function card(v){
   const k=kindOf(v);
   const isVeh=k==="vehicle";
   const kindLabel=KIND_TAG[k]||"🚚 車両";
+  if(k==="measure")return measureCard(v,kindLabel);
   return `<div class="card">
     <div class="card-head">
       <div style="flex:1;min-width:0">
@@ -887,6 +917,32 @@ function card(v){
     </div>
   </div>`;
 }
+function measureCard(v,kindLabel){
+  return `<div class="card">
+    <div class="card-head">
+      <div style="flex:1;min-width:0">
+        <div class="kind-tag kind-measure">${kindLabel}</div>
+        <div class="veh-maker">${esc(v.maker)||esc(v.name)||"（未登録）"}</div>
+        ${(v.maker&&v.name)?`<div class="veh-name">${esc(v.name)}</div>`:""}
+        <div class="veh-ids">
+          <span class="idpair"><span class="idk">管理番号</span><span class="idv">${esc(v.kanri)||"—"}</span></span>
+          <span class="idpair"><span class="idk">製造番号</span><span class="idv">${esc(v.bangou)||"—"}</span></span>
+        </div>
+      </div>
+      <button class="edit" onclick="openEdit('${v.id}')" title="編集">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
+      </button>
+    </div>
+    <div class="insp-row">${inspBlock(v,"cal")}</div>
+    <div class="card-actions">
+      <div class="frow"><button class="mini acc" onclick="openRec('${v.id}','cal')">校正を記録</button></div>
+      <div class="frow">
+        <button class="mini" onclick="openDetail('${v.id}')">履歴</button>
+        <button class="mini" onclick="openDocs('${v.id}')">📎 書類<span class="doc-count">${(v.docs||[]).length?" "+(v.docs||[]).length:""}</span></button>
+      </div>
+    </div>
+  </div>`;
+}
 function esc(s){return(s==null?"":String(s)).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
 
 /* ---------- Edit ---------- */
@@ -897,18 +953,25 @@ function kindOf(v){
   if(v&&v.shkTarget&&!v.tokTarget)return "vehicle";
   return (v&&v.tokTarget)?"machine":"vehicle";
 }
-const KIND_JA={vehicle:"車両",machine:"機械",paving:"舗装機械"};
-const KIND_TAG={vehicle:"🚚 車両",machine:"🚜 機械",paving:"🛣 舗装機械"};
+const KIND_JA={vehicle:"車両",machine:"機械",paving:"舗装機械",measure:"測定機器"};
+const KIND_TAG={vehicle:"🚚 車両",machine:"🚜 機械",paving:"🛣 舗装機械",measure:"📏 測定機器"};
 function syncKind(){
   document.querySelectorAll(".kind-btn").forEach(b=>b.classList.toggle("on",b.dataset.kind===editKind));
-  const isVeh=editKind==="vehicle";
-  $("tokSec").style.display=isVeh?"none":"";
-  $("keishinRow").style.display=isVeh?"none":"";
-  $("shkAlsoRow").style.display=isVeh?"none":"";
+  const isVeh=editKind==="vehicle", isMea=editKind==="measure";
+  $("tokSec").style.display=(isVeh||isMea)?"none":"";
+  $("keishinRow").style.display=(isVeh||isMea)?"none":"";
+  $("shkAlsoRow").style.display=(isVeh||isMea)?"none":"";
+  $("tourokuRow").style.display=isMea?"none":"";
+  $("calSec").style.display=isMea?"":"none";
   // 車検セクション：車両は常に表示、機械は「車検も管理する」にチェック時のみ表示
-  $("shkSec").style.display=(isVeh||$("f_shkAlso").checked)?"":"none";
-  if(isVeh)$("f_keishin").checked=false;
-  $("f_kanri").placeholder=isVeh?"例：C-01":(editKind==="paving"?"例：P-01":"例：D-03");
+  $("shkSec").style.display=(isVeh||(!isMea&&$("f_shkAlso").checked))?"":"none";
+  if(isVeh||isMea)$("f_keishin").checked=false;
+  $("l_bangou").textContent=isMea?"製造番号（シリアル）":"ナンバー / 車台番号";
+  $("f_bangou").placeholder=isMea?"例：K12345":"例：福井 800 あ 12-34";
+  $("l_name").textContent=isMea?"機器名（任意）":"車両名 / 機械名（任意）";
+  $("f_name").placeholder=isMea?"例：トータルステーション1号":"例：3号機・○○現場ダンプ";
+  $("f_maker").placeholder=isMea?"例：トプコン GM-52":"例：コマツ PC30MR-5";
+  $("f_kanri").placeholder=isVeh?"例：C-01":(editKind==="paving"?"例：P-01":(isMea?"例：M-01":"例：D-03"));
   $("editTitle").textContent=(editId?"編集":"追加")+"（"+(KIND_JA[editKind]||"車両")+"）";
 }
 function openEdit(id){
@@ -934,6 +997,10 @@ function openEdit(id){
   $("f_jibai").value=v?.jibai||"";
   $("f_shakenGyo").value=v?.shakenGyo||"";
   $("f_driver").value=v?.driver||"";
+  $("f_calLast").value=v?.calLast||"";
+  $("f_calInt").value=v?.calInt||12;
+  $("f_calGyo").value=v?.calGyo||"";
+  $("f_calUser").value=v?.calUser||"";
   $("f_memo").value=v?.memo||"";
   syncKind();
   $("editOverlay").classList.add("on");
@@ -956,18 +1023,23 @@ $("btnSave").onclick=()=>{
     hokan:$("f_hokan").value.trim(),
     shutoku:$("f_shutoku").value,
     touroku:$("f_touroku").value.trim(),
-    tokTarget:kind!=="vehicle",
+    tokTarget:kind==="machine"||kind==="paving",
     tokLast:$("f_tokLast").value,
     tokInt:Number($("f_tokInt").value),
     capacity:$("f_capacity").value.trim(),
     haisha:$("f_haisha").value,
     haishaOk:$("f_haishaOk").value.trim(),
-    keishin:kind!=="vehicle" && $("f_keishin").checked,
-    shkTarget:kind==="vehicle" || (kind!=="vehicle" && $("f_shkAlso").checked),
+    keishin:(kind==="machine"||kind==="paving") && $("f_keishin").checked,
+    shkTarget:kind==="vehicle" || ((kind==="machine"||kind==="paving") && $("f_shkAlso").checked),
     shkExp:$("f_shkExp").value,
     jibai:$("f_jibai").value,
     shakenGyo:$("f_shakenGyo").value.trim(),
     driver:$("f_driver").value.trim(),
+    calTarget:kind==="measure",
+    calLast:$("f_calLast").value,
+    calInt:Number($("f_calInt").value),
+    calGyo:$("f_calGyo").value.trim(),
+    calUser:$("f_calUser").value.trim(),
     memo:$("f_memo").value.trim(),
     history:editId?(data.find(x=>x.id===editId)?.history||[]):[]
   };
@@ -978,7 +1050,7 @@ $("btnSave").onclick=()=>{
 };
 $("btnDelete").onclick=()=>{
   if(!editId)return;
-  if(confirm("この車両・機械を削除しますか？履歴も削除されます。")){
+  if(confirm("この登録を削除しますか？履歴も削除されます。")){
     const id=editId;
     deleteVehicle(id);
     data=data.filter(x=>x.id!==id);save();render();closeAll();toast("削除しました");
@@ -989,11 +1061,11 @@ $("btnDelete").onclick=()=>{
 function openRec(id,type){
   recCtx={id,type};
   const v=data.find(x=>x.id===id);
-  const isTok=type==="tok";
-  $("recTitle").textContent=isTok?"特定自主検査を記録":"車検を記録";
+  const isTok=type==="tok", isCal=type==="cal";
+  $("recTitle").textContent=isCal?"校正を記録":(isTok?"特定自主検査を記録":"車検を記録");
   $("recHint").textContent=`${v.maker||""}${v.name?"　"+v.name:""}`;
-  $("recDateLabel").textContent=isTok?"検査を実施した日":"新しい車検満了日";
-  $("rec_date").value=isTok?fmtInput(today()):"";
+  $("recDateLabel").textContent=isCal?"校正を実施した日":(isTok?"検査を実施した日":"新しい車検満了日");
+  $("rec_date").value=(isTok||isCal)?fmtInput(today()):"";
   $("rec_by").value="";$("rec_note").value="";
   updateRecPreview();
   $("recOverlay").classList.add("on");
@@ -1008,6 +1080,9 @@ function updateRecPreview(){
   if(recCtx.type==="tok"){
     const next=addMonths(toDate(d),v.tokInt||12);
     $("recPreview").innerHTML=`次回検査期限 → <b style="color:var(--amber-soft)">${fmt(next)}</b>`;
+  }else if(recCtx.type==="cal"){
+    const next=addMonths(toDate(d),v.calInt||12);
+    $("recPreview").innerHTML=`次回校正期限 → <b style="color:var(--amber-soft)">${fmt(next)}</b>`;
   }else{
     $("recPreview").innerHTML=`車検満了日 → <b style="color:var(--amber-soft)">${fmt(toDate(d))}</b>`;
   }
@@ -1021,6 +1096,9 @@ $("recSave").onclick=()=>{
   if(recCtx.type==="tok"){
     v.tokLast=d;
     v.history.unshift({type:"特定自主検査",date:d,by:$("rec_by").value.trim(),note:$("rec_note").value.trim(),ts:Date.now()});
+  }else if(recCtx.type==="cal"){
+    v.calLast=d;
+    v.history.unshift({type:"校正",date:d,by:$("rec_by").value.trim(),note:$("rec_note").value.trim(),ts:Date.now()});
   }else{
     v.shkExp=d;
     v.history.unshift({type:"車検",date:d,by:$("rec_by").value.trim(),note:$("rec_note").value.trim(),ts:Date.now()});
@@ -1036,7 +1114,7 @@ function openDetail(id){
   const h=(v.history||[]);
   $("detHist").innerHTML=h.length
     ? h.map(x=>`<li><span class="hd">${fmt(toDate(x.date))}</span><span class="ht">${x.type}</span><span class="hn">${esc(x.by)||"—"}${x.note?"　"+esc(x.note):""}</span></li>`).join("")
-    : `<div class="no-hist">まだ履歴がありません。「特定自主検査を記録」「車検を記録」から追加できます。</div>`;
+    : `<div class="no-hist">まだ履歴がありません。「〇〇を記録」ボタンから追加できます。</div>`;
   $("detOverlay").classList.add("on");
 }
 
@@ -1045,11 +1123,11 @@ let docCtx=null;
 function openDocs(id){docCtx=id;renderDocs();$("docOverlay").classList.add("on");}
 async function renderDocs(){
   const v=data.find(x=>x.id===docCtx);if(!v)return;
-  $("docTitle").textContent=`${v.name} の検査書類`;
+  $("docTitle").textContent=`${v.name||v.maker||""} の書類`;
   const docs=(v.docs||[]).slice().sort((a,b)=>b.addedAt-a.addedAt);
   const box=$("docList");
-  if(!docs.length){box.innerHTML=`<div class="doc-empty">まだ書類がありません。上の「＋ファイルを添付」から車検証・記録表などを追加できます。</div>`;return;}
-  const cats=["特定自主検査","車検","その他"];
+  if(!docs.length){box.innerHTML=`<div class="doc-empty">まだ書類がありません。上の「＋ファイルを添付」から車検証・記録表・校正証明書などを追加できます。</div>`;return;}
+  const cats=["特定自主検査","車検","校正","その他"];
   let html="";
   for(const cat of cats){
     const items=docs.filter(d=>d.cat===cat);
@@ -1208,6 +1286,22 @@ function printLedgerMachine(){
   </tr>`).join("");
   openLedgerPrint("重機一覧表","",head,rows,list.length,11);
 }
+function printLedgerMeasure(){
+  const list=data.filter(v=>kindOf(v)==="measure").sort((a,b)=>(a.kanri||"").localeCompare(b.kanri||"","ja",{numeric:true}));
+  if(!list.length){toast("測定機器が登録されていません");return;}
+  const head=`<th class="nw">管理番号</th><th>メーカー・型式／機器名</th><th>製造番号</th><th>保管場所</th><th>使用者・担当</th><th>前回校正日</th><th>次回校正期限</th><th>校正業者</th>`;
+  const rows=list.map(v=>`<tr>
+    <td class="nw">${esc(v.kanri)||"—"}</td>
+    <td>${esc(v.maker)||"—"}${v.name?`<br><span class="sub2">${esc(v.name)}</span>`:""}</td>
+    <td>${esc(v.bangou)||"—"}</td>
+    <td>${esc(v.hokan)||"—"}</td>
+    <td>${esc(v.calUser)||"—"}</td>
+    <td class="nw">${ledgerFd(v.calLast)}</td>
+    <td class="nw">${calNext(v)?fmt(calNext(v)):"—"}</td>
+    <td>${esc(v.calGyo)||"—"}</td>
+  </tr>`).join("");
+  openLedgerPrint("測定機器一覧表","",head,rows,list.length,12);
+}
 
 /* ---------- Data menu ---------- */
 $("expIcs").onclick=()=>{
@@ -1231,11 +1325,14 @@ $("expJson").onclick=async ()=>{
   toast(`バックアップを保存しました（書類 ${files.length} 件を含む）`);
 };
 $("expCsv").onclick=()=>{
-  const head=["管理番号","ナンバー","メーカー・型式","車両名","特定自主検査_前回","特定自主検査_次回","車検満了日","メモ"];
-  const rows=data.map(v=>[v.kanri,v.bangou,v.maker,v.name,
+  const head=["種類","管理番号","ナンバー／製造番号","メーカー・型式","名称","特定自主検査_前回","特定自主検査_次回","車検満了日","校正_前回","校正_次回","校正業者","メモ"];
+  const rows=data.map(v=>[KIND_JA[kindOf(v)]||"",v.kanri,v.bangou,v.maker,v.name,
     v.tokTarget?(v.tokLast||""):"対象外",
     v.tokTarget?fmt(tokuteiNext(v)):"対象外",
-    v.shkTarget?(v.shkExp||""):"対象外",v.memo]
+    v.shkTarget?(v.shkExp||""):"対象外",
+    v.calTarget?(v.calLast||""):"対象外",
+    v.calTarget?fmt(calNext(v)):"対象外",
+    v.calGyo||"",v.memo]
     .map(c=>`"${String(c==null?"":c).replace(/"/g,'""')}"`).join(","));
   dl("\uFEFF"+[head.join(","),...rows].join("\r\n"),`検査一覧_${stamp()}.csv`,"text/csv");
   toast("CSVを書き出しました");
@@ -1251,7 +1348,7 @@ $("impFile").onchange=e=>{
       if(Array.isArray(parsed)){vehicles=parsed;}                 // 旧形式
       else if(parsed&&Array.isArray(parsed.vehicles)){vehicles=parsed.vehicles;files=parsed.files||[];}
       else throw 0;
-      if(confirm(`車両 ${vehicles.length} 台・書類 ${files.length} 件を読み込みます。現在のデータは上書きされます。よろしいですか？`)){
+      if(confirm(`登録 ${vehicles.length} 件・書類 ${files.length} 件を読み込みます。現在のデータは上書きされます。よろしいですか？`)){
         data=vehicles;save();
         for(const fl of files){try{await idbPut(fl);}catch(e){}}
         render();closeAll();toast("復元しました（書類含む）");
@@ -1274,6 +1371,7 @@ $("detClose").onclick=closeAll;
 $("docClose").onclick=closeAll;
 $("printMachine").onclick=printLedgerMachine;
 $("printVehicle").onclick=printLedgerVehicle;
+$("printMeasure").onclick=printLedgerMeasure;
 $("docPrintAll").onclick=()=>{if(docCtx)printVehicleDocs(docCtx);};
 $("docFile").onchange=async e=>{
   const files=e.target.files;if(!files.length||!docCtx)return;

@@ -1,7 +1,7 @@
 {
   "id": "/tokuji-shaken.html",
-  "name": "特自・車検管理",
-  "short_name": "特自・車検",
+  "name": "定検ナビ",
+  "short_name": "定検ナビ",
   "start_url": "/tokuji-shaken.html",
   "scope": "/tokuji-shaken.html",
   "display": "standalone",

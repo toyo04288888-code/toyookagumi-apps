@@ -56,13 +56,14 @@ function ev(L, uid, start, summary, desc) {
 function buildICS(vehicles) {
   const L = [
     "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Toyooka-gumi//Kensa//JA",
-    "CALSCALE:GREGORIAN", "METHOD:PUBLISH", "X-WR-CALNAME:特自・車検管理", "X-WR-TIMEZONE:Asia/Tokyo",
+    "CALSCALE:GREGORIAN", "METHOD:PUBLISH", "X-WR-CALNAME:定検ナビ", "X-WR-TIMEZONE:Asia/Tokyo",
   ];
   for (const v of vehicles) {
     if (!v) continue;
     const items = [];
     if (v.tokTarget && v.tokLast) items.push(["特定自主検査", addMonths(parseD(v.tokLast), v.tokInt || 12)]);
     if (v.shkTarget && v.shkExp) items.push(["車検満了", parseD(v.shkExp)]);
+    if (v.calTarget && v.calLast) items.push(["校正", addMonths(parseD(v.calLast), v.calInt || 12)]);
     for (const [label, dt] of items) {
       if (!dt) continue;
       const lead = label.includes("車検") ? 3 : 1;

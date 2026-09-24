@@ -11,6 +11,9 @@
 | `toyooka-tenken.html` | 点検簿ジェネレーター（事務用） | 機械の点検簿Excelを読み込み、日報データから使用日を自動で✔ | 素のJS + ExcelJS |
 | `genba-kanri.html` | 現場管理表 | 複数現場の進行状況（未着手/施工中/完了）を管理 | 素のJS（Supabase REST直叩き） |
 | `mitsumori.html` | 現場見積アプリ | 工事項目の単価・複合単価から見積作成 | React + Tailwind（ビルド済みインライン） |
+| `tokuji-shaken.html` | 定検ナビ（旧：特自・車検管理） | 車両の車検・機械の特定自主検査・測定機器の校正の期限管理 | 素のJS + Supabase（`kensa_vehicles` / `kensa_files`） |
+
+※ 定検ナビはURL・PWA維持のためファイル名を`tokuji-shaken.html`のまま据え置き。測定機器は`kind:"measure"`・`calTarget/calLast/calInt/calGyo/calUser`で同じ`kensa_vehicles`テーブルに保存（製造番号は`bangou`を流用）。
 
 ## 公開URL（本番）
 
