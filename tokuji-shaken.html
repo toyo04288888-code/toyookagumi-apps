@@ -1358,6 +1358,8 @@ function printLedgerMeasure(){
   const jd=s=>{const t=toDate(s);return t?`<span class="nw">${t.getFullYear()}年</span><wbr><span class="nw">${t.getMonth()+1}月${t.getDate()}日</span>`:"";};
   const c=s=>esc(s)||"";
   const jym=s=>{const t=toDate(s);return t?`${t.getFullYear()}年${t.getMonth()+1}月`:"";};
+  // 始業前点検：「取扱説明書に基づく」は「取扱説明書／に基づく」の2行できれいに折り返す
+  const shigyouHtml=s=>s===SHIGYOU_DEFAULT?`<span class="nw">取扱説明書</span><br><span class="nw">に基づく</span>`:c(s);
   // 校正記録：1台につき2欄（手書き用。年月日・確認者の枠だけで、日付は入れない）
   const recCell=`<td rowspan="2" class="rec"><div class="rd"><span class="blank">年</span><span class="blank">月</span><span class="blank">日</span></div><div class="rc">確認者</div></td>`;
   const body=list.map(v=>{
@@ -1371,7 +1373,7 @@ function printLedgerMeasure(){
       <td rowspan="2" class="ctr">${jd(v.shutoku)}</td>
       <td class="up">${c(v.hokan)}</td>
       <td rowspan="2" class="ctr">${v.calTarget?calIntLabel(v.calInt):""}</td>
-      <td rowspan="2" class="ctr">${c(v.shigyou||SHIGYOU_DEFAULT)}</td>
+      <td rowspan="2" class="ctr">${shigyouHtml(v.shigyou||SHIGYOU_DEFAULT)}</td>
       <td class="up ctr">${jym(v.calLast)}</td>
       <td rowspan="2" class="ctr">${c(v.sakusei)}</td>
       <td class="up ctr">${jd(v.haisha)}</td>
@@ -1386,7 +1388,7 @@ function printLedgerMeasure(){
       <td class="lo ctr">${c(v.haishaOk)}</td>
     </tr></tbody>`;
   }).join("");
-  const W=[5.2,10.5,8.3,8.8,7.9,8.7,4.2,5.4,8.4,4.1,4.1];
+  const W=[5.2,9.8,8.3,8.8,7.9,8.7,4.2,6.1,8.4,4.1,4.1];
   const recW=(100-W.reduce((a,b)=>a+b,0))/2;
   const colgroup=`<colgroup>${W.map(w=>`<col style="width:${w}%">`).join("")}${`<col style="width:${recW}%">`.repeat(2)}</colgroup>`;
   const d=new Date();
