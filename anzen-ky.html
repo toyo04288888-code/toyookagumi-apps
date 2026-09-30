@@ -401,7 +401,7 @@ const LS={mode:'az_mode',url:'az_url',key:'az_key',list:'az_list',kojinames:'az_
   companies:'az_companies',shokuchos:'az_shokuchos',workernames:'az_workernames',genbas:'az_genbas',shunins:'az_shunins',patrolpersons:'az_patrolpersons',machines:'az_machines',tenkenTemplate:'az_tenken_template',tbms:'az_tbms',dangers:'az_dangers',actions:'az_actions',kyexamples:'az_kyexamples',completedkojis:'az_completedkojis',machineDetails:'az_machine_details',kikaiTemplate:'az_kikai_template'};
 
 /* ===== 状態 ===== */
-const state={mode:'local',sb:null,reports:[],r:null,editId:null,cloudKojiNames:null,cloudPlaces:null,cloudKojiPlaces:null,cloudTemplate:null,cloudWorkerMaster:null,cloudMachines:null,cloudTenkenTemplate:null,cloudTbms:null,cloudDangers:null,cloudActions:null,cloudKyExamples:null,cloudCompletedKojis:null,cloudMachineDetails:null,cloudKikaiTemplate:null,cloudKojiMaster:null};
+const state={mode:'local',sb:null,reports:[],r:null,editId:null,cloudKojiNames:null,cloudPlaces:null,cloudKojiPlaces:null,cloudTemplate:null,cloudWorkerMaster:null,cloudMachines:null,cloudTenkenTemplate:null,cloudTbms:null,cloudDangers:null,cloudActions:null,cloudKyExamples:null,cloudCompletedKojis:null,cloudMachineDetails:null,cloudKikaiTemplate:null};
 
 // 年月日(YYYY-MM-DD)から年度を求める（日本の年度＝4月〜翌3月／令和・平成表記）
 function nendoFromDate(ds){
@@ -492,9 +492,6 @@ const Store={
           state.cloudMachineDetails=(md.data&&Array.isArray(md.data.value))?md.data.value:[];}catch(e){state.cloudMachineDetails=[];}
         try{const kt=await state.sb.from('az_config').select('value').eq('id','kikai_template').maybeSingle();
           state.cloudKikaiTemplate=(kt.data&&kt.data.value)?kt.data.value:null;}catch(e){state.cloudKikaiTemplate=null;}
-        // 工事日報アプリの工事名マスタ(koji_master)からも工事名を取り込む（KYの工事名プルダウンに全部出すため）
-        try{const km=await state.sb.from('koji_master').select('koji_name');
-          state.cloudKojiMaster=(km.data&&Array.isArray(km.data))?[...new Set(km.data.map(x=>(x.koji_name||'').trim()).filter(Boolean))]:[];}catch(e){state.cloudKojiMaster=[];}
         return;
       }
     }
@@ -573,21 +570,8 @@ async function saveKojiPlaces(arr){
     await azUpsertConfig('kojiplaces', arr, 'az_configテーブルが作成済みか確認してください。');
   }else{localStorage.setItem(LS.kojiplaces,JSON.stringify(arr));}
 }
-// 工事名の一覧は、登録済みのすべての工事名を集める：
-// ①KYの「工事名・工事場所」ペア ②旧「工事名一覧」 ③工事日報アプリの工事名マスタ(koji_master) ④保存済み日報の工事名
-// これで「登録してある工事名がプルダウンに出ない」を防ぐ。
-function getKojiNames(){
-  const names=[];
-  getKojiPlaces().forEach(x=>{const n=(x.name||'').trim();if(n)names.push(n);});
-  const legacy=(state.mode==='cloud'&&state.sb)?(state.cloudKojiNames||[]):localKojiNames();
-  legacy.forEach(n=>{n=(n||'').trim();if(n)names.push(n);});
-  if(state.mode==='cloud'&&state.sb)(state.cloudKojiMaster||[]).forEach(n=>{n=(n||'').trim();if(n)names.push(n);});
-  state.reports.forEach(r=>{const n=(r.koji_name||'').trim();if(n)names.push(n);});
-  // 半角全角・空白の違いで重複しないよう、正規化したキーで最初の表記を採用
-  const seen=new Set(), out=[];
-  for(const n of names){const key=normWidth(n).replace(/\s/g,'');if(!seen.has(key)){seen.add(key);out.push(n);}}
-  return out;
-}
+// 工事名の一覧は、KY日報の設定「工事名・工事場所の管理」で登録した工事名から作る
+function getKojiNames(){return [...new Set(getKojiPlaces().map(x=>(x.name||'').trim()).filter(Boolean))];}
 
 /* ===== 完了した工事（工事名の一覧）＝日報一覧で下にグレー表示 ===== */
 function localCompletedKojis(){const raw=localStorage.getItem(LS.completedkojis);if(raw){try{const p=JSON.parse(raw);if(Array.isArray(p))return p;}catch(e){}}return [];}
