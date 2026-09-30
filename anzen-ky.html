@@ -660,12 +660,11 @@ function updateYoubi(){
 /* ===== 工事名・工事場所プルダウン ===== */
 function renderKojiNameSelect(){
   const cur=state.r.koji_name||'';
-  const done=new Set(getCompletedKojis());              // 「完了」にした工事は選択肢から除外
-  const names=getKojiNames().filter(n=>!done.has(n));
-  // 編集中の日報の工事名は、完了済みでも選択肢に残す（表示が消えないように）
-  const all=[...new Set([...names, ...(cur?[cur]:[])])];
+  const done=new Set(getCompletedKojis());              // 「完了」にした工事は選択肢に「（完了）」と付けて残す（除外しない）
+  // 設定で登録した工事名はすべて出す。編集中の日報の工事名も念のため残す。
+  const all=[...new Set([...getKojiNames(), ...(cur?[cur]:[])])];
   $('f_kojiname').innerHTML='<option value="">選択…</option>'+
-    all.map(n=>`<option value="${esc(n)}" ${n===cur?'selected':''}>${esc(n)}</option>`).join('');
+    all.map(n=>`<option value="${esc(n)}" ${n===cur?'selected':''}>${esc(n)}${done.has(n)?'（完了）':''}</option>`).join('');
 }
 function renderPlaceSelect(){
   const cur=state.r.place||'';
