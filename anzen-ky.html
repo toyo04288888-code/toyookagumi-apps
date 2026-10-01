@@ -660,11 +660,12 @@ function updateYoubi(){
 /* ===== 工事名・工事場所プルダウン ===== */
 function renderKojiNameSelect(){
   const cur=state.r.koji_name||'';
-  const done=new Set(getCompletedKojis());              // 「完了」にした工事は選択肢に「（完了）」と付けて残す（除外しない）
-  // 設定で登録した工事名はすべて出す。編集中の日報の工事名も念のため残す。
-  const all=[...new Set([...getKojiNames(), ...(cur?[cur]:[])])];
+  const done=new Set(getCompletedKojis());              // 日報一覧で「完了」にした工事は選択肢から除外する
+  const names=getKojiNames().filter(n=>!done.has(n));
+  // 編集中の日報の工事名は、完了済みでも選択肢に残す（表示が消えないように）
+  const all=[...new Set([...names, ...(cur?[cur]:[])])];
   $('f_kojiname').innerHTML='<option value="">選択…</option>'+
-    all.map(n=>`<option value="${esc(n)}" ${n===cur?'selected':''}>${esc(n)}${done.has(n)?'（完了）':''}</option>`).join('');
+    all.map(n=>`<option value="${esc(n)}" ${n===cur?'selected':''}>${esc(n)}</option>`).join('');
 }
 function renderPlaceSelect(){
   const cur=state.r.place||'';
@@ -2199,7 +2200,8 @@ function getCellStyleIdFromXml(xml, cellRef){
 
 // styles.xml内のcellXfsに、既存スタイル(baseStyleId)をベースに配置(alignment)だけ変更した
 // 新規エントリを追加し、その新しいスタイルIDを返す。罫線・フォント等の他の書式は完全に保たれる。
-async function addCenterAlignedStyle(zip, baseStyleId){
+async function addCenterAlignedStyle(zip, baseStyleId, horizontal){
+  horizontal=horizontal||'center'; // 'center'（既定）/'left' など
   if(baseStyleId==null)return baseStyleId;
   const stylesPath='xl/styles.xml';
   let stylesXml=await zip.file(stylesPath).async('string');
@@ -2213,12 +2215,13 @@ async function addCenterAlignedStyle(zip, baseStyleId){
   const xfs=body.match(xfRegex)||[];
   if(baseStyleId>=xfs.length)return baseStyleId;
 
+  const align=`<alignment horizontal="${horizontal}" vertical="center"/>`;
   let baseXf=xfs[baseStyleId];
   let newXf=baseXf.replace(/<alignment[^>]*\/>|<alignment[^>]*>[\s\S]*?<\/alignment>/,'');
   if(newXf.endsWith('/>')){
-    newXf=newXf.slice(0,-2)+' applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>';
+    newXf=newXf.slice(0,-2)+' applyAlignment="1">'+align+'</xf>';
   }else{
-    newXf=newXf.replace('</xf>','<alignment horizontal="center" vertical="center"/></xf>');
+    newXf=newXf.replace('</xf>',align+'</xf>');
     if(!newXf.includes('applyAlignment')){
       newXf=newXf.replace(/^<xf\b/,'<xf applyAlignment="1"');
     }
@@ -2857,6 +2860,8 @@ async function buildWorkerStyleOverrides(zip, baseXml){
     const origId=getCellStyleIdFromXml(baseXml, `C${rn}`);
     styleOverrides[rn]=await addCenterAlignedStyle(zip, origId);
   }
+  // 櫻田泰貴の指示事項（G40〜G42）を左詰めにするためのスタイル
+  styleOverrides.leftInstr=await addCenterAlignedStyle(zip, getCellStyleIdFromXml(baseXml, 'G40'), 'left');
   return styleOverrides;
 }
 // 1枚のシートXMLに、1件の日報の内容を記入して返す（{xml, overflow}）
@@ -2923,9 +2928,10 @@ function applyKyMarks(xml, r, styleOverrides){
   });
   // 指示事項・是正事項（現場代理人が櫻田泰貴のときは指定の3行を箇条書きで入れる）
   if(isSakurada){
-    xml=setCellTextInXml(xml,'G40', '・施工箇所を明確に区画・明示し、作業範囲を関係者に周知すること。');
-    xml=setCellTextInXml(xml,'G41', '・切断・撤去箇所については、段差や開口部が生じないよう適切に養生すること。');
-    xml=setCellTextInXml(xml,'G42', '・工事終了時は、施工箇所及び周辺を点検し、通行車両・歩行者の安全を確保すること。');
+    const li=styleOverrides&&styleOverrides.leftInstr; // 左詰めスタイル（無ければ既定のまま）
+    xml=setCellTextInXml(xml,'G40', '・施工箇所を明確に区画・明示し、作業範囲を関係者に周知すること。', li);
+    xml=setCellTextInXml(xml,'G41', '・切断・撤去箇所については、段差や開口部が生じないよう適切に養生すること。', li);
+    xml=setCellTextInXml(xml,'G42', '・工事終了時は、施工箇所及び周辺を点検し、通行車両・歩行者の安全を確保すること。', li);
   }else{
     xml=setCellTextInXml(xml,'G40', '掘削箇所の明示をすること。');
     xml=setCellTextInXml(xml,'G41', '工事終了時は、鉄板で開口部を養生すること。');
