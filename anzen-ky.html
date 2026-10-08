@@ -2020,15 +2020,29 @@ $('tenkenUpload').onchange=async(e)=>{
     const buf=await file.arrayBuffer();
     const base64=arrayBufferToBase64(buf);
     await saveTenkenTemplate({filename:file.name,base64});
-    // 使用機械マスタが空なら、点検簿のシート名を候補として自動登録する
+    // 点検簿のシート名を使用機械マスタに反映する。
+    // ・マスタが空なら全シート名を登録。
+    // ・既にあるときは、まだ無いシート名だけ追加（リース機械など新シートを足したとき用）。
+    //   正規化（半角全角・カナ・小数）で重複判定し、玉掛けは除外（自動処理のため選択不要）。
     try{
       const zip=await JSZip.loadAsync(base64ToArrayBuffer(base64));
       const sheets=await resolveAllSheetPaths(zip);
-      const names=sheets.map(s=>s.name);
-      if(getMachines().length===0 && names.length){
+      const names=sheets.map(s=>s.name).filter(Boolean);
+      const cur=getMachines();
+      if(names.length && cur.length===0){
         await saveMachinesList(names);
         renderMachines();refreshMachinesSettings();
         toast('点検簿を登録し、シート名を使用機械に登録しました');
+      }else if(names.length){
+        const curNorms=new Set(cur.map(normMachine));
+        const added=names.filter(n=>n.trim()!=='玉掛け' && !curNorms.has(normMachine(n)));
+        if(added.length){
+          await saveMachinesList(cur.concat(added));
+          renderMachines();refreshMachinesSettings();
+          toast('点検簿を登録し、使用機械に追加：'+added.join('・'));
+        }else{
+          toast('点検簿テンプレートを登録しました');
+        }
       }else{
         toast('点検簿テンプレートを登録しました');
       }
