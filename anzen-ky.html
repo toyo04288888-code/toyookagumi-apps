@@ -2294,7 +2294,14 @@ function getTenkenTargetMachines(){
   // 「すべての工事」のときは、登録済みの使用機械（マスタ）を全部表示（未使用の機械も出す）
   if(!koji) getMachines().forEach(m=>{const n=normMachine(m);if(n&&!isTenkenHidden(n))set.add(n);});
   if(hasReport||!koji)set.add('玉掛け');
-  return [...set];
+  return [...set].sort((a,b)=>tenkenMachineRank(a)-tenkenMachineRank(b)); // 並び順は固定（それ以外は末尾に元の順）
+}
+// 点検簿ごとの点検者選択の機械の並び順
+const TENKEN_MACHINE_ORDER=['0.1BH(旧)','0.1BH(新)','0.25BH','0.25BH(UU)','0.45BH','アスファルトフィニッシャー','コンバインドローラー','マカダムローラー','タイヤローラー','1tローラー','玉掛け','リースバックホウ','リースモーターグレーダー','リース発電機'].map(normMachine);
+function tenkenMachineRank(n){
+  let i=TENKEN_MACHINE_ORDER.indexOf(n);
+  if(i<0)i=TENKEN_MACHINE_ORDER.findIndex(o=>n.indexOf(o)===0);
+  return i<0?999:i;
 }
 // 点検者の候補（選んだ工事現場の日報に入っている作業員＋職長）
 function getReportWorkerCandidates(koji){
