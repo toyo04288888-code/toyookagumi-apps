@@ -2472,7 +2472,10 @@ function tenkenShadeWeekends(xml){
 // machineName=シート内の目印「（機械名）」に入れる機械名（リース機械のとき使う）
 function tenkenMarkSheet(xml, shared, days, inspectorFull, year, month, koji, genba, motouke, excludeRows, machineName){
   excludeRows=excludeRows||[]; // ✔を付けない行（玉掛の10・16・22・24行など）
-  if(machineName) xml=tenkenReplaceText(xml, shared, '（機械名）', machineName); // リースシートの機械名を差し替え
+  if(machineName){ // リースシートの機械名を差し替え（全角・半角どちらのカッコでも）
+    xml=tenkenReplaceText(xml, shared, '（機械名）', machineName);
+    xml=tenkenReplaceText(xml, shared, '(機械名)', machineName);
+  }
   const {map:dayCols,row:dayRow}=tenkenFindDayColumns(xml);
   if(!dayRow||Object.keys(dayCols).length===0)return {xml,ok:false};
   const {itemRows,inspectorRow}=tenkenDetectRows(xml,dayRow,shared);
@@ -2743,7 +2746,9 @@ async function exportTenken(){
     // 点検簿シート名も正規化して照合（半角全角・カナ・小数の違いを無視）。normキー→実際のシート名
     const sheetByNorm=new Map();
     sheetNames.forEach(s=>{const n=normMachine(s);if(!sheetByNorm.has(n))sheetByNorm.set(n,s);});
-    const leaseSheet=sheetByNorm.get(normMachine('リース')); // リース用の汎用シート（あれば）
+    // リース用の汎用シート（あれば）。「リース機械」を優先、旧名「リース」や「リース…」で始まるシート名でも可
+    const leaseSheet=sheetByNorm.get(normMachine('リース機械'))||sheetByNorm.get(normMachine('リース'))||
+      [...sheetByNorm.entries()].find(([k])=>k.indexOf('リース')===0)?.[1];
     const kojiSafe=koji?koji.replace(/[\\/:*?"<>|]/g,'_'):'';
     const kojiPart=kojiSafe?`_${kojiSafe}`:''; // 工事現場を選んだらファイル名に付ける
     const files=[];const unmatched=[];
