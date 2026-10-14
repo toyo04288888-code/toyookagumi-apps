@@ -2280,7 +2280,7 @@ function normMachine(name){
   return s.replace(/[\s　]/g,'').replace(/\d*\.\d+/g, m=>String(parseFloat(m)));
 }
 // 点検簿の出力対象に含めない機械（日報に残っていても一覧・出力から除く）
-const TENKEN_HIDE_MACHINES=['ローラグレーダ','ロードグレーダ','モータグレーダ'].map(normMachine);
+const TENKEN_HIDE_MACHINES=['ローラグレーダ','ロードグレーダ','モータグレーダ','リースモーターグレーダー'].map(normMachine);
 function isTenkenHidden(n){return TENKEN_HIDE_MACHINES.some(h=>n.indexOf(h)===0);}
 function getTenkenTargetMachines(){
   const koji=($('tenken_koji')&&$('tenken_koji').value)||'';
