@@ -2279,6 +2279,9 @@ function normMachine(name){
   try{ s=s.normalize('NFKC'); }catch(e){}
   return s.replace(/[\s　]/g,'').replace(/\d*\.\d+/g, m=>String(parseFloat(m)));
 }
+// 点検簿の出力対象に含めない機械（日報に残っていても一覧・出力から除く）
+const TENKEN_HIDE_MACHINES=['ローラグレーダ','ロードグレーダ','モータグレーダ'].map(normMachine);
+function isTenkenHidden(n){return TENKEN_HIDE_MACHINES.some(h=>n.indexOf(h)===0);}
 function getTenkenTargetMachines(){
   const koji=($('tenken_koji')&&$('tenken_koji').value)||'';
   const set=new Set(); let hasReport=false;
@@ -2286,10 +2289,10 @@ function getTenkenTargetMachines(){
     if(!r.report_date)return;
     if(koji&&r.koji_name!==koji)return;
     hasReport=true;
-    (Array.isArray(r.machines)?r.machines:[]).forEach(mc=>{const n=normMachine(mc);if(n)set.add(n);});
+    (Array.isArray(r.machines)?r.machines:[]).forEach(mc=>{const n=normMachine(mc);if(n&&!isTenkenHidden(n))set.add(n);});
   });
   // 「すべての工事」のときは、登録済みの使用機械（マスタ）を全部表示（未使用の機械も出す）
-  if(!koji) getMachines().forEach(m=>{const n=normMachine(m);if(n)set.add(n);});
+  if(!koji) getMachines().forEach(m=>{const n=normMachine(m);if(n&&!isTenkenHidden(n))set.add(n);});
   if(hasReport||!koji)set.add('玉掛け');
   return [...set];
 }
@@ -2716,7 +2719,7 @@ async function exportTenken(){
     const te=ensure(tama,key,year,month);
     te.days.add(day); if(r.koji_name)te.kojis.add(r.koji_name); if(r.genba)te.genbas.add(r.genba);
     (Array.isArray(r.machines)?r.machines:[]).forEach(mc=>{
-      const name=normMachine(mc);if(!name)return; // 0.10BH→0.1BH に正規化して重複を1つに
+      const name=normMachine(mc);if(!name||isTenkenHidden(name))return; // 0.10BH→0.1BH に正規化して重複を1つに
       if(!machDisplay[name])machDisplay[name]=(mc||'').trim();
       const e=ensure(mach[name]=mach[name]||{},key,year,month);
       e.days.add(day); if(r.koji_name)e.kojis.add(r.koji_name); if(r.genba)e.genbas.add(r.genba);
