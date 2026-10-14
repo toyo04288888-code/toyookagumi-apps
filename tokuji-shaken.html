@@ -988,14 +988,14 @@ function syncKind(){
   document.querySelectorAll(".kind-btn").forEach(b=>b.classList.toggle("on",b.dataset.kind===editKind));
   const isVeh=editKind==="vehicle", isMea=editKind==="measure";
   $("tokSec").style.display=(isVeh||isMea)?"none":"";
-  $("keishinRow").style.display=(isVeh||isMea)?"none":"";
+  $("keishinRow").style.display=isMea?"none":"";
   $("shkAlsoRow").style.display=(isVeh||isMea)?"none":"";
   ["tourokuRow","bangouField","makerField","nameField","hokanRow"].forEach(id=>$(id).style.display=isMea?"none":"");
   $("measFields").style.display=isMea?"":"none";
   $("calSec").style.display=isMea?"":"none";
   // 車検セクション：車両は常に表示、機械は「車検も管理する」にチェック時のみ表示
   $("shkSec").style.display=(isVeh||(!isMea&&$("f_shkAlso").checked))?"":"none";
-  if(isVeh||isMea)$("f_keishin").checked=false;
+  if(isMea)$("f_keishin").checked=false;
   $("f_kanri").placeholder=isVeh?"例：C-01":(editKind==="paving"?"例：P-01":(isMea?"例：M-01":"例：D-03"));
   $("editTitle").textContent=(editId?"編集":"追加")+"（"+(KIND_JA[editKind]||"車両")+"）";
 }
@@ -1078,7 +1078,7 @@ $("btnSave").onclick=()=>{
     capacity:$("f_capacity").value.trim(),
     haisha:$("f_haisha").value,
     haishaOk:$("f_haishaOk").value.trim(),
-    keishin:(kind==="machine"||kind==="paving") && $("f_keishin").checked,
+    keishin:(kind!=="measure") && $("f_keishin").checked,
     shkTarget:kind==="vehicle" || ((kind==="machine"||kind==="paving") && $("f_shkAlso").checked),
     shkExp:$("f_shkExp").value,
     jibai:$("f_jibai").value,
