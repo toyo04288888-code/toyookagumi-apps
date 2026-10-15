@@ -1271,6 +1271,11 @@ const WORKER_COMPANY={
   'ウマム':'(株)豊岡組','ブリヤン':'(株)豊岡組',
   '道本博文':'トヨオカ(株)','櫻田泰貴':'トヨオカ(株)'
 };
+// 氏名 → 苗字（姓）。点検簿の各日の判子に使う。姓の文字数が推定できない人（3文字姓など）も正しく出すため明示。
+const WORKER_SURNAME={
+  '豊岡強志':'豊岡','豊岡敦志':'豊岡','白崎健一':'白崎','本郷憲市':'本郷','坂本圭司':'坂本',
+  '谷口勝康':'谷口','十左近昭悟':'十左近','武内進':'武内','道本博文':'道本','櫻田泰貴':'櫻田','豊岡昭三':'豊岡'
+};
 // 会社名 → 元請/下請
 const COMPANY_KIND={'(株)豊岡組':'元請','トヨオカ(株)':'下請'};
 function workerCompany(originalName, fullName){
@@ -1571,7 +1576,11 @@ async function importFromKantoku(){
 
 // 工事日報1日分(d)の内容を、いま編集中のKY日報(state.r)に流し込む（1日＝1枚）。
 function applyKantokuDay(d){
-  if(d.koji_name!=null)state.r.koji_name=canonicalKojiName(d.koji_name); // 半角全角の違いは無視して登録済み工事名に揃える
+  if(d.koji_name!=null){
+    state.r.koji_name=canonicalKojiName(d.koji_name); // 半角全角の違いは無視して登録済み工事名に揃える
+    // 工事名に紐づく登録済みの工事場所を自動で入れる（取り込みで場所が消えないように）
+    if(!state.r.place){ const pl=kojiToPlace(state.r.koji_name); if(pl) state.r.place=pl; }
+  }
   if(d.weather!=null)state.r.weather=d.weather;
   if(Array.isArray(d.works)&&d.works.length)state.r.works=d.works.map(w=>({kind:(w&&w.kind)||'',content:(w&&w.content)||''}));
   if(Array.isArray(d.machines))state.r.machines=d.machines.map(m=>(m&&m.machine)?m.machine:(typeof m==='string'?m:'')).filter(Boolean);
@@ -2431,12 +2440,20 @@ function tenkenSetCell(xml,ref,text){
   return xml.replace(rowRe,rm[1]+newInner+rm[3]);
 }
 
-// 氏名から判子用の姓を作る（スペース区切りの先頭／なければ先頭2文字）
+// 氏名から判子用の姓（苗字）を作る。各日の点検者欄は苗字のみ表示にするため。
+// ①スペースで姓名が分かれていれば姓 ②登録済みの姓マップ（旧字体ゆれも吸収）
+// ③それ以外は推定（名は1〜2文字が多い：4文字以上は末尾2文字を名、3文字は姓2文字とみなす）
 function tenkenStampName(name){
   if(!name)return '';
-  const p=name.split(/[\s　]+/).filter(Boolean);
+  const raw=String(name).trim();
+  const p=raw.split(/[\s　]+/).filter(Boolean);
   if(p.length>=2)return p[0];
-  return name.length>=4?name.slice(0,2):name;
+  const k=(typeof normKanji==='function')?normKanji(raw):raw;
+  for(const full in WORKER_SURNAME){ if(((typeof normKanji==='function')?normKanji(full):full)===k) return WORKER_SURNAME[full]; }
+  const n=raw.length;
+  if(n>=4)return raw.slice(0,n-2); // 例：豊岡敦志→豊岡、十左近昭悟→十左近
+  if(n===3)return raw.slice(0,2);  // 例：武内進→武内
+  return raw;
 }
 
 // 1シート分のxmlに、使用日の✔と点検者・年月・現場名・現場代理人を記入する（記入前にテンプレの記入例を消す）
