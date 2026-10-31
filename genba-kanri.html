@@ -116,6 +116,40 @@
   .st-now{background:var(--s-now);}
   .st-done{background:var(--s-done);}
 
+  /* ボード表示（3列） */
+  .view-btn{
+    margin-left:auto;border:1.5px solid var(--line);background:var(--panel);color:var(--ink);
+    border-radius:999px;padding:7px 14px;font-size:.85rem;font-weight:800;cursor:pointer;font-family:inherit;white-space:nowrap;
+  }
+  body.board header .wrap, body.board main.wrap{max-width:1500px;}
+  body.board .tabs{display:none;}
+  .board-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;align-items:start;}
+  .col{background:rgba(0,0,0,.04);border-radius:16px;padding:10px;min-width:0;}
+  .col-head{
+    display:flex;align-items:center;gap:8px;font-weight:800;font-size:1rem;
+    padding:6px 6px 10px;cursor:default;
+  }
+  .col-head .dot{width:12px;height:12px;border-radius:50%;}
+  .col-head .cnt{background:var(--line);border-radius:999px;min-width:24px;height:24px;padding:0 7px;
+    display:inline-flex;align-items:center;justify-content:center;font-size:.8rem;}
+  .col-head .chev{margin-left:auto;display:none;transition:.15s;}
+  .col-body{max-height:calc(100vh - 330px);overflow-y:auto;padding-right:2px;}
+  .col-empty{text-align:center;color:var(--ink-soft);font-size:.85rem;padding:18px 0;}
+  .board-grid .card{margin-bottom:9px;}
+  .board-grid .card-body{padding:11px 11px 10px;}
+  .board-grid .card-name{font-size:1.02rem;}
+  .board-grid .meta{font-size:.8rem;}
+  .board-grid .status-btn{flex:0 0 58px;font-size:.78rem;}
+  .board-grid .status-btn .tap{display:none;}
+  @media (max-width:760px){
+    .board-grid{grid-template-columns:1fr;gap:10px;}
+    .col-head{cursor:pointer;padding-bottom:6px;}
+    .col-head .chev{display:inline;}
+    .col.closed .chev{transform:rotate(-90deg);}
+    .col.closed .col-body{display:none;}
+    .col-body{max-height:none;overflow:visible;}
+  }
+
   /* 空状態 */
   .empty{
     text-align:center;color:var(--ink-soft);padding:54px 20px;
@@ -295,6 +329,7 @@
     <div class="year-bar">
       <label class="year-label" for="yearSel">年度</label>
       <select id="yearSel" class="year-sel"></select>
+      <button class="view-btn" id="viewBtn" type="button"></button>
     </div>
 
     <div class="summary">
@@ -444,6 +479,9 @@
 
   var sites = [];
   var filter = "すべて";
+  var viewMode = window.innerWidth>=761 ? "board" : "list";
+  try{ viewMode = localStorage.getItem("gk_view") || viewMode; }catch(e){}
+  var closedCols = {"完了":true};   // スマホのボードで折りたたみ中の列
   var editingId = null;
   var pickedStatus = "未着手";
 
@@ -676,20 +714,16 @@
     document.getElementById("sumRate").textContent   = (totalRate!=null ? totalRate.toFixed(1)+"%" : "—");
 
     var list = document.getElementById("list");
-    var view = inYear.filter(function(s){ return filter==="すべて" || s.status===filter; });
+    document.body.classList.toggle("board", viewMode==="board");
+    var vb = document.getElementById("viewBtn");
+    vb.textContent = viewMode==="board" ? "📋 リスト表示" : "🗂 ボード表示";
+    vb.onclick = function(){
+      viewMode = (viewMode==="board") ? "list" : "board";
+      try{ localStorage.setItem("gk_view", viewMode); }catch(e){}
+      render();
+    };
 
-    // 並び順：施工中 → 未着手 → 完了
-    var rank = {"施工中":0,"未着手":1,"完了":2};
-    view.sort(function(a,b){ return (rank[a.status]-rank[b.status]) || (b.updated-a.updated); });
-
-    if(view.length===0){
-      list.innerHTML = '<div class="empty"><div class="ico">🏗️</div><p>'+
-        (inYear.length===0 ? "この年度の現場はまだありません。<br>下の「現場を追加」から登録してください。" : "この区分の現場はありません")+
-        '</p></div>';
-      return;
-    }
-
-    list.innerHTML = view.map(function(s){
+    function cardHTML(s){
       return '<div class="card">'+
         '<div class="card-top">'+
           '<div class="card-body" data-edit="'+s.id+'">'+
@@ -703,7 +737,46 @@
           '</button>'+
         '</div>'+
       '</div>';
-    }).join("");
+    }
+
+    if(viewMode==="board"){
+      if(inYear.length===0){
+        list.innerHTML = '<div class="empty"><div class="ico">🏗️</div><p>この年度の現場はまだありません。<br>下の「現場を追加」から登録してください。</p></div>';
+        return;
+      }
+      var colColor = {"未着手":"var(--s-mada)","施工中":"var(--s-now)","完了":"var(--s-done)"};
+      list.innerHTML = '<div class="board-grid">' + STATUSES.map(function(st){
+        var items = inYear.filter(function(x){ return x.status===st; })
+                          .sort(function(a,b){ return b.updated-a.updated; });
+        return '<div class="col'+(closedCols[st]?' closed':'')+'">'+
+          '<div class="col-head" data-colhead="'+st+'"><span class="dot" style="background:'+colColor[st]+'"></span>'+st+
+            '<span class="cnt">'+items.length+'</span><span class="chev">▼</span></div>'+
+          '<div class="col-body">'+(items.length ? items.map(cardHTML).join("") : '<div class="col-empty">なし</div>')+'</div>'+
+        '</div>';
+      }).join("") + '</div>';
+      document.querySelectorAll("[data-colhead]").forEach(function(h){
+        h.onclick = function(){
+          if(window.innerWidth>760) return;   // PCでは折りたたまない
+          var st = h.getAttribute("data-colhead");
+          closedCols[st] = !closedCols[st];
+          h.parentNode.classList.toggle("closed", !!closedCols[st]);
+        };
+      });
+    }else{
+      var view = inYear.filter(function(s){ return filter==="すべて" || s.status===filter; });
+
+      // 並び順：施工中 → 未着手 → 完了
+      var rank = {"施工中":0,"未着手":1,"完了":2};
+      view.sort(function(a,b){ return (rank[a.status]-rank[b.status]) || (b.updated-a.updated); });
+
+      if(view.length===0){
+        list.innerHTML = '<div class="empty"><div class="ico">🏗️</div><p>'+
+          (inYear.length===0 ? "この年度の現場はまだありません。<br>下の「現場を追加」から登録してください。" : "この区分の現場はありません")+
+          '</p></div>';
+        return;
+      }
+      list.innerHTML = view.map(cardHTML).join("");
+    }
 
     document.querySelectorAll("[data-toggle]").forEach(function(b){
       b.onclick = function(){ toggleStatus(b.getAttribute("data-toggle")); };
