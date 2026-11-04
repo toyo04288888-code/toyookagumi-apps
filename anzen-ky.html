@@ -1530,7 +1530,10 @@ function applyNecchushoByDate(){
 
 /* ===== 基本情報バインド ===== */
 function bindBasic(){
-  $('f_date').oninput=e=>{state.r.report_date=e.target.value;state.r.nendo=nendoFromDate(e.target.value);$('f_nendo').value=state.r.nendo;updateYoubi();applyWeekTbm();applyNecchushoByDate();};
+  // 日付変更（手入力＝input／日付ピッカー確定＝change。端末差対応で両方に同じ処理をバインド）
+  const onDateChange=e=>{state.r.report_date=e.target.value;state.r.nendo=nendoFromDate(e.target.value);$('f_nendo').value=state.r.nendo;updateYoubi();applyWeekTbm();applyNecchushoByDate();};
+  $('f_date').oninput=onDateChange;
+  $('f_date').onchange=onDateChange;
   $('f_weather').onchange=e=>state.r.weather=e.target.value;
   $('f_kojiname').onchange=e=>{
     state.r.koji_name=e.target.value;
@@ -1697,6 +1700,7 @@ function loadNextKyBatchDay(){
   if(typeof nendoFromDate==='function') state.r.nendo=nendoFromDate(dateStr)||state.r.nendo;
   applyKantokuDay(cr.data||cr);
   renderAll();
+  applyNecchushoByDate(); // 取り込んだ日付が5/1〜10/31なら熱中症対策を自動チェック
   $('editFlag').textContent='まとめて作成 '+doneNo+'/'+b.total+'枚目：'+dateStr+'（確認して「この日報を保存」を押すと次へ）';
   switchTab('editor');
 }
