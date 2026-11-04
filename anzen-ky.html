@@ -1198,6 +1198,22 @@ async function saveKyExamples(arr){
   if(state.mode==='cloud'&&state.sb){state.cloudKyExamples=arr;await azUpsertConfig('kyexamples', arr);}
   else{localStorage.setItem(LS.kyexamples,JSON.stringify(arr));}
 }
+// 日報のKY活動記録で直接入力した新しい「工種＋危険＋対策」の組み合わせを例集に自動登録する。
+// これで次回、同じ工種を選んだときに同じ危険・対策（セット）が候補・自動入力に出る。
+async function registerNewKyCombos(){
+  const existing=getKyExamples(); // 組み込み＋登録済み＋継承＋共通（この中にあれば登録不要）
+  const seen=new Set(existing.map(e=>e.work+'|'+e.danger+'|'+e.action));
+  const stored=(state.mode==='cloud'&&state.sb)?(state.cloudKyExamples||[]):localKyExamples(); // 追記先（生データ）
+  const toAdd=[];
+  (state.r.ky||[]).forEach(k=>{
+    const work=cleanKyText(k.content||''), danger=cleanKyText(k.danger||''), action=cleanKyText(k.action||'');
+    if(!danger||!action)return;           // 危険・対策が両方そろったものだけ登録
+    const key=work+'|'+danger+'|'+action;
+    if(seen.has(key))return;              // 既に候補にある組み合わせは登録しない
+    seen.add(key); toAdd.push({work,danger,action});
+  });
+  if(toAdd.length) await saveKyExamples([...stored, ...toAdd]);
+}
 // KY活動事例.xlsx を解析：B列=作業内容/C列=危険/D列=対策、F列=危険/G列=対策（作業内容なし）
 async function parseKyExamplesXlsx(base64){
   const zip=await JSZip.loadAsync(base64ToArrayBuffer(base64));
@@ -1498,10 +1514,23 @@ function renderNecchusho(){
     box.appendChild(wrap);
   });
 }
+// 熱中症対策の期間（5/1〜10/31）。5〜10月は丸ごと対象なので月だけで判定できる
+function isNecchushoSeason(dateStr){
+  if(!dateStr)return false;
+  const m=+String(dateStr).slice(5,7);
+  return m>=5 && m<=10;
+}
+// 年月日に応じて熱中症対策のチェックを自動で入れる/外す（期間内=全チェック、期間外=全オフ）
+function applyNecchushoByDate(){
+  if(!state.r.necchusho)state.r.necchusho={};
+  const season=isNecchushoSeason(state.r.report_date);
+  NECCHUSHO_ITEMS.forEach(label=>{ state.r.necchusho[label]=season; });
+  renderNecchusho();
+}
 
 /* ===== 基本情報バインド ===== */
 function bindBasic(){
-  $('f_date').oninput=e=>{state.r.report_date=e.target.value;state.r.nendo=nendoFromDate(e.target.value);$('f_nendo').value=state.r.nendo;updateYoubi();applyWeekTbm();};
+  $('f_date').oninput=e=>{state.r.report_date=e.target.value;state.r.nendo=nendoFromDate(e.target.value);$('f_nendo').value=state.r.nendo;updateYoubi();applyWeekTbm();applyNecchushoByDate();};
   $('f_weather').onchange=e=>state.r.weather=e.target.value;
   $('f_kojiname').onchange=e=>{
     state.r.koji_name=e.target.value;
@@ -1726,6 +1755,7 @@ async function enforceNendoLimit(){
 }
 $('saveReportBtn').onclick=async()=>{
   if(!state.r.report_date){alert('年月日を入力してください');return;}
+  try{ await registerNewKyCombos(); }catch(_){} // 新しい危険・対策の組み合わせを例集に自動登録
   const ok=await Store.saveReport(state.r);
   if(ok){
     await enforceNendoLimit();
