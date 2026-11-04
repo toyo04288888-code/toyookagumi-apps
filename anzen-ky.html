@@ -157,7 +157,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   <div class="card">
     <h2><span class="bar"></span>建設作業員名簿</h2>
     <table>
-      <thead><tr><th style="width:20%">所属会社名</th><th style="width:14%">元請/下請</th><th style="width:16%">職長名</th><th>本日の作業員名（複数選択可）</th><th style="width:36px"></th></tr></thead>
+      <thead><tr><th style="width:20%">所属会社名</th><th style="width:14%">元請/下請</th><th style="width:16%">職長名</th><th>本日の作業員名（複数選択可）</th><th style="width:96px">並べ替え</th></tr></thead>
       <tbody id="workerBody"></tbody>
     </table>
     <button class="btn ghost small add-row-btn" id="addWorkerRow">＋ 会社を追加</button>
@@ -812,7 +812,10 @@ function renderWorkers(){
           <div class="wna-list">${allNames.map(nm=>`<label style="display:flex;align-items:center;gap:6px;padding:3px 0;font-size:13px"><input type="checkbox" value="${esc(nm)}" ${w.names.includes(nm)?'checked':''}> ${esc(nm)}</label>`).join('') || '<div class="muted">下の欄に名前を直接入力するか、設定タブで作業員名を登録できます。</div>'}</div>
         </div>
       </td>
-      <td><button class="del">×</button></td>`;
+      <td style="white-space:nowrap;text-align:center">
+        <button type="button" class="btn ghost small up" title="上へ移動" ${idx===0?'disabled':''} style="padding:2px 6px">▲</button>
+        <button type="button" class="btn ghost small down" title="下へ移動" ${idx===state.r.workers.length-1?'disabled':''} style="padding:2px 6px">▼</button>
+        <button class="del" title="この行を削除">×</button></td>`;
     tr.querySelector('.wco').oninput=e=>w.company=e.target.value;
     tr.querySelector('.wki').onchange=e=>w.kind=e.target.value;
     tr.querySelector('.wsh').oninput=e=>w.shokucho=e.target.value;
@@ -839,6 +842,10 @@ function renderWorkers(){
     };
     addBtn.onclick=addName;
     addInput.onkeydown=ev=>{if(ev.key==='Enter'){ev.preventDefault();addName();}};
+    // 並べ替え：この行を上/下の行と入れ替える（会社名・職長・作業員名はstateに同期済みなので内容は保持）
+    const up=tr.querySelector('.up'), down=tr.querySelector('.down');
+    if(up)up.onclick=()=>{const a=state.r.workers;if(idx>0){[a[idx-1],a[idx]]=[a[idx],a[idx-1]];renderWorkers();}};
+    if(down)down.onclick=()=>{const a=state.r.workers;if(idx<a.length-1){[a[idx+1],a[idx]]=[a[idx],a[idx+1]];renderWorkers();}};
     tr.querySelector('.del').onclick=()=>{state.r.workers.splice(idx,1);renderWorkers();};
     tb.appendChild(tr);
   });
