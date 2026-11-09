@@ -669,7 +669,13 @@ function renderKojiNameSelect(){
 }
 function renderPlaceSelect(){
   const cur=state.r.place||'';
-  const places=getPlaces();
+  // 完了した工事の工事場所は選択肢から除外する（未完了の工事が同じ場所を使っていれば残す）
+  const done=new Set(getCompletedKojis());
+  const pairs=getKojiPlaces();
+  const donePlaces=new Set(pairs.filter(x=>done.has((x.name||'').trim())).map(x=>(x.place||'').trim()).filter(Boolean));
+  pairs.filter(x=>!done.has((x.name||'').trim())).forEach(x=>donePlaces.delete((x.place||'').trim()));
+  const places=getPlaces().filter(p=>!donePlaces.has(p));
+  // 編集中の日報の工事場所は、完了済みでも選択肢に残す（表示が消えないように）
   const all=[...new Set([...places, ...(cur?[cur]:[])])];
   $('f_place').innerHTML='<option value="">選択…</option>'+
     all.map(n=>`<option value="${esc(n)}" ${n===cur?'selected':''}>${esc(n)}</option>`).join('');
