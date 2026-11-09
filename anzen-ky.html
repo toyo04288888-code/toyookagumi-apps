@@ -675,7 +675,13 @@ function renderPlaceSelect(){
   const pairs=getKojiPlaces();
   const donePlaces=new Set(pairs.filter(x=>done.has(nz(x.name))).map(x=>nz(x.place)).filter(Boolean));
   pairs.filter(x=>!done.has(nz(x.name))).forEach(x=>donePlaces.delete(nz(x.place)));
-  const places=getPlaces().filter(p=>!donePlaces.has(nz(p)));
+  // 「工事名・工事場所の管理」に登録がある場合は、完了していない工事の場所だけを出す
+  // （工事名と結びつかない旧「工事場所一覧」の分は、登録が無いときだけ使う）
+  const hasPairPlaces=pairs.some(x=>(x.place||'').trim());
+  const places=(hasPairPlaces
+    ? pairs.filter(x=>!done.has(nz(x.name))).map(x=>(x.place||'').trim()).filter(Boolean)
+    : getPlaces()
+  ).filter(p=>!donePlaces.has(nz(p)));
   // 編集中の日報の工事場所は、完了済みでも選択肢に残す（表示が消えないように）
   const all=[...new Set([...places, ...(cur?[cur]:[])])];
   $('f_place').innerHTML='<option value="">選択…</option>'+
