@@ -1293,7 +1293,7 @@ function matchWorkerFullName(name){
 }
 
 // 作業員の所属会社（氏名→会社名）。工事日報の取り込み時に、この会社ごとに名簿を分ける
-// （＝Excelの名簿で会社ごとに1行空けて表示される）。別会社の人を追加したいときはここに足す。
+// （＝Excelの名簿で会社ごとに行を詰めて表示される）。別会社の人を追加したいときはここに足す。
 const WORKER_COMPANY={
   '豊岡強志':'(株)豊岡組','豊岡敦志':'(株)豊岡組','白崎健一':'(株)豊岡組','本郷憲市':'(株)豊岡組',
   '坂本圭司':'(株)豊岡組','谷口勝康':'(株)豊岡組','十左近昭悟':'(株)豊岡組','武内進':'(株)豊岡組',
@@ -1631,7 +1631,7 @@ function applyKantokuDay(d){
   if(Array.isArray(d.machines))state.r.machines=d.machines.map(m=>(m&&m.machine)?m.machine:(typeof m==='string'?m:'')).filter(Boolean);
   if(Array.isArray(d.workers)&&d.workers.length){
     // 工事日報は苗字。KY日報はフルネームが必要なので登録済み作業員のフルネームに変換し、
-    // さらに所属会社ごとにグループ分けする（別会社は名簿で1行空けて表示される）。
+    // さらに所属会社ごとにグループ分けする（別会社は名簿で行を空けずに続けて表示される）。
     const groupsMap=new Map(); // 会社名 → 名前配列
     d.workers.forEach(w=>{
       const orig=(w&&w.name)||''; if(!orig)return;
@@ -2983,10 +2983,10 @@ function applyKyMarks(xml, r, styleOverrides){
     xml=setCellTextInXml(xml, kyCells[i][1], k.danger);
     xml=setCellTextInXml(xml, kyCells[i][2], k.action);
   });
-  // 建設作業員名簿（19〜23行目、会社ごとに空白1行はさむ、1行4人まで）
+  // 建設作業員名簿（19〜23行目、会社ごとに行を詰めて記入、1行4人まで。5人以上なら2行使う）
   const nameCols=['R','W','AB','AG'];
   let rowCursor=0, overflow=false;
-  (r.workers||[]).forEach((w, widx) => {
+  (r.workers||[]).forEach((w) => {
     if(overflow) return;
     const names=Array.isArray(w.names)?w.names:(w.names?String(w.names).split(/[\n,、，]/).map(s=>s.trim()).filter(Boolean):[]);
     const rowsNeeded=Math.max(1, Math.ceil(names.length/4));
@@ -3000,8 +3000,7 @@ function applyKyMarks(xml, r, styleOverrides){
       const targetRow=KY_WORKER_AVAILABLE_ROWS[rowCursor+rowOffset];
       xml=setCellTextInXml(xml, `${nameCols[colIdx]}${targetRow}`, nm);
     });
-    rowCursor += rowsNeeded;
-    if(widx < (r.workers.length-1)) rowCursor += 1;
+    rowCursor += rowsNeeded; // 次の会社は行を空けずに続けて書く
   });
   // 本日の体調・服装確認：3項目とも「○」固定
   ['AJ8','AJ9','AJ10'].forEach(cell=>{xml=setCellTextInXml(xml,cell, '○');});
