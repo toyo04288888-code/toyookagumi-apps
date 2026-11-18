@@ -374,6 +374,10 @@ create policy "all km" on koji_master for all using(true) with check(true);</pre
 <datalist id="machineList"></datalist>
 <datalist id="kindList"></datalist>
 <datalist id="contentList"></datalist>
+<datalist id="buyItemList"></datalist>
+<datalist id="supplierList"></datalist>
+<datalist id="subconCoList"></datalist>
+<datalist id="subconWorkList"></datalist>
 
 <div id="updOverlay">
   <div id="updBox">
@@ -391,9 +395,9 @@ const LS={mode:'tk_kn_mode',url:'tk_kn_url',key:'tk_kn_key',list:'tk_kn_list',wo
 /* ===== 更新のお知らせ =====
    コードを更新したら APP_VERSION を上げて、UPDATE_NOTES に今回の変更点を書く。
    利用者が前回と違うバージョンで開くと、1回だけポップアップが出る。 */
-const APP_VERSION='2026.09.08';
+const APP_VERSION='2026.11.18';
 const UPDATE_NOTES=[
-  'このお知らせ機能を追加しました（更新すると1回だけ表示されます）。',
+  '購買品の「購買品名・購入先」と、下請の「会社名・作業内容」に、過去の入力が候補で出るようになりました。',
 ];
 const WD=['日','月','火','水','木','金','土'];
 const $=id=>document.getElementById(id);
@@ -622,7 +626,7 @@ function renderBuy(){
   const tb=$('buyBody');tb.innerHTML='';
   state.r.purchases.forEach(p=>{
     const tr=document.createElement('tr');
-    tr.innerHTML=`<td><input class="i"></td><td><input class="s"></td><td><input class="q"></td>
+    tr.innerHTML=`<td><input class="i" list="buyItemList"></td><td><input class="s" list="supplierList"></td><td><input class="q"></td>
       <td><button class="del">×</button></td>`;
     const set=(sel,k)=>{const el=tr.querySelector(sel);el.value=p[k]||'';el.oninput=e=>p[k]=e.target.value;};
     set('.i','item');set('.s','supplier');set('.q','qty');
@@ -659,9 +663,9 @@ function renderSubcon(){
   if(!Array.isArray(state.r.subcon))state.r.subcon=[];
   state.r.subcon.forEach(sc=>{
     const tr=document.createElement('tr');
-    tr.innerHTML=`<td><input class="co"></td><td><input class="nm" placeholder="山田、田中"></td>
+    tr.innerHTML=`<td><input class="co" list="subconCoList"></td><td><input class="nm" placeholder="山田、田中"></td>
       <td><input class="st" placeholder="8:00"></td><td><input class="et" placeholder="17:00"></td>
-      <td><input class="wk" placeholder="作業内容"></td>
+      <td><input class="wk" placeholder="作業内容" list="subconWorkList"></td>
       <td><button class="del">×</button></td>`;
     const set=(sel,k)=>{const el=tr.querySelector(sel);el.value=sc[k]||'';el.oninput=e=>sc[k]=e.target.value;};
     set('.co','company');set('.nm','names');set('.st','start');set('.et','end');set('.wk','work');
@@ -1131,6 +1135,13 @@ function buildLists(){
   const wdef=['晴','曇','雨','雪','晴時々曇','曇時々晴','雨時々曇'];
   $('weatherList').innerHTML=opt([...wdef,...state.reports.map(r=>r.weather)]);
   $('machineList').innerHTML=opt(getMachines());
+  // 購買品・下請：過去の日報に入力した内容を候補に出す
+  const pur=state.reports.flatMap(r=>r.purchases||[]);
+  const sub=state.reports.flatMap(r=>Array.isArray(r.subcon)?r.subcon:[]);
+  $('buyItemList').innerHTML=opt(pur.map(p=>p.item));
+  $('supplierList').innerHTML=opt(pur.map(p=>p.supplier));
+  $('subconCoList').innerHTML=opt(sub.map(s=>s.company));
+  $('subconWorkList').innerHTML=opt(sub.map(s=>s.work));
   updateKindList();
   renderWriterOptions();
   refreshWorkerSettings();
