@@ -79,6 +79,22 @@
     display:flex;align-items:center;justify-content:center;font-size:40px;line-height:1}
   #toast.err .ic{color:var(--warn)}
 
+  /* ===== 更新のお知らせ ===== */
+  #updOverlay{position:fixed;inset:0;background:rgba(15,25,40,.55);z-index:200;
+    display:none;align-items:center;justify-content:center;padding:18px}
+  #updOverlay.show{display:flex}
+  #updBox{background:var(--card);border-radius:16px;max-width:420px;width:100%;
+    box-shadow:0 18px 60px rgba(0,0,0,.35);overflow:hidden;animation:updpop .25s cubic-bezier(.2,1.4,.4,1)}
+  @keyframes updpop{from{opacity:0;transform:translateY(14px) scale(.96)}to{opacity:1;transform:none}}
+  #updBox .head{background:var(--navy);color:#fff;padding:16px 20px;font-weight:800;font-size:17px;
+    display:flex;align-items:center;gap:10px}
+  #updBox .head .ic{font-size:24px}
+  #updBox .body{padding:16px 20px 6px}
+  #updBox .ver{color:var(--muted);font-size:12px;margin-bottom:10px}
+  #updBox ul{margin:0 0 6px;padding-left:20px}
+  #updBox li{margin-bottom:7px;line-height:1.5}
+  #updBox .foot{padding:12px 20px 18px;text-align:right}
+
   /* ===== 印刷（A4） ===== */
   #printArea{display:none}
   @media print{
@@ -359,8 +375,26 @@ create policy "all km" on koji_master for all using(true) with check(true);</pre
 <datalist id="kindList"></datalist>
 <datalist id="contentList"></datalist>
 
+<div id="updOverlay">
+  <div id="updBox">
+    <div class="head"><span class="ic">🎉</span>アプリが新しくなりました</div>
+    <div class="body">
+      <div class="ver" id="updVer"></div>
+      <ul id="updList"></ul>
+    </div>
+    <div class="foot"><button class="btn" id="updClose">確認しました</button></div>
+  </div>
+</div>
+
 <script>
-const LS={mode:'tk_kn_mode',url:'tk_kn_url',key:'tk_kn_key',list:'tk_kn_list',workers:'tk_kn_workers',masters:'tk_kn_masters',machines:'tk_kn_machines'};
+const LS={mode:'tk_kn_mode',url:'tk_kn_url',key:'tk_kn_key',list:'tk_kn_list',workers:'tk_kn_workers',masters:'tk_kn_masters',machines:'tk_kn_machines',ver:'tk_kn_ver'};
+/* ===== 更新のお知らせ =====
+   コードを更新したら APP_VERSION を上げて、UPDATE_NOTES に今回の変更点を書く。
+   利用者が前回と違うバージョンで開くと、1回だけポップアップが出る。 */
+const APP_VERSION='2026.09.08';
+const UPDATE_NOTES=[
+  'このお知らせ機能を追加しました（更新すると1回だけ表示されます）。',
+];
 const WD=['日','月','火','水','木','金','土'];
 const $=id=>document.getElementById(id);
 const ymdLocal=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
@@ -1141,6 +1175,21 @@ document.addEventListener('keydown',e=>{
   const next=fields[i+1];
   if(next){ next.focus(); if(next.select) try{next.select();}catch(_){ } }
 });
+/* ===== 更新のお知らせ 表示処理 ===== */
+function showUpdateIfNeeded(){
+  let seen=null;
+  try{seen=localStorage.getItem(LS.ver);}catch(_){ }
+  // 初めて使う端末（過去バージョン記録なし）はポップアップを出さず、静かに記録
+  if(!seen){ try{localStorage.setItem(LS.ver,APP_VERSION);}catch(_){ } return; }
+  if(seen===APP_VERSION) return;            // 最新版のまま → 何もしない
+  // バージョンが変わった → 1回だけ表示
+  $('updVer').textContent='バージョン '+APP_VERSION;
+  $('updList').innerHTML=UPDATE_NOTES.map(n=>'<li>'+esc(n)+'</li>').join('');
+  $('updOverlay').classList.add('show');
+  const close=()=>{ $('updOverlay').classList.remove('show'); try{localStorage.setItem(LS.ver,APP_VERSION);}catch(_){ } };
+  $('updClose').onclick=close;
+  $('updOverlay').onclick=e=>{ if(e.target===$('updOverlay')) close(); };
+}
 (async function(){
   bindBasic();
   bindMaster();
@@ -1149,6 +1198,7 @@ document.addEventListener('keydown',e=>{
   await MasterStore.load();
   buildLists();
   renderAll();
+  showUpdateIfNeeded();
 })();
 </script>
 </body>
