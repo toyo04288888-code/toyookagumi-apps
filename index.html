@@ -397,7 +397,7 @@ const LS={mode:'tk_kn_mode',url:'tk_kn_url',key:'tk_kn_key',list:'tk_kn_list',wo
    利用者が前回と違うバージョンで開くと、1回だけポップアップが出る。 */
 const APP_VERSION='2026.11.18';
 const UPDATE_NOTES=[
-  '購買品の「購買品名・購入先」と、下請の「会社名・作業内容」に、過去の入力が候補で出るようになりました。',
+  '購買品の「購買品名・購入先」と、下請の「会社名・作業内容」に、記入者ご自身が直近に入力した10件が候補で出るようになりました。',
 ];
 const WD=['日','月','火','水','木','金','土'];
 const $=id=>document.getElementById(id);
@@ -543,24 +543,31 @@ function loadBasicToForm(){
 /* ===== 作業内容 ===== */
 /* いま選んでいる記入者が過去の日報に書いた工種／作業内容を、新しい順に最大10件集める
    （記入者ごとの蓄積。古いものは自然に消える。履歴がなければ空のまま） */
-function recentWorkValues(field){
+function recentValues(listOf,field){
   const me=(state.r.writer||'').trim();
   if(!me)return[];
   const seen=new Set(),out=[];
   const rows=[...state.reports].sort((a,b)=>(b.report_date||'').localeCompare(a.report_date||''));
   for(const r of rows){
     if((r.writer||'').trim()!==me)continue;
-    for(const w of (r.works||[])){
-      const k=(w[field]||'').trim();
+    for(const w of listOf(r)){
+      const k=((w&&w[field])||'').trim();
       if(k&&!seen.has(k)){seen.add(k);out.push(k);if(out.length>=10)return out;}
     }
   }
   return out;
 }
+const recentWorkValues=field=>recentValues(r=>r.works||[],field);
 function updateKindList(){
   const fill=(id,arr)=>$(id).innerHTML=arr.map(v=>`<option value="${esc(v)}">`).join('');
   fill('kindList',recentWorkValues('kind'));
   fill('contentList',recentWorkValues('content'));
+  // 購買品・下請も同様に、選んでいる記入者が直近に入力した10件
+  const pur=r=>r.purchases||[], sub=r=>Array.isArray(r.subcon)?r.subcon:[];
+  fill('buyItemList',recentValues(pur,'item'));
+  fill('supplierList',recentValues(pur,'supplier'));
+  fill('subconCoList',recentValues(sub,'company'));
+  fill('subconWorkList',recentValues(sub,'work'));
 }
 function renderWorks(){
   const tb=$('worksBody');tb.innerHTML='';
@@ -1135,13 +1142,6 @@ function buildLists(){
   const wdef=['晴','曇','雨','雪','晴時々曇','曇時々晴','雨時々曇'];
   $('weatherList').innerHTML=opt([...wdef,...state.reports.map(r=>r.weather)]);
   $('machineList').innerHTML=opt(getMachines());
-  // 購買品・下請：過去の日報に入力した内容を候補に出す
-  const pur=state.reports.flatMap(r=>r.purchases||[]);
-  const sub=state.reports.flatMap(r=>Array.isArray(r.subcon)?r.subcon:[]);
-  $('buyItemList').innerHTML=opt(pur.map(p=>p.item));
-  $('supplierList').innerHTML=opt(pur.map(p=>p.supplier));
-  $('subconCoList').innerHTML=opt(sub.map(s=>s.company));
-  $('subconWorkList').innerHTML=opt(sub.map(s=>s.work));
   updateKindList();
   renderWriterOptions();
   refreshWorkerSettings();
