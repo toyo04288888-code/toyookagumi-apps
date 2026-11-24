@@ -2278,11 +2278,28 @@ function getCellStyleIdFromXml(xml, cellRef){
 
 // styles.xml内のcellXfsに、既存スタイル(baseStyleId)をベースに配置(alignment)だけ変更した
 // 新規エントリを追加し、その新しいスタイルIDを返す。罫線・フォント等の他の書式は完全に保たれる。
-async function addCenterAlignedStyle(zip, baseStyleId, horizontal){
+// fontSize を指定すると、元のフォントを複製して文字サイズだけ変え、縮小して全体を表示（shrinkToFit）も付ける。
+async function addCenterAlignedStyle(zip, baseStyleId, horizontal, fontSize){
   horizontal=horizontal||'center'; // 'center'（既定）/'left' など
   if(baseStyleId==null)return baseStyleId;
   const stylesPath='xl/styles.xml';
   let stylesXml=await zip.file(stylesPath).async('string');
+  let newFontId=null;
+  if(fontSize){
+    const fm=stylesXml.match(/<fonts count="(\d+)"([^>]*)>([\s\S]*?)<\/fonts>/);
+    const xm=stylesXml.match(/<cellXfs count="\d+">([\s\S]*?)<\/cellXfs>/);
+    const baseXfTmp=xm&&(xm[1].match(/<xf\b[^>]*\/>|<xf\b[^>]*>[\s\S]*?<\/xf>/g)||[])[baseStyleId];
+    const fontIdx=baseXfTmp?+((baseXfTmp.match(/\sfontId="(\d+)"/)||[])[1]||0):0;
+    const fonts=fm?(fm[3].match(/<font\b[^>]*\/>|<font\b[^>]*>[\s\S]*?<\/font>/g)||[]):[];
+    if(fm&&fonts[fontIdx]){
+      let f=fonts[fontIdx];
+      if(/<sz\b[^>]*\/>/.test(f)) f=f.replace(/<sz\b[^>]*\/>/,`<sz val="${fontSize}"/>`);
+      else if(f.endsWith('/>')) f=f.slice(0,-2)+`><sz val="${fontSize}"/></font>`;
+      else f=f.replace(/^(<font\b[^>]*>)/,`$1<sz val="${fontSize}"/>`);
+      newFontId=+fm[1];
+      stylesXml=stylesXml.replace(fm[0], `<fonts count="${newFontId+1}"${fm[2]}>${fm[3]}${f}</fonts>`);
+    }
+  }
 
   const m=stylesXml.match(/<cellXfs count="(\d+)">([\s\S]*?)<\/cellXfs>/);
   if(!m)return baseStyleId;
@@ -2293,9 +2310,13 @@ async function addCenterAlignedStyle(zip, baseStyleId, horizontal){
   const xfs=body.match(xfRegex)||[];
   if(baseStyleId>=xfs.length)return baseStyleId;
 
-  const align=`<alignment horizontal="${horizontal}" vertical="center"/>`;
+  const align=`<alignment horizontal="${horizontal}" vertical="center"${newFontId!=null?' shrinkToFit="1"':''}/>`;
   let baseXf=xfs[baseStyleId];
   let newXf=baseXf.replace(/<alignment[^>]*\/>|<alignment[^>]*>[\s\S]*?<\/alignment>/,'');
+  if(newFontId!=null){
+    newXf=/\sfontId="\d+"/.test(newXf)?newXf.replace(/\sfontId="\d+"/,` fontId="${newFontId}"`):newXf.replace(/^<xf\b/,`<xf fontId="${newFontId}"`);
+    newXf=/\sapplyFont="\d"/.test(newXf)?newXf.replace(/\sapplyFont="\d"/,' applyFont="1"'):newXf.replace(/^<xf\b/,'<xf applyFont="1"');
+  }
   if(newXf.endsWith('/>')){
     newXf=newXf.slice(0,-2)+' applyAlignment="1">'+align+'</xf>';
   }else{
@@ -2954,12 +2975,26 @@ async function exportKikai(){
 if($('kikaiExportBtn'))$('kikaiExportBtn').onclick=()=>exportKikai();
 
 const KY_WORKER_AVAILABLE_ROWS=[19,20,21,22,23];
+// 所属会社名セル（C〜G結合・幅約71pt・標準9pt）に文字が入る幅(pt)と、長い社名のときに使う文字サイズの段階
+const KY_COMPANY_CELL_PT=68;
+const KY_COMPANY_FONT_SIZES=[8.5,8,7.5,7,6.5,6,5.5,5];
+// 文字の幅（全角=1、半角英数・半角カナ=0.5）の合計
+function kyTextEm(s){let n=0;for(const ch of String(s||''))n+=/[\x20-\x7e｡-ﾟ]/.test(ch)?0.5:1;return n;}
+// 会社名がセルに収まる文字サイズ（標準の9ptで収まるならnull＝そのまま）
+function kyCompanyFontSize(name){
+  const em=kyTextEm(name); if(!em)return null;
+  const fit=Math.floor(KY_COMPANY_CELL_PT/em*2)/2;
+  return fit>=9?null:Math.max(KY_COMPANY_FONT_SIZES[KY_COMPANY_FONT_SIZES.length-1],fit);
+}
 // 会社名セルを中央揃えにするスタイルを、作業員名簿の各行ぶん用意する（styles.xmlに追加。1回だけ計算して使い回す）
+// あわせて、長い会社名用に文字サイズを小さくしたスタイルも段階ごとに用意する（companyFit[行][サイズ]）
 async function buildWorkerStyleOverrides(zip, baseXml){
-  const styleOverrides={};
+  const styleOverrides={companyFit:{}};
   for(const rn of KY_WORKER_AVAILABLE_ROWS){
     const origId=getCellStyleIdFromXml(baseXml, `C${rn}`);
     styleOverrides[rn]=await addCenterAlignedStyle(zip, origId);
+    styleOverrides.companyFit[rn]={};
+    for(const sz of KY_COMPANY_FONT_SIZES) styleOverrides.companyFit[rn][sz]=await addCenterAlignedStyle(zip, origId, 'center', sz);
   }
   // 櫻田泰貴の指示事項（G40〜G42）を左詰めにするためのスタイル
   styleOverrides.leftInstr=await addCenterAlignedStyle(zip, getCellStyleIdFromXml(baseXml, 'G40'), 'left');
@@ -2999,7 +3034,10 @@ function applyKyMarks(xml, r, styleOverrides){
     const rowsNeeded=Math.max(1, Math.ceil(names.length/4));
     if(rowCursor + rowsNeeded > KY_WORKER_AVAILABLE_ROWS.length){overflow=true;return;}
     const firstRow=KY_WORKER_AVAILABLE_ROWS[rowCursor];
-    xml=setCellTextInXml(xml,`C${firstRow}`, w.company, styleOverrides[firstRow]);
+    // 会社名が長いときは、文字数に合わせて文字を小さくしてセル内に収める
+    const fitSz=kyCompanyFontSize(w.company);
+    const fitStyle=fitSz&&styleOverrides.companyFit&&styleOverrides.companyFit[firstRow]?styleOverrides.companyFit[firstRow][fitSz]:null;
+    xml=setCellTextInXml(xml,`C${firstRow}`, w.company, fitStyle!=null?fitStyle:styleOverrides[firstRow]);
     xml=setCellTextInXml(xml,`H${firstRow}`, w.kind);
     xml=setCellTextInXml(xml,`M${firstRow}`, w.shokucho);
     names.forEach((nm,ni)=>{
