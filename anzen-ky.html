@@ -1635,7 +1635,8 @@ async function importFromKantoku(){
   // 古い日付から順に並べる（作成順を自然に）
   chosenRows.sort((a,b)=>String(a.report_date||'').localeCompare(String(b.report_date||'')));
   // 「まとめて作成」のキューを用意し、1枚ずつ〔確認→保存→次へ〕で進める
-  state.kyBatch={koji, total:chosenRows.length, queue:chosenRows.slice()};
+  // 取り込み前に選んでいた現場代理人は、作る日報すべてに引き継ぐ
+  state.kyBatch={koji, genba:state.r.genba||'', total:chosenRows.length, queue:chosenRows.slice()};
   loadNextKyBatchDay();
 }
 
@@ -1697,6 +1698,11 @@ function applyKantokuDay(d){
     }
     // 下請の作業内容を本日の作業に追加（同じ内容は重複させない）
     subWorks.forEach(sw=>{ if(!state.r.works.some(x=>(x.content||'')===sw.content))state.r.works.push(sw); });
+  }
+  // 現場代理人：取り込み前に選んでいた人、無ければ同じ工事の前回の日報の人を自動で入れる（工事日報には代理人が無いため）
+  if(!state.r.genba){
+    const g=(state.kyBatch&&state.kyBatch.genba)||lastGenbaOfKoji(state.r.koji_name);
+    if(g) applyGenba(g);
   }
   syncKyContentFromWorks(); // ③KY活動（危険・対策）を工種から自動で下書き
 }
