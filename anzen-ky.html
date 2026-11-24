@@ -1552,24 +1552,14 @@ function bindBasic(){
     state.r.koji_name=e.target.value;
     const pl=kojiToPlace(state.r.koji_name); // 紐づく工事場所を自動で入れる
     if(pl){ state.r.place=pl; renderPlaceSelect(); }
+    // 同じ工事の前回の日報の現場代理人を自動で入れる（未選択のとき、または前回分を自動で入れたままのときだけ）
+    if(!state.r.genba || state.genbaAuto){
+      const g=lastGenbaOfKoji(state.r.koji_name);
+      if(g){ applyGenba(g); state.genbaAuto=true; }
+    }
   };
   $('f_place').onchange=e=>state.r.place=e.target.value;
-  // 現場代理人を選ぶと、主任技術者・安全巡視員も同じ人を自動セット
-  $('f_genba').onchange=e=>{
-    state.r.genba=e.target.value;
-    state.r.shunin=e.target.value;
-    // 現場代理人が櫻田泰貴のときは、安全巡視員は豊岡昭三にする
-    state.r.patrol.person=(e.target.value==='櫻田泰貴')?'豊岡昭三':e.target.value;
-    // 現場代理人/主任技術者を、その会社の職長に自動転記（職長は作業員名から外す）
-    const leaders=companyLeaders();
-    (state.r.workers||[]).forEach(w=>{
-      if(w.company) w.kind=companyKind(w.company); // 現場代理人の会社が元請
-      const s=leaders[w.company]||'';
-      if(s){ w.shokucho=s; if(Array.isArray(w.names)) w.names=w.names.filter(nm=>nm!==s); }
-    });
-    if(Array.isArray(state.r.workers)) state.r.workers.sort((a,b)=>(a.kind==='元請'?0:1)-(b.kind==='元請'?0:1)); // 元請を一番上に
-    renderGenbaShuninSelect();renderPatrolPersonSelect();renderWorkers();
-  };
+  $('f_genba').onchange=e=>{ applyGenba(e.target.value); state.genbaAuto=false; };
   $('f_shunin').onchange=e=>state.r.shunin=e.target.value;
   $('f_tbm').onchange=e=>state.r.tbm=e.target.value;
   $('f_patrol_person').onchange=e=>state.r.patrol.person=e.target.value;
@@ -1577,6 +1567,29 @@ function bindBasic(){
   $('f_zesei_ari').onchange=()=>state.r.zesei_ari='ari';
   $('f_zesei_text').oninput=e=>state.r.zesei_text=e.target.value;
   state.r.shanai_patrol='豊岡昭三'; // 実施者は固定
+}
+// 同じ工事名の保存済み日報のうち、一番新しい日付の現場代理人を返す（無ければ''）
+function lastGenbaOfKoji(koji){
+  if(!koji)return '';
+  const same=state.reports.filter(r=>r.koji_name===koji&&r.genba&&r.id!==state.r.id)
+    .sort((a,b)=>(b.report_date||'').localeCompare(a.report_date||''));
+  return same.length?same[0].genba:'';
+}
+// 現場代理人を選ぶと、主任技術者・安全巡視員も同じ人を自動セット
+function applyGenba(name){
+  state.r.genba=name;
+  state.r.shunin=name;
+  // 現場代理人が櫻田泰貴のときは、安全巡視員は豊岡昭三にする
+  state.r.patrol.person=(name==='櫻田泰貴')?'豊岡昭三':name;
+  // 現場代理人/主任技術者を、その会社の職長に自動転記（職長は作業員名から外す）
+  const leaders=companyLeaders();
+  (state.r.workers||[]).forEach(w=>{
+    if(w.company) w.kind=companyKind(w.company); // 現場代理人の会社が元請
+    const s=leaders[w.company]||'';
+    if(s){ w.shokucho=s; if(Array.isArray(w.names)) w.names=w.names.filter(nm=>nm!==s); }
+  });
+  if(Array.isArray(state.r.workers)) state.r.workers.sort((a,b)=>(a.kind==='元請'?0:1)-(b.kind==='元請'?0:1)); // 元請を一番上に
+  renderGenbaShuninSelect();renderPatrolPersonSelect();renderWorkers();
 }
 
 /* ===== 工事日報から取り込む（工事名を選び、取り込む日を一覧から選択） ===== */
@@ -1743,6 +1756,7 @@ function loadBasicToForm(){
 }
 
 function renderAll(){
+  state.genbaAuto=false; // 別の日報を開いたら「現場代理人を自動で入れた」状態を解除
   loadBasicToForm();
   renderWorks();
   renderMachines();
