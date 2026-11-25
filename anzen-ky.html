@@ -2398,11 +2398,15 @@ function getTenkenTargetMachines(){
   });
   // 「すべての工事」のときは、登録済みの使用機械（マスタ）を全部表示（未使用の機械も出す）
   if(!koji) getMachines().forEach(m=>{const n=normMachine(m);if(n&&!isTenkenHidden(n))set.add(n);});
-  if(hasReport||!koji)set.add('玉掛け');
+  if(hasReport||!koji){ set.add('玉掛け'); set.add(HOAN_KEY); } // 玉掛け・保安施設点検は日報がある日すべてが対象
   return [...set].sort((a,b)=>tenkenMachineRank(a)-tenkenMachineRank(b)); // 並び順は固定（それ以外は末尾に元の順）
 }
+// 保安施設点検表：玉掛けと同じく、使用機械に関係なく日報がある全日にチェックする（テンプレートのシート名＝保安施設点検）
+const HOAN_SHEET='保安施設点検';
+const HOAN_KEY=normMachine(HOAN_SHEET);
+const HOAN_DASH_LABEL='工事用信号機'; // この項目は✔ではなく「―」を入れる
 // 点検簿ごとの点検者選択の機械の並び順
-const TENKEN_MACHINE_ORDER=['0.1BH(旧)','0.1BH(新)','0.25BH','0.25BH(UU)','0.45BH','アスファルトフィニッシャー','コンバインドローラー','マカダムローラー','タイヤローラー','1tローラー','玉掛け','リースバックホウ','リースモーターグレーダー','リース発電機'].map(normMachine);
+const TENKEN_MACHINE_ORDER=['0.1BH(旧)','0.1BH(新)','0.25BH','0.25BH(UU)','0.45BH','アスファルトフィニッシャー','コンバインドローラー','マカダムローラー','タイヤローラー','1tローラー','玉掛け','保安施設点検','リースバックホウ','リースモーターグレーダー','リース発電機'].map(normMachine);
 function tenkenMachineRank(n){
   let i=TENKEN_MACHINE_ORDER.indexOf(n);
   if(i<0)i=TENKEN_MACHINE_ORDER.findIndex(o=>n.indexOf(o)===0);
@@ -2478,7 +2482,8 @@ async function tenkenLoadSharedStrings(zip){
 
 // 指定セルの文字列を取得（共有文字列 / インライン文字列 / 数値に対応）
 function tenkenCellText(xml,ref,shared){
-  const re=new RegExp(`<c r="${ref}"([^>]*)>([\\s\\S]*?)</c>`);
+  // 空のセル（<c r="B18" s="31"/>）は空文字。属性に「/」を含めないことで、次のセルの中身を誤って読まないようにする
+  const re=new RegExp(`<c r="${ref}"([^>/]*)>([\\s\\S]*?)</c>`);
   const m=xml.match(re);if(!m)return '';
   const attrs=m[1],inner=m[2];
   if(/t="s"/.test(attrs)){const v=inner.match(/<v>(\d+)<\/v>/);return v?(shared[+v[1]]||''):'';}
@@ -2554,7 +2559,7 @@ function tenkenStampName(name){
 // 1シート分のxmlに、使用日の✔と点検者・年月・現場名・現場代理人を記入する（記入前にテンプレの記入例を消す）
 // テキストに needle を含むセルを、needle部分だけ replacement に置換する（リースシートの「（機械名）」差し替え用）
 function tenkenReplaceText(xml, shared, needle, replacement){
-  let m; const cellRe=/<c r="([A-Z]+\d+)"([^>]*)>([\s\S]*?)<\/c>/g; const hits=[];
+  let m; const cellRe=/<c r="([A-Z]+\d+)"([^>/]*)>([\s\S]*?)<\/c>/g; const hits=[];
   while((m=cellRe.exec(xml))){
     const ref=m[1], attrs=m[2], inner=m[3]; let text='';
     if(/t="s"/.test(attrs)){const v=inner.match(/<v>(\d+)<\/v>/);if(v)text=shared[+v[1]]||'';}
@@ -2583,7 +2588,8 @@ function tenkenShadeWeekends(xml){
 
 // inspectorFull=選択した点検者のフルネーム。「点検者：」にはフルネーム、各日の判子には苗字を入れる。
 // machineName=シート内の目印「（機械名）」に入れる機械名（リース機械のとき使う）
-function tenkenMarkSheet(xml, shared, days, inspectorFull, year, month, koji, genba, motouke, excludeRows, machineName){
+// dashLabel=この文字を含む点検項目の行は、✔の代わりに「―」を入れる（保安施設点検の「工事用信号機」など）
+function tenkenMarkSheet(xml, shared, days, inspectorFull, year, month, koji, genba, motouke, excludeRows, machineName, dashLabel){
   excludeRows=excludeRows||[]; // ✔を付けない行（玉掛の10・16・22・24行など）
   if(machineName){ // リースシートの機械名を差し替え（全角・半角どちらのカッコでも）
     xml=tenkenReplaceText(xml, shared, '（機械名）', machineName);
@@ -2594,7 +2600,14 @@ function tenkenMarkSheet(xml, shared, days, inspectorFull, year, month, koji, ge
   const {itemRows,inspectorRow}=tenkenDetectRows(xml,dayRow,shared);
   const surname=tenkenStampName(inspectorFull||''); // 各日の判子は苗字のみ
   const ymCells=tenkenFindYearMonthCells(xml,dayRow+1);
-  if(ymCells){xml=setCellNumberInXml(xml,ymCells.yearCell,year);xml=setCellNumberInXml(xml,ymCells.monthCell,month);}
+  if(ymCells){
+    // 西暦セルが「=令和セル+2018」の数式なら、令和の年セルも合わせて書き換える（年をまたいでも令和○年が正しく出るように）
+    const yf=(xml.match(new RegExp(`<c r="${ymCells.yearCell}"[^>]*><f>([^<]*)</f>`))||[])[1]||'';
+    const wm=yf.match(/^\$?([A-Z]+)\$?(\d+)\+2018$/);
+    if(wm&&year) xml=setCellNumberInXml(xml,wm[1]+wm[2],year-2018);
+    xml=setCellNumberInXml(xml,ymCells.yearCell,year);xml=setCellNumberInXml(xml,ymCells.monthCell,month);
+  }
+  const dashRows=dashLabel?itemRows.filter(r=>tenkenCellText(xml,'B'+r,shared).indexOf(dashLabel)>=0):[];
   // 日付列は等間隔で並ぶ前提。見つかった日から全日(1〜31)の列を推定する（31日目が空のテンプレでも列を求められる）
   const foundDays=Object.keys(dayCols).map(Number).filter(d=>d>=1&&d<=31).sort((a,b)=>a-b);
   let dcol=(d)=>dayCols[d]||null;
@@ -2640,7 +2653,7 @@ function tenkenMarkSheet(xml, shared, days, inspectorFull, year, month, koji, ge
   // 使用日に✔と点検者の苗字（excludeRowsの行は✔を付けない＝空欄のまま）
   for(const d of days){
     const col=dcol(d);if(!col)continue;
-    for(const r of itemRows){ if(excludeRows.indexOf(r)>=0)continue; xml=tenkenSetCell(xml,col+r,'✔'); }
+    for(const r of itemRows){ if(excludeRows.indexOf(r)>=0)continue; xml=tenkenSetCell(xml,col+r,dashRows.indexOf(r)>=0?'―':'✔'); }
     if(inspectorRow&&surname)xml=tenkenSetCell(xml,col+inspectorRow,surname);
   }
   // 土日のみ網掛（テンプレートの条件付き書式に土曜ルールを補う）
@@ -2653,7 +2666,7 @@ function tenkenReEsc(s){return String(s).replace(/[.*+?^${}()|[\]\\]/g,'\\$&');}
 
 // 指定文字を含むセルがある最終行を探す（印刷範囲の下端＝「西暦○○年」行の検出に使う）
 function tenkenFindTextRow(xml, shared, needle){
-  let m; const cellRe=/<c r="[A-Z]+(\d+)"([^>]*)>([\s\S]*?)<\/c>/g; let found=null;
+  let m; const cellRe=/<c r="[A-Z]+(\d+)"([^>/]*)>([\s\S]*?)<\/c>/g; let found=null;
   while((m=cellRe.exec(xml))){
     const row=+m[1], attrs=m[2], inner=m[3]; let text='';
     if(/t="s"/.test(attrs)){const v=inner.match(/<v>(\d+)<\/v>/);if(v)text=shared[+v[1]]||'';}
@@ -2669,7 +2682,7 @@ function tenkenFindTextRow(xml, shared, needle){
 // 「年」「月」「日」がそろう最下行（点検簿最下部の「○年○月○日」欄）を返す。「西暦」が無い玉掛用のフォールバック
 function tenkenFindDateLineRow(xml, shared){
   const rowText={};
-  let m; const cellRe=/<c r="[A-Z]+(\d+)"([^>]*)>([\s\S]*?)<\/c>/g;
+  let m; const cellRe=/<c r="[A-Z]+(\d+)"([^>/]*)>([\s\S]*?)<\/c>/g;
   while((m=cellRe.exec(xml))){
     const row=+m[1], attrs=m[2], inner=m[3]; let text='';
     if(/t="inlineStr"/.test(attrs)){let tt,tr=/<t[^>]*>([\s\S]*?)<\/t>/g;while((tt=tr.exec(inner)))text+=tenkenDecodeXml(tt[1]);}
@@ -2735,7 +2748,7 @@ async function tenkenBuildMachineFile(base64, sheetName, specs, machineName){
   // 各パートにその月のデータを記入
   for(const p of parts){
     const sp=p.spec;
-    let x=tenkenMarkSheet(baseXml,shared,[...sp.days],sp.inspector||'',sp.year,sp.month,sp.koji,sp.genba,sp.motouke,sp.excludeRows,machineName).xml;
+    let x=tenkenMarkSheet(baseXml,shared,[...sp.days],sp.inspector||'',sp.year,sp.month,sp.koji,sp.genba,sp.motouke,sp.excludeRows,machineName,sp.dashLabel).xml;
     if(sheetName.indexOf('玉掛')>=0) x=tenkenFitOnePage(x); // 玉掛は1ページに収める
     zip.file(p.path,x);
     if(p.path!==keep.path && keepRelsXml){
@@ -2849,7 +2862,7 @@ async function exportTenken(){
     });
   });
   // 玉掛けは使用機械の選択に関係なく、日報がある全日にチェックする
-  if(Object.keys(tama).length)mach['玉掛け']=tama;
+  if(Object.keys(tama).length){ mach['玉掛け']=tama; mach[HOAN_KEY]=tama; } // 保安施設点検も同じ日（日報がある全日）
   const names=Object.keys(mach);
   if(!names.length){note.textContent=(koji?`「${koji}」`:'')+'の日報がありません。';return;}
 
@@ -2870,7 +2883,7 @@ async function exportTenken(){
       let machineName='';                  // リースのとき、シートの「（機械名）」に入れる名前
       if(!name){
         // テンプレに専用シートが無い機械は、リース用の汎用シートで出す（玉掛けは除く）
-        if(leaseSheet && normName!=='玉掛け'){ name=leaseSheet; machineName=machDisplay[normName]||normName; }
+        if(leaseSheet && normName!=='玉掛け' && normName!==HOAN_KEY){ name=leaseSheet; machineName=machDisplay[normName]||normName; }
         else { unmatched.push(machDisplay[normName]||normName); continue; }
       }
       const display=machineName||name;     // 表示・ファイル名（リースは元の機械名）
@@ -2885,7 +2898,8 @@ async function exportTenken(){
         const kojiName=koji || [...e.kojis].join('・'); // 現場名（選んだ工事、無ければ日報の工事名）
         const genbaName=[...e.genbas].join('・');       // 現場代理人
         return {name:multiYear?`${e.year}年${e.month}月`:`${e.month}月`, year:e.year, month:e.month,
-                days:e.days, koji:kojiName, genba:genbaName, motouke:tenkenMotoukeName(genbaName), inspector, excludeRows};
+                days:e.days, koji:kojiName, genba:genbaName, motouke:tenkenMotoukeName(genbaName), inspector, excludeRows,
+                dashLabel:(normName===HOAN_KEY)?HOAN_DASH_LABEL:''};
       });
       const blob=await tenkenBuildMachineFile(tpl.base64,name,specs,machineName);
       if(!blob){unmatched.push(display);continue;}
