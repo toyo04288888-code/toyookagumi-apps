@@ -1949,7 +1949,7 @@ function renderList(){
   box.querySelectorAll('.koji-done').forEach(b=>b.onclick=async(e)=>{
     e.stopPropagation();
     await setKojiDone(b.dataset.koji, b.dataset.done==='1');
-    renderList();
+    renderList(); refreshTenkenExportUI(); // 点検簿出力の工事現場の一覧にもすぐ反映
   });
   box.querySelectorAll('.koji-del').forEach(b=>b.onclick=async(e)=>{
     e.stopPropagation();
@@ -2371,7 +2371,8 @@ function circleChar(ch){return ch.split('').map(c=>c+'\u20DD').join('');}
 function refreshTenkenExportUI(){
   const kEl=$('tenken_koji'); if(!kEl)return;
   const curK=kEl.value;
-  const kojis=[...new Set(state.reports.map(r=>r.koji_name).filter(Boolean))].sort();
+  const done=new Set(getCompletedKojis()); // 日報一覧で「完了」にした工事は出さない
+  const kojis=[...new Set(state.reports.map(r=>r.koji_name).filter(k=>k&&!done.has(k)))].sort();
   kEl.innerHTML='<option value="">すべての工事</option>'+kojis.map(k=>`<option value="${esc(k)}" ${k===curK?'selected':''}>${esc(k)}</option>`).join('');
   refreshTenkenMachineInspectors();
 }
@@ -2437,7 +2438,7 @@ function refreshTenkenMachineInspectors(){
   [...tenkenSelected].forEach(k=>{ if(!machines.includes(k)) tenkenSelected.delete(k); });
   const allOn=machines.every(mc=>tenkenSelected.has(mc));
   // 日報一覧と同じ作り：先頭に「すべて選択」、各行の左にチェック
-  box.innerHTML='<div class="muted" style="margin-bottom:4px">出力する点検簿にチェックを入れ、点検者を選んでください（日報の作業員・職長から選択）：</div>'+
+  box.innerHTML=
     `<label style="display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--text-sub);padding:2px 0 6px 4px"><input type="checkbox" class="tk-selall" ${allOn?'checked':''}> すべて選択</label>`+
     machines.map(mc=>{
     const curV=tenkenInspectorMap[mc]||'';
