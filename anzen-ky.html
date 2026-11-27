@@ -1949,7 +1949,7 @@ function renderList(){
   box.querySelectorAll('.koji-done').forEach(b=>b.onclick=async(e)=>{
     e.stopPropagation();
     await setKojiDone(b.dataset.koji, b.dataset.done==='1');
-    renderList(); refreshTenkenExportUI(); // 点検簿出力の工事現場の一覧にもすぐ反映
+    renderList(); refreshTenkenExportUI(); refreshKikaiExportUI(); // 点検簿出力の工事現場の一覧にもすぐ反映
   });
   box.querySelectorAll('.koji-del').forEach(b=>b.onclick=async(e)=>{
     e.stopPropagation();
@@ -2954,7 +2954,8 @@ if($('tenken_koji'))$('tenken_koji').onchange=()=>refreshTenkenMachineInspectors
 function refreshKikaiExportUI(){
   const kEl=$('kikai_koji'); if(!kEl)return;
   const curK=kEl.value;
-  const kojis=[...new Set(state.reports.map(r=>r.koji_name).filter(Boolean))].sort();
+  const done=new Set(getCompletedKojis()); // 日報一覧で「完了」にした工事は出さない
+  const kojis=[...new Set(state.reports.map(r=>r.koji_name).filter(k=>k&&!done.has(k)))].sort();
   kEl.innerHTML='<option value="">すべての工事</option>'+kojis.map(k=>`<option value="${esc(k)}" ${k===curK?'selected':''}>${esc(k)}</option>`).join('');
 }
 // 選んだ工事で使われた機械の表示名を初出順で返す（normキー→表示名のMap）
