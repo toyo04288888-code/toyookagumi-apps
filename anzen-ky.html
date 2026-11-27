@@ -1350,6 +1350,7 @@ function tenkenMotoukeName(genba){
 }
 // 点検簿ごとの点検者（機械名 → 点検者フルネーム）
 const tenkenInspectorMap={};
+const tenkenSelected=new Set(); // 出力する点検簿（機械名の正規化キー）。日報の出力と同じくチェックしたものだけ出力
 
 /* ===== 点検簿テンプレート（使用機械用・9シートの点検簿.xlsx） ===== */
 function localTenkenTemplate(){const raw=localStorage.getItem(LS.tenkenTemplate);if(raw){try{return JSON.parse(raw);}catch(e){}}return null;}
@@ -2432,14 +2433,30 @@ function refreshTenkenMachineInspectors(){
   const machines=getTenkenTargetMachines();
   if(!machines.length){box.innerHTML='<div class="muted">工事現場を選ぶと、点検簿ごとに点検者を設定できます。</div>';return;}
   const cands=getReportWorkerCandidates(koji);
-  box.innerHTML='<div class="muted" style="margin-bottom:4px">点検簿ごとの点検者（日報の作業員・職長から選択）：</div>'+machines.map(mc=>{
+  // 一覧に無くなった機械の選択は外す（工事現場を切り替えたとき）
+  [...tenkenSelected].forEach(k=>{ if(!machines.includes(k)) tenkenSelected.delete(k); });
+  const allOn=machines.every(mc=>tenkenSelected.has(mc));
+  // 日報一覧と同じ作り：先頭に「すべて選択」、各行の左にチェック
+  box.innerHTML='<div class="muted" style="margin-bottom:4px">出力する点検簿にチェックを入れ、点検者を選んでください（日報の作業員・職長から選択）：</div>'+
+    `<label style="display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--text-sub);padding:2px 0 6px 4px"><input type="checkbox" class="tk-selall" ${allOn?'checked':''}> すべて選択</label>`+
+    machines.map(mc=>{
     const curV=tenkenInspectorMap[mc]||'';
     const opts=[...new Set([...cands, ...(curV?[curV]:[])])];
-    return `<div style="display:flex;gap:8px;align-items:center;margin:3px 0"><span style="flex:0 0 200px;font-size:13px">${esc(mc)}</span><select class="tk-insp" data-machine="${esc(mc)}"><option value="">（未選択）</option>${opts.map(w=>`<option value="${esc(w)}" ${w===curV?'selected':''}>${esc(w)}</option>`).join('')}</select></div>`;
+    return `<div style="display:flex;gap:10px;align-items:center;padding:5px 12px;margin-bottom:4px;border:1px solid var(--border);border-radius:8px;background:#fff">
+      <label style="display:flex;align-items:center;gap:10px;flex:0 0 220px;min-width:0;font-size:13.5px;font-weight:600;cursor:pointer"><input type="checkbox" class="tk-sel" data-machine="${esc(mc)}" ${tenkenSelected.has(mc)?'checked':''}>${esc(mc)}</label>
+      <select class="tk-insp" data-machine="${esc(mc)}" style="flex:1 1 auto;min-width:0"><option value="">（点検者 未選択）</option>${opts.map(w=>`<option value="${esc(w)}" ${w===curV?'selected':''}>${esc(w)}</option>`).join('')}</select></div>`;
   }).join('');
   box.querySelectorAll('.tk-insp').forEach(sel=>sel.onchange=()=>{
     if(sel.value)tenkenInspectorMap[sel.dataset.machine]=sel.value; else delete tenkenInspectorMap[sel.dataset.machine];
   });
+  const selAll=box.querySelector('.tk-selall');
+  box.querySelectorAll('.tk-sel').forEach(cb=>cb.onchange=()=>{
+    if(cb.checked)tenkenSelected.add(cb.dataset.machine); else tenkenSelected.delete(cb.dataset.machine);
+    selAll.checked=machines.every(mc=>tenkenSelected.has(mc));
+  });
+  selAll.onchange=()=>{
+    box.querySelectorAll('.tk-sel').forEach(cb=>{cb.checked=selAll.checked; if(selAll.checked)tenkenSelected.add(cb.dataset.machine); else tenkenSelected.delete(cb.dataset.machine);});
+  };
 }
 
 // XMLエンティティを元に戻す（共有文字列の読み取り用）
@@ -2839,6 +2856,7 @@ async function exportTenken(){
   if(typeof JSZip==='undefined'){alert('ZIPライブラリの読み込みに失敗しています。');return;}
   const koji=($('tenken_koji')&&$('tenken_koji').value)||''; // 工事現場（空＝すべての工事）
   const note=$('tenkenExportNote');
+  if(!tenkenSelected.size){note.textContent='出力する点検簿にチェックを入れてください。';return;}
   note.textContent='作成中…';
 
   // 選んだ工事現場の日報から「機械名→{年月(YYYY-MM)→{使用日,工事名,現場代理人}}」を作る
@@ -2863,8 +2881,9 @@ async function exportTenken(){
   });
   // 玉掛けは使用機械の選択に関係なく、日報がある全日にチェックする
   if(Object.keys(tama).length){ mach['玉掛け']=tama; mach[HOAN_KEY]=tama; } // 保安施設点検も同じ日（日報がある全日）
-  const names=Object.keys(mach);
-  if(!names.length){note.textContent=(koji?`「${koji}」`:'')+'の日報がありません。';return;}
+  if(!Object.keys(mach).length){note.textContent=(koji?`「${koji}」`:'')+'の日報がありません。';return;}
+  const names=Object.keys(mach).filter(n=>tenkenSelected.has(n)); // チェックした点検簿だけ出力
+  if(!names.length){note.textContent='チェックした点検簿は、'+(koji?`「${koji}」の`:'')+'日報で使われていません。';return;}
 
   try{
     const probe=await JSZip.loadAsync(base64ToArrayBuffer(tpl.base64));
